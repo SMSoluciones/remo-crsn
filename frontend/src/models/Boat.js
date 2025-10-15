@@ -6,7 +6,7 @@ export const BoatStatus = {
 };
 
 export const BoatTypes = [
-  'single', 'doble', 'cuadruple', 'yola', 'otros'
+  'single', 'doble', 'cuadruple', 'otros'
 ];
 
 export class Boat {
