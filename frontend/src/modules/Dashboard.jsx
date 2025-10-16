@@ -15,6 +15,8 @@ const mockKPIs = {
 
 
 import Avatar from 'react-avatar';
+import UsersAdmin from './UsersAdmin';
+import { useAuth } from '../context/useAuth';
 
 const mockRanking = [
   { id: 's1', nombre: 'Juan García', puntos: 28 },
@@ -32,9 +34,10 @@ const mockProfile = {
 
 
 export default function Dashboard() {
+  const { user } = useAuth();
   return (
     <ProtectedRoute allowedRoles={['admin', 'entrenador', 'mantenimiento']}>
-      <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4">
+      <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center py-12 px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full max-w-6xl mx-auto">
           {/* Columna principal Dashboard */}
           <div className="col-span-2 flex flex-col gap-10 items-center justify-center">
@@ -102,6 +105,12 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        {/* Sección de administración de usuarios solo para admin */}
+        {user?.rol === 'admin' && (
+          <div className="mt-12 w-full max-w-6xl mx-auto">
+            <UsersAdmin />
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   );
