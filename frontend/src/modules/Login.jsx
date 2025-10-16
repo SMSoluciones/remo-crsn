@@ -2,25 +2,38 @@ import { useState } from 'react';
 import { useAuth } from '../context/useAuth';
 import { UserRoles } from '../models/User';
 
-const mockUsers = [
-  { id: '1', nombre: 'Admin', apellido: 'Club', email: 'admin@club.com', rol: UserRoles.ADMIN },
-  { id: '2', nombre: 'Entrenador', apellido: 'Perez', email: 'entrenador@club.com', rol: UserRoles.ENTRENADOR },
-  { id: '3', nombre: 'Mantenimiento', apellido: 'Gomez', email: 'mantenimiento@club.com', rol: UserRoles.MANTENIMIENTO },
-];
+
+
+
 
 
 export default function Login() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const user = mockUsers.find(u => u.email === email);
-    if (user) {
-      login(user);
-    } else {
-      setError('Usuario no encontrado');
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('http://localhost:5000/api/users/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        login(data);
+      } else {
+        setError(data.error || 'Credenciales incorrectas');
+      }
+    } catch {
+      setError('Error de conexión con el servidor');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -35,18 +48,23 @@ export default function Login() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
+            disabled={loading}
+            required
           />
-          <button type="submit" className="bg-green-700 text-white rounded px-4 py-2 hover:bg-green-800 transition">Ingresar</button>
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
+            disabled={loading}
+            required
+          />
+          <button type="submit" className="bg-green-700 text-white rounded px-4 py-2 hover:bg-green-800 transition" disabled={loading}>
+            {loading ? 'Ingresando...' : 'Ingresar'}
+          </button>
         </form>
         {error && <p className="text-red-600 mt-2 text-center">{error}</p>}
-        <div className="mt-6">
-          <strong className="block mb-2 text-gray-700">Usuarios de prueba:</strong>
-          <ul className="space-y-1">
-            {mockUsers.map(u => (
-              <li key={u.id} className="text-gray-600 text-sm">{u.email} <span className="text-xs text-gray-400">({u.rol})</span></li>
-            ))}
-          </ul>
-        </div>
       </div>
     </div>
   );

@@ -14,3 +14,35 @@ export class User {
     this.rol = rol;
   }
 }
+
+// Funciones para consumir la API de usuarios
+const API_URL = 'http://localhost:5000/api/users';
+
+export async function fetchUsers() {
+  const res = await fetch(API_URL);
+  return await res.json();
+}
+
+export async function createUser(data) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return await res.json();
+}
+
+export async function updateUser(id, data) {
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return await res.json();
+}
+
+export async function deleteUser(id) {
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: 'DELETE' });
+  return await res.json();
+}
