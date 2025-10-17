@@ -19,7 +19,7 @@ export default function ChangePasswordModal({ open, onClose, user }) {
     setLoading(true);
     try {
       // Llamada al backend para cambiar contraseña
-      const res = await fetch(`http://localhost:5000/api/users/${user._id}`, {
+      const res = await fetch(`http://localhost:5003/api/users/${user._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
