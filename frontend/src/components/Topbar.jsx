@@ -2,7 +2,7 @@ import Avatar from 'react-avatar';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/useAuth';
 import { useState } from 'react';
-import ChangePasswordModal from './ChangePasswordModal';
+import ChangePasswordModal from './Login/ChangePasswordModal';
 
 export default function Topbar({ onLogout }) {
   const { user, logout } = useAuth();

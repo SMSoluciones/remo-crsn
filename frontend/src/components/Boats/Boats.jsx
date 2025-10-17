@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { BoatStatus, BoatTypes } from '../models/Boat';
-import ProtectedRoute from './ProtectedRoute';
+import { BoatStatus, BoatTypes } from '../../models/Boat';
+import ProtectedRoute from '../ProtectedRoute';
 import { AcademicCapIcon, WrenchScrewdriverIcon, FunnelIcon, PlusIcon } from '@heroicons/react/24/outline';
 import Avatar from 'react-avatar';
 

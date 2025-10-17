@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { fetchUsers, createUser, updateUser, deleteUser, UserRoles } from '../models/User';
-import { useAuth } from '../context/useAuth';
+import { fetchUsers, createUser, updateUser, deleteUser, UserRoles } from '../../models/User';
+import { useAuth } from '../../context/useAuth';
 
 export default function UsersAdmin() {
   const { user } = useAuth();

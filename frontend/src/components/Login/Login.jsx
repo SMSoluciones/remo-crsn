@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useAuth } from '../context/useAuth';
-import { UserRoles } from '../models/User';
+import { useAuth } from '../../context/useAuth';
+import { UserRoles } from '../../models/User';
 
 
 

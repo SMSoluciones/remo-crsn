@@ -1,5 +1,7 @@
 import ProtectedRoute from './ProtectedRoute';
 import { AcademicCapIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
+import { fetchStudents } from '../models/Student';
 
 const mockKPIs = {
   totalBoats: 5,
@@ -15,7 +17,7 @@ const mockKPIs = {
 
 
 import Avatar from 'react-avatar';
-import UsersAdmin from './UsersAdmin';
+import UsersAdmin from './Login/UsersAdmin';
 import { useAuth } from '../context/useAuth';
 
 const mockRanking = [
@@ -30,11 +32,20 @@ const mockProfile = {
   categoria: 'Senior',
 };
 
-
-
-
 export default function Dashboard() {
   const { user } = useAuth();
+  const [studentCount, setStudentCount] = useState(mockKPIs.activeStudents);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchStudents().then(data => {
+      if (!mounted) return;
+      setStudentCount(Array.isArray(data) ? data.length : (data.count || mockKPIs.activeStudents));
+    }).catch(err => {
+      console.error('No se pudo obtener el conteo de alumnos:', err);
+    });
+    return () => { mounted = false };
+  }, []);
   return (
     <ProtectedRoute allowedRoles={['admin', 'entrenador', 'mantenimiento']}>
       <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center py-12 px-4">
@@ -56,7 +67,7 @@ export default function Dashboard() {
               <div className="bg-blue-600 text-white rounded-2xl p-10 shadow-lg flex flex-col items-center justify-center min-h-[160px]">
                 <UserGroupIcon className="h-10 w-10 mb-3" />
                 <span className="text-lg">Alumnos activos</span>
-                <span className="text-5xl font-bold mt-2">{mockKPIs.activeStudents}</span>
+                <span className="text-5xl font-bold mt-2">{studentCount}</span>
               </div>
               <div className="bg-purple-600 text-white rounded-2xl p-10 shadow-lg flex flex-col items-center justify-center min-h-[160px]">
                 <ChartBarIcon className="h-10 w-10 mb-3" />
