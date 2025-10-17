@@ -7,15 +7,15 @@ import { AcademicCapIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Co
 import Avatar from 'react-avatar';
 import { useAuth } from './context/useAuth.js';
 import { AuthProvider } from './context/AuthContext.jsx';
-import Login from './modules/Login.jsx';
-import Dashboard from './modules/Dashboard.jsx';
-import Boats from './modules/Boats.jsx';
-import Students from './modules/Students.jsx';
-import TechnicalSheets from './modules/TechnicalSheets.jsx';
+import Login from './components/Login/Login.jsx';
+import Dashboard from "./components/Dashboard.jsx";
+import Boats from './components/Boats/Boats.jsx';
+import Students from './components/Students/Students.jsx';
+import TechnicalSheets from './components/Students/TechnicalSheets.jsx';
 import Topbar from './components/Topbar.jsx';
 import { ToastContainer, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import './App.css';
+
 
 
 

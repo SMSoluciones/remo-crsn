@@ -11,3 +11,36 @@ export class TechnicalSheet {
     this.observaciones = observaciones;
   }
 }
+
+const BASE = 'http://localhost:5000/api/technical-sheets';
+
+export async function fetchSheetsByStudent(studentId, user) {
+  const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+  const res = await fetch(`${BASE}/student/${studentId}`, { headers });
+  if (!res.ok) throw new Error('Error fetching technical sheets');
+  return res.json();
+}
+
+export async function fetchAllSheets(user) {
+  const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+  const res = await fetch(BASE, { headers });
+  if (!res.ok) throw new Error('Error fetching all technical sheets');
+  return res.json();
+}
+
+export default { fetchSheetsByStudent };
+
+export async function createSheet(data, user) {
+  // user: { id, rol }
+  const res = await fetch(BASE, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-user-id': user?.id || user?._id || '',
+      'x-user-role': user?.rol || ''
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Error creating technical sheet');
+  return res.json();
+}

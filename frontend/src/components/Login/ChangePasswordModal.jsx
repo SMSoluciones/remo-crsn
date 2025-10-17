@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { showSuccess, showError } from '../utils/toast';
+import { showSuccess, showError } from '../../utils/toast';
 
 export default function ChangePasswordModal({ open, onClose, user }) {
   const [password, setPassword] = useState('');

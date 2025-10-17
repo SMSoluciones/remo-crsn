@@ -5,6 +5,10 @@ const StudentSchema = new mongoose.Schema({
   apellido: { type: String, required: true },
   dni: { type: String, required: true, unique: true },
   categoria: { type: String },
+  domicilio: { type: String },
+  nacimiento: { type: String },
+  celular: { type: String },
+  email: { type: String },
   fechaIngreso: { type: Date, default: Date.now },
 });
 

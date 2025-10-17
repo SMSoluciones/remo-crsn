@@ -5,7 +5,11 @@ const cors = require('cors');
 
 
 const app = express();
-app.use(cors());
+// Allow custom headers x-user-id and x-user-role for our header-based auth
+app.use(cors({
+  allowedHeaders: ['Content-Type', 'x-user-id', 'x-user-role'],
+  exposedHeaders: ['x-user-id', 'x-user-role'],
+}));
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
