@@ -47,101 +47,48 @@ export default function UsersAdmin() {
     setMenuOpen(null);
   };
 
-  // Estilos modernos para la tabla y menú
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    background: '#fff',
-    borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-    overflow: 'hidden',
-  };
-  const thStyle = {
-    background: '#f7f7f7',
-    padding: '12px',
-    fontWeight: 600,
-    color: '#333',
-    borderBottom: '1px solid #eee',
-    textAlign: 'left',
-  };
-  const tdStyle = {
-    padding: '12px',
-    borderBottom: '1px solid #eee',
-    color: '#444',
-    verticalAlign: 'middle',
-    background: '#fff',
-  };
-  const menuBtnStyle = {
-    background: 'none',
-    border: 'none',
-    fontSize: '20px',
-    cursor: 'pointer',
-    padding: '4px 8px',
-  };
-  const menuStyle = {
-    position: 'absolute',
-    right: 0,
-    top: '100%',
-    background: '#fff',
-    border: '1px solid #eee',
-    borderRadius: 8,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-    zIndex: 10,
-    minWidth: '140px',
-  };
-  const menuItemStyle = {
-    display: 'block',
-    width: '100%',
-    padding: '10px 16px',
-    border: 'none',
-    background: 'none',
-    textAlign: 'left',
-    color: '#333',
-    fontSize: '15px',
-    cursor: 'pointer',
-  };
-
   return (
-    <div style={{ padding: '32px', background: '#f9f9f9', borderRadius: '16px' }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '24px', color: '#222' }}>Administrar Usuarios</h2>
-      <form onSubmit={handleSubmit} style={{ marginBottom: '32px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" required style={{ padding: '8px', borderRadius: 6, border: '1px solid #ddd', minWidth: 120 }} />
-        <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required style={{ padding: '8px', borderRadius: 6, border: '1px solid #ddd', minWidth: 120 }} />
-        <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" style={{ padding: '8px', borderRadius: 6, border: '1px solid #ddd', minWidth: 180 }} />
-        <select name="rol" value={form.rol} onChange={handleChange} required style={{ padding: '8px', borderRadius: 6, border: '1px solid #ddd', minWidth: 140 }}>
+    <div className="p-8 bg-gray-50 rounded-lg">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">Administrar Usuarios</h2>
+
+      <form onSubmit={handleSubmit} className="mb-8 flex flex-wrap gap-3 items-center">
+        <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" required className="px-3 py-2 border rounded w-40" />
+        <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required className="px-3 py-2 border rounded w-40" />
+        <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" className="px-3 py-2 border rounded w-56" />
+        <select name="rol" value={form.rol} onChange={handleChange} required className="px-3 py-2 border rounded w-40">
           <option value={UserRoles.ADMIN}>Admin</option>
           <option value={UserRoles.ENTRENADOR}>Entrenador</option>
           <option value={UserRoles.MANTENIMIENTO}>Mantenimiento</option>
         </select>
-        <button type="submit" style={{ padding: '8px 18px', borderRadius: 6, background: '#1976d2', color: '#fff', border: 'none', fontWeight: 600 }}>{editId ? 'Actualizar' : 'Crear'} usuario</button>
-        {editId && <button type="button" style={{ padding: '8px 18px', borderRadius: 6, background: '#eee', color: '#333', border: 'none', fontWeight: 600 }} onClick={() => { setEditId(null); setForm({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR }); }}>Cancelar</button>}
+        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded font-medium">{editId ? 'Actualizar' : 'Crear'} usuario</button>
+        {editId && <button type="button" className="px-4 py-2 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditId(null); setForm({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR }); }}>Cancelar</button>}
       </form>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={tableStyle}>
-          <thead>
+
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
             <tr>
-              <th style={thStyle}>Nombre</th>
-              <th style={thStyle}>Apellido</th>
-              <th style={thStyle}>Email</th>
-              <th style={thStyle}>Rol</th>
-              <th style={thStyle}>Acciones</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apellido</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white divide-y divide-gray-200">
             {users.map(u => (
-              <tr key={u._id} style={{ background: menuOpen === u._id ? '#f5f7fa' : '#fff' }}>
-                <td style={tdStyle}>{u.nombre}</td>
-                <td style={tdStyle}>{u.apellido}</td>
-                <td style={tdStyle}>{u.email}</td>
-                <td style={tdStyle}>{u.rol}</td>
-                <td style={{ ...tdStyle, position: 'relative' }}>
-                  <button onClick={() => setMenuOpen(menuOpen === u._id ? null : u._id)} style={menuBtnStyle}>⋮</button>
+              <tr key={u._id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.nombre}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.apellido}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.rol}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                  <button onClick={() => setMenuOpen(menuOpen === u._id ? null : u._id)} className="text-gray-500 hover:text-gray-700">⋮</button>
                   {menuOpen === u._id && (
-                    <div style={menuStyle}>
-                      {/* Opciones preparadas para futuras funcionalidades */}
-                      <button style={menuItemStyle} onClick={() => { handleEdit(u); setMenuOpen(null); }}>Editar</button>
-                      <button style={menuItemStyle} disabled>Desactivar</button>
-                      <button style={{ ...menuItemStyle, color: '#d32f2f' }} onClick={() => handleDelete(u._id)}>Eliminar</button>
+                    <div className="absolute right-6 mt-2 w-40 bg-white border rounded shadow-lg z-20">
+                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => { handleEdit(u); setMenuOpen(null); }}>Editar</button>
+                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed" disabled>Desactivar</button>
+                      <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onClick={() => handleDelete(u._id)}>Eliminar</button>
                     </div>
                   )}
                 </td>

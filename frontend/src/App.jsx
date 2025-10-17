@@ -12,6 +12,9 @@ import Dashboard from './modules/Dashboard.jsx';
 import Boats from './modules/Boats.jsx';
 import Students from './modules/Students.jsx';
 import TechnicalSheets from './modules/TechnicalSheets.jsx';
+import Topbar from './components/Topbar.jsx';
+import { ToastContainer, Slide } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 
@@ -50,22 +53,8 @@ function MainApp() {
         ))}
       </aside>
       <div className="flex-1 flex flex-col" style={{ marginLeft: 96 }}>
-        <header className="w-full h-20 bg-white shadow flex items-center justify-between px-10 fixed top-0 left-24 z-10">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-blue-700">Club Regatas San Nicolás</h1>
-          </div>
-          <div className="flex items-center gap-6">
-            <button className="relative">
-              <ChartBarIcon className="h-6 w-6 text-gray-500" />
-              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-            </button>
-            <div className="flex items-center gap-2">
-              <Avatar name={user?.nombre + ' ' + user?.apellido} size="36" round={true} />
-              <span className="font-medium text-gray-700">{user?.nombre}</span>
-            </div>
-            <button onClick={logout} className="ml-4 px-3 py-1 bg-green-700 text-white rounded hover:bg-green-800 transition">Salir</button>
-          </div>
-        </header>
+  <Topbar onLogout={logout} />
+  <ToastContainer position="bottom-right" transition={Slide} />
         <main className="flex flex-row gap-8 pt-28 px-10 pb-8">
           <div className="flex-1">
             {section === 'dashboard' && <Dashboard />}
