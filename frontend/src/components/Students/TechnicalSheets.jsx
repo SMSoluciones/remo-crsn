@@ -6,6 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { fetchAllSheets, createSheet } from '../../models/TechnicalSheet';
 import { fetchStudents } from '../../models/Student';
 import { fetchTrainers } from '../../models/User';
+import { API_BASE_URL } from '../../utils/apiConfig';
 
 export default function TechnicalSheets() {
   const { user } = useAuth();
@@ -72,7 +73,15 @@ export default function TechnicalSheets() {
   const handleDeleteSheet = async (id) => {
     if (!window.confirm('¿Está seguro de que desea eliminar esta ficha técnica?')) return;
     try {
-      // Simulate delete request (replace with actual API call)
+      const res = await fetch(`${API_BASE_URL}/api/technical-sheets/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-user-id': user?.id || user?._id || '',
+          'x-user-role': user?.rol || '',
+        },
+      });
+      if (!res.ok) throw new Error('Error eliminando ficha técnica del servidor');
+
       setSheets(prev => prev.filter(sheet => sheet._id !== id));
       showSuccess('Ficha técnica eliminada');
     } catch (err) {
