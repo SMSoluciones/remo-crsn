@@ -1,4 +1,7 @@
-// Modelo de datos para Fichas Técnicas
+import { API_BASE_URL } from '../utils/apiConfig';
+
+const BASE = `${API_BASE_URL}/api/technical-sheets`;
+
 export class TechnicalSheet {
   constructor({ id, studentId, entrenadorId, fecha, postura, remada, equilibrio, observaciones }) {
     this.id = id;
@@ -11,8 +14,6 @@ export class TechnicalSheet {
     this.observaciones = observaciones;
   }
 }
-
-const BASE = 'http://localhost:5003/api/technical-sheets';
 
 export async function fetchSheetsByStudent(studentId, user) {
   const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};

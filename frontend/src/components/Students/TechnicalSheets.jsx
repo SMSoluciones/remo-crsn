@@ -15,6 +15,7 @@ export default function TechnicalSheets() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ studentId: '', entrenadorId: '', fecha: '', postura: 5, remada: 5, equilibrio: 5, observaciones: '' });
+  const [filter, setFilter] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -67,6 +68,29 @@ export default function TechnicalSheets() {
       showError('No se pudo crear la ficha técnica');
     }
   };
+
+  const handleDeleteSheet = async (id) => {
+    if (!window.confirm('¿Está seguro de que desea eliminar esta ficha técnica?')) return;
+    try {
+      // Simulate delete request (replace with actual API call)
+      setSheets(prev => prev.filter(sheet => sheet._id !== id));
+      showSuccess('Ficha técnica eliminada');
+    } catch (err) {
+      console.error('Error eliminando ficha técnica:', err);
+      showError('No se pudo eliminar la ficha técnica');
+    }
+  };
+
+  const filteredSheets = sheets.filter(sheet => {
+    const studentName = sheet.studentId?.nombre?.toLowerCase() || '';
+    const studentLastName = sheet.studentId?.apellido?.toLowerCase() || '';
+    const date = new Date(sheet.fecha).toLocaleDateString();
+    return (
+      studentName.includes(filter.toLowerCase()) ||
+      studentLastName.includes(filter.toLowerCase()) ||
+      date.includes(filter)
+    );
+  });
 
   return (
     <div className="bg-gray-50 min-h-screen p-8" data-aos="fade-up">
@@ -150,6 +174,15 @@ export default function TechnicalSheets() {
         </form>
       )}
 
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Buscar por nombre o fecha"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
+        />
+      </div>
       {loading ? (
         <div className="text-center text-gray-500 py-8">Cargando fichas y alumnos...</div>
       ) : (
@@ -164,10 +197,11 @@ export default function TechnicalSheets() {
                 <th className="py-2 px-4 text-left">Remada</th>
                 <th className="py-2 px-4 text-left">Equilibrio</th>
                 <th className="py-2 px-4 text-left">Observaciones</th>
+                <th className="py-2 px-4 text-left">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {sheets.map(s => (
+              {filteredSheets.map(s => (
                 <tr key={s._id || s.id} className="border-b">
                   <td className="py-2 px-4">{(s.studentId && (s.studentId.nombre ? `${s.studentId.nombre} ${s.studentId.apellido}` : s.studentId)) || s.student || ''}</td>
                   <td className="py-2 px-4">{s.entrenador || (s.entrenadorId && s.entrenadorId.nombre) || ''}</td>
@@ -176,6 +210,14 @@ export default function TechnicalSheets() {
                   <td className="py-2 px-4">{s.remada}</td>
                   <td className="py-2 px-4">{s.equilibrio}</td>
                   <td className="py-2 px-4">{s.observaciones}</td>
+                  <td className="py-2 px-4">
+                    <button
+                      onClick={() => handleDeleteSheet(s._id || s.id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

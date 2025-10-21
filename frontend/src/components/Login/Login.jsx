@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/useAuth';
 import { UserRoles } from '../../models/User';
-
-
-
-
-
+import { API_BASE_URL } from '../../utils/apiConfig';
 
 export default function Login() {
   const { login } = useAuth();
@@ -19,7 +15,7 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:5003/api/users/login', {
+      const res = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

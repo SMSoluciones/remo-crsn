@@ -1,4 +1,6 @@
-const BASE = 'http://localhost:5003/api/students';
+import { API_BASE_URL } from '../utils/apiConfig';
+
+const BASE = `${API_BASE_URL}/api/students`;
 
 export async function fetchStudents() {
   const res = await fetch(BASE);
