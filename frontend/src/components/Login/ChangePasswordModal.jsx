@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { showSuccess, showError } from '../../utils/toast';
+import { API_BASE_URL } from '../../utils/apiConfig';
 
 export default function ChangePasswordModal({ open, onClose, user }) {
   const [password, setPassword] = useState('');
@@ -19,7 +20,7 @@ export default function ChangePasswordModal({ open, onClose, user }) {
     setLoading(true);
     try {
       // Llamada al backend para cambiar contraseña
-      const res = await fetch(`http://localhost:5003/api/users/${user._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/users/${user._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
