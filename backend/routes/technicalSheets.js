@@ -1,12 +1,11 @@
 const express = require('express');
 const TechnicalSheet = require('../models/TechnicalSheet');
 const Student = require('../models/Student');
+const User = require('../models/User');
 const mongoose = require('mongoose');
 const router = express.Router();
 
-// Simple header-based auth middleware (no JWT required)
 function headerAuth(req, res, next) {
-  // Expect headers: x-user-id and x-user-role
   const userId = req.header('x-user-id');
   const userRole = req.header('x-user-role');
   if (userId) req.user = { id: userId, rol: userRole ? String(userRole).toLowerCase() : undefined };
@@ -21,27 +20,80 @@ function requireTrainerOrAdmin(req, res, next) {
 
 router.get('/', headerAuth, requireTrainerOrAdmin, async (req, res) => {
   try {
-    // populate both student and entrenador for display
-    const sheets = await TechnicalSheet.find().populate('studentId', 'nombre apellido dni').populate('entrenadorId', 'nombre apellido email');
+    let sheets = await TechnicalSheet.find().populate('studentId', 'nombre apellido dni').populate('entrenadorId', 'nombre apellido email');
+    async function enrichSheets(sheetsArr) {
+      return Promise.all((sheetsArr || []).map(async s => {
+        const obj = (s && s.toObject) ? s.toObject() : (s || {});
+        try {
+          if (!obj.studentId || !obj.studentId.nombre) {
+            const sid = obj.studentId && (obj.studentId._id || obj.studentId);
+            let studentDoc = null;
+            if (sid && mongoose.Types.ObjectId.isValid(String(sid))) studentDoc = await Student.findById(sid).select('nombre apellido dni');
+            if (!studentDoc && obj.studentId && typeof obj.studentId === 'string') studentDoc = await Student.findOne({ dni: obj.studentId }).select('nombre apellido dni');
+            if (studentDoc) obj.studentId = studentDoc;
+          }
+  } catch (e) { }
+
+        
+        try {
+          if (!obj.entrenadorId || !obj.entrenadorId.nombre) {
+            const tid = obj.entrenadorId && (obj.entrenadorId._id || obj.entrenadorId);
+            let trainerDoc = null;
+            if (tid && mongoose.Types.ObjectId.isValid(String(tid))) trainerDoc = await User.findById(tid).select('nombre apellido email rol');
+            if (!trainerDoc && obj.entrenadorId && typeof obj.entrenadorId === 'string') trainerDoc = await User.findOne({ email: obj.entrenadorId }).select('nombre apellido email rol');
+            if (trainerDoc) obj.entrenadorId = trainerDoc;
+          }
+  } catch (e) { }
+
+        return obj;
+      }));
+    }
+
+    sheets = await enrichSheets(sheets);
     res.json(sheets);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// Get technical sheets for a specific student (protected by headerAuth + role check)
 router.get('/student/:studentId', headerAuth, requireTrainerOrAdmin, async (req, res) => {
   try {
     const { studentId } = req.params;
     let idToQuery = studentId;
-    // if studentId is not a valid ObjectId, try to resolve by DNI
+    
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
       const student = await Student.findOne({ dni: studentId });
-      if (!student) return res.json([]); // no student found, return empty list
+  if (!student) return res.json([]);
       idToQuery = student._id;
     }
-  // find by studentId and populate both student and entrenador info
-  const sheets = await TechnicalSheet.find({ studentId: idToQuery }).populate('studentId', 'nombre apellido dni').populate('entrenadorId', 'nombre email rol');
+  let sheets = await TechnicalSheet.find({ studentId: idToQuery }).populate('studentId', 'nombre apellido dni').populate('entrenadorId', 'nombre email rol');
+
+  async function enrichSheets(sheetsArr) {
+    return Promise.all((sheetsArr || []).map(async s => {
+      const obj = (s && s.toObject) ? s.toObject() : (s || {});
+      try {
+        if (!obj.studentId || !obj.studentId.nombre) {
+          const sid = obj.studentId && (obj.studentId._id || obj.studentId);
+          let studentDoc = null;
+          if (sid && mongoose.Types.ObjectId.isValid(String(sid))) studentDoc = await Student.findById(sid).select('nombre apellido dni');
+          if (!studentDoc && obj.studentId && typeof obj.studentId === 'string') studentDoc = await Student.findOne({ dni: obj.studentId }).select('nombre apellido dni');
+          if (studentDoc) obj.studentId = studentDoc;
+        }
+      } catch (e) { }
+      try {
+        if (!obj.entrenadorId || !obj.entrenadorId.nombre) {
+          const tid = obj.entrenadorId && (obj.entrenadorId._id || obj.entrenadorId);
+          let trainerDoc = null;
+          if (tid && mongoose.Types.ObjectId.isValid(String(tid))) trainerDoc = await User.findById(tid).select('nombre apellido email rol');
+          if (!trainerDoc && obj.entrenadorId && typeof obj.entrenadorId === 'string') trainerDoc = await User.findOne({ email: obj.entrenadorId }).select('nombre apellido email rol');
+          if (trainerDoc) obj.entrenadorId = trainerDoc;
+        }
+      } catch (e) { }
+      return obj;
+    }));
+  }
+
+  sheets = await enrichSheets(sheets);
   res.json(sheets);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -53,7 +105,7 @@ router.post('/', headerAuth, requireTrainerOrAdmin, async (req, res) => {
     const { studentId } = req.body;
     if (!studentId) return res.status(400).json({ error: 'studentId es requerido' });
 
-    // resolve studentId whether it's an ObjectId or a DNI
+    
     let studentDoc = null;
     if (mongoose.Types.ObjectId.isValid(studentId)) {
       studentDoc = await Student.findById(studentId);
@@ -62,12 +114,12 @@ router.post('/', headerAuth, requireTrainerOrAdmin, async (req, res) => {
     }
     if (!studentDoc) return res.status(400).json({ error: 'studentId no corresponde a ningún alumno' });
 
-    // allow entrenadorId override, else use header user id
+    
     const entrenadorId = req.user?.id || req.body.entrenadorId;
     const payload = { ...req.body, entrenadorId, studentId: studentDoc._id };
   const sheet = new TechnicalSheet(payload);
   await sheet.save();
-  // populate student and entrenador for response
+  
   const populated = await TechnicalSheet.findById(sheet._id).populate('studentId', 'nombre apellido dni').populate('entrenadorId', 'nombre email');
   res.status(201).json(populated);
   } catch (err) {
