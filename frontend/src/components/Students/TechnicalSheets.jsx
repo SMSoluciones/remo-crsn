@@ -10,10 +10,20 @@ import { API_BASE_URL } from '../../utils/apiConfig';
 
 export default function TechnicalSheets() {
   const { user } = useAuth();
+  const getStoredUser = () => {
+    try {
+      const raw = localStorage.getItem('auth_user');
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
   const [sheets, setSheets] = useState([]);
   const [students, setStudents] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reloading, setReloading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ studentId: '', entrenadorId: '', fecha: '', postura: 5, remada: 5, equilibrio: 5, observaciones: '' });
   const [filter, setFilter] = useState('');
@@ -21,33 +31,97 @@ export default function TechnicalSheets() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    // Always fetch students so the <select> se llena independientemente de permisos sobre fichas
-    fetchStudents()
-      .then(studentsData => {
+
+  const effectiveUser = user || getStoredUser();
+  const role = (effectiveUser?.rol || '').toLowerCase();
+
+    async function loadData() {
+      try {
+        const shouldLoadSheets = !!(effectiveUser && ['admin', 'entrenador'].includes(role));
+        const [studentsData, trainersData, sheetsDataOrNull] = await Promise.all([
+          fetchStudents().then(sd => (sd || []).map(s => ({ id: s._id || s.id || s.dni, nombre: s.nombre, apellido: s.apellido, dni: s.dni }))).catch(err => { console.error('Error cargando alumnos:', err); showError('No se pudieron cargar los alumnos.'); return []; }),
+          fetchTrainers().catch(err => { console.error('Error cargando entrenadores:', err); return []; }),
+          shouldLoadSheets ? fetchAllSheets({ ...(effectiveUser || {}), rol: role }).catch(err => { console.error('Error cargando fichas:', err); return []; }) : Promise.resolve(null),
+        ]);
         if (!mounted) return;
-        const normalized = (studentsData || []).map(s => ({ id: s._id || s.id || s.dni, nombre: s.nombre, apellido: s.apellido, dni: s.dni }));
-        setStudents(normalized);
-      })
-      .catch(err => {
-        console.error('Error cargando alumnos:', err);
-        showError('No se pudieron cargar los alumnos.');
-      })
-      .finally(() => { if (mounted) setLoading(false); });
-
-    // Cargar entrenadores para el select (independiente de rol)
-    fetchTrainers()
-      .then(t => { if (!mounted) return; setTrainers(t || []); })
-      .catch(err => { console.error('Error cargando entrenadores:', err); /* no toast */ });
-
-    // Solo intentar cargar todas las fichas si el usuario tiene rol adecuado
-    if (user && ['admin', 'entrenador'].includes(user.rol)) {
-      fetchAllSheets(user)
-        .then(sheetsData => { if (!mounted) return; setSheets(sheetsData || []); })
-        .catch(err => { console.error('Error cargando fichas:', err); /* no mostrar toast para no sobrecargar */ })
+        setStudents(studentsData || []);
+        setTrainers(trainersData || []);
+        
+  const sheetsData = sheetsDataOrNull || [];
+  if (sheetsDataOrNull !== null) {
+  const normalized = (sheetsData || []).map(s => {
+          const studentFromSheet = s.studentId && (s.studentId.nombre || s.studentId.apellido) ? `${s.studentId.nombre || ''} ${s.studentId.apellido || ''}`.trim() : null;
+          const trainerFromSheet = s.entrenadorId && (s.entrenadorId.nombre || s.entrenadorId.apellido) ? `${s.entrenadorId.nombre || ''} ${s.entrenadorId.apellido || ''}`.trim() : null;
+          let studentResolved = studentFromSheet;
+          if (!studentResolved && s.studentId) {
+            const sId = s.studentId._id || s.studentId;
+            const found = (studentsData || []).find(st => (st._id === sId) || (st.id === sId) || (st.dni === sId));
+            if (found) studentResolved = `${found.nombre} ${found.apellido}`.trim();
+          }
+          let entrenadorResolved = trainerFromSheet;
+          if (!entrenadorResolved && s.entrenadorId) {
+            const tId = s.entrenadorId._id || s.entrenadorId;
+            const foundT = (trainersData || []).find(t => (t._id === tId) || (t.id === tId) || (t.email === tId));
+            if (foundT) entrenadorResolved = `${foundT.nombre} ${foundT.apellido}`.trim();
+          }
+          return { ...s, studentResolved, entrenadorResolved };
+        });
+  setSheets(normalized);
+  }
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
 
-    return () => { mounted = false };
+  loadData();
+
+  return () => { mounted = false };
   }, [user]);
+
+  const handleReload = async () => {
+    setReloading(true);
+    const effectiveUser = user || getStoredUser();
+    const role = (effectiveUser?.rol || '').toLowerCase();
+    if (!effectiveUser || !['admin', 'entrenador'].includes(role)) {
+      setReloading(false);
+      showError('No hay usuario autenticado con permisos para recargar fichas');
+      return;
+    }
+    
+    try {
+      const [studentsData, trainersData, sheetsData] = await Promise.all([
+        fetchStudents().then(sd => (sd || []).map(s => ({ id: s._id || s.id || s.dni, nombre: s.nombre, apellido: s.apellido, dni: s.dni }))).catch(() => []),
+        fetchTrainers().catch(() => []),
+        fetchAllSheets({ ...(effectiveUser || {}), rol: role }).catch(() => []),
+      ]);
+      setStudents(studentsData || []);
+      setTrainers(trainersData || []);
+      const normalized = (sheetsData || []).map(s => {
+        const studentFromSheet = s.studentId && (s.studentId.nombre || s.studentId.apellido) ? `${s.studentId.nombre || ''} ${s.studentId.apellido || ''}`.trim() : null;
+        const trainerFromSheet = s.entrenadorId && (s.entrenadorId.nombre || s.entrenadorId.apellido) ? `${s.entrenadorId.nombre || ''} ${s.entrenadorId.apellido || ''}`.trim() : null;
+        let studentResolved = studentFromSheet;
+        if (!studentResolved && s.studentId) {
+          const sId = s.studentId._id || s.studentId;
+          const found = (studentsData || []).find(st => (st._id === sId) || (st.id === sId) || (st.dni === sId));
+          if (found) studentResolved = `${found.nombre} ${found.apellido}`.trim();
+        }
+        let entrenadorResolved = trainerFromSheet;
+        if (!entrenadorResolved && s.entrenadorId) {
+          const tId = s.entrenadorId._id || s.entrenadorId;
+          const foundT = (trainersData || []).find(t => (t._id === tId) || (t.id === tId) || (t.email === tId));
+          if (foundT) entrenadorResolved = `${foundT.nombre} ${foundT.apellido}`.trim();
+        }
+        return { ...s, studentResolved, entrenadorResolved };
+      });
+      setSheets(normalized);
+  showSuccess(`Fichas recargadas: ${(sheetsData || []).length}`);
+    } catch (err) {
+      console.error('Error al recargar fichas:', err);
+      showError('Error al recargar fichas');
+    } finally {
+      setReloading(false);
+    }
+  };
 
   const handleAddSheet = async (e) => {
     e.preventDefault();
@@ -90,34 +164,59 @@ export default function TechnicalSheets() {
     }
   };
 
-  const filteredSheets = sheets.filter(sheet => {
-    const studentName = sheet.studentId?.nombre?.toLowerCase() || '';
-    const studentLastName = sheet.studentId?.apellido?.toLowerCase() || '';
-    const date = new Date(sheet.fecha).toLocaleDateString();
+  const normalizedFilter = (filter || '').toString().trim();
+  const filteredSheets = (normalizedFilter === '') ? sheets : sheets.filter(sheet => {
+    const studentName = (sheet.studentId?.nombre || '').toString().toLowerCase();
+    const studentLastName = (sheet.studentId?.apellido || '').toString().toLowerCase();
+    let date = '';
+    try {
+      date = new Date(sheet.fecha).toLocaleDateString();
+    } catch {
+      date = '';
+    }
+    const f = normalizedFilter.toLowerCase();
     return (
-      studentName.includes(filter.toLowerCase()) ||
-      studentLastName.includes(filter.toLowerCase()) ||
-      date.includes(filter)
+      studentName.includes(f) ||
+      studentLastName.includes(f) ||
+      date.includes(f)
     );
   });
 
+  
+
   return (
-    <div className="bg-gray-50 min-h-screen p-8" data-aos="fade-up">
+    <div className="bg-gray-50 min-h-screen p-8">
       <div className="flex items-center gap-2 mb-6">
         <ChartBarIcon className="h-7 w-7 text-purple-600" />
         <h2 className="text-2xl font-bold text-gray-800">Fichas Técnicas</h2>
       </div>
-      {user && ['admin', 'entrenador'].includes(user.rol) && (
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="mb-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
-        >
-          {showForm ? 'Cancelar' : 'Nueva Ficha Técnica'}
-        </button>
+      {user && ['admin', 'entrenador'].includes((user.rol || '').toLowerCase()) && (
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+          >
+            {showForm ? 'Cancelar' : 'Nueva Ficha Técnica'}
+          </button>
+          <button
+            onClick={handleReload}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition flex items-center gap-2"
+            title="Forzar recarga de fichas"
+          >
+            {reloading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a12 12 0 00-12 12h4z"></path></svg>
+                <span>Recargando...</span>
+              </>
+            ) : (
+              'Recargar fichas'
+            )}
+          </button>
+        </div>
       )}
 
       {showForm && (
-        <form onSubmit={handleAddSheet} className="bg-white rounded-xl shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-7 gap-4" data-aos="zoom-in">
+  <form onSubmit={handleAddSheet} className="bg-white rounded-xl shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-7 gap-4">
           <select
             value={form.studentId}
             onChange={e => setForm(f => ({ ...f, studentId: e.target.value }))}
@@ -192,10 +291,11 @@ export default function TechnicalSheets() {
           className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
         />
       </div>
+      
       {loading ? (
         <div className="text-center text-gray-500 py-8">Cargando fichas y alumnos...</div>
-      ) : (
-        <div className="overflow-x-auto mb-8" data-aos="fade-left">
+  ) : (
+  <div className="overflow-x-auto mb-8">
           <table className="min-w-full bg-white rounded-xl shadow">
             <thead className="bg-gray-200">
               <tr>
@@ -212,8 +312,8 @@ export default function TechnicalSheets() {
             <tbody>
               {filteredSheets.map(s => (
                 <tr key={s._id || s.id} className="border-b">
-                  <td className="py-2 px-4">{(s.studentId && (s.studentId.nombre ? `${s.studentId.nombre} ${s.studentId.apellido}` : s.studentId)) || s.student || ''}</td>
-                  <td className="py-2 px-4">{s.entrenador || (s.entrenadorId && s.entrenadorId.nombre) || ''}</td>
+                  <td className="py-2 px-4">{s.studentResolved || (s.studentId && (s.studentId.nombre ? `${s.studentId.nombre} ${s.studentId.apellido}` : s.studentId)) || s.student || ''}</td>
+                  <td className="py-2 px-4">{s.entrenadorResolved || s.entrenador || (s.entrenadorId && s.entrenadorId.nombre) || ''}</td>
                   <td className="py-2 px-4">{new Date(s.fecha).toLocaleDateString()}</td>
                   <td className="py-2 px-4">{s.postura}</td>
                   <td className="py-2 px-4">{s.remada}</td>
@@ -234,7 +334,7 @@ export default function TechnicalSheets() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow p-6 mb-8" data-aos="fade-right">
+  <div className="bg-white rounded-xl shadow p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4 text-gray-700">Evolución Técnica</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={sheets.map(s => ({ fecha: new Date(s.fecha).toLocaleDateString(), postura: s.postura, remada: s.remada, equilibrio: s.equilibrio }))}>
