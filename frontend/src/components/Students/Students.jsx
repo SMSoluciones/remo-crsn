@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import ProtectedRoute from '../ProtectedRoute';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
-import { fetchStudents } from '../../models/Student';
+import { fetchStudents, deleteStudent } from '../../models/Student';
 import { fetchSheetsByStudent } from '../../models/TechnicalSheet';
 import Avatar from 'react-avatar';
 import { EllipsisVerticalIcon, UserIcon, PlusIcon } from '@heroicons/react/24/outline';
+import AddStudentModal from './AddStudentModal';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 export default function Students() {
@@ -17,8 +18,10 @@ export default function Students() {
   const [selected, setSelected] = useState('s1');
   const [search, setSearch] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+  const [openMenuFor, setOpenMenuFor] = useState(null);
   const [sheets, setSheets] = useState({}); // { studentId: [fichas...] }
   const [form, setForm] = useState({ fecha: '', entrenador: '', postura: 5, remada: 5, equilibrio: 5, coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
+  const [showAddStudent, setShowAddStudent] = useState(false);
 
   // Filtrado por nombre
   const filtered = students.filter(s =>
@@ -66,6 +69,20 @@ export default function Students() {
     });
   };
 
+  const handleDeleteStudent = async (id) => {
+    try {
+      await deleteStudent(id);
+      setStudents(prev => prev.filter(s => (s.id || s._id) !== id));
+      showSuccess('Alumno eliminado');
+      if (selected === id) {
+        setShowProfile(false);
+      }
+    } catch (err) {
+      console.error('Error eliminando alumno:', err);
+      showError('No se pudo eliminar el alumno');
+    }
+  };
+
   // Agregar ficha técnica (POST al backend)
   const handleAddSheet = async (e) => {
     e.preventDefault();
@@ -92,11 +109,17 @@ export default function Students() {
     <ProtectedRoute>
       <div className="flex min-h-screen bg-gray-50">
         {/* Sidebar */}
-        <aside className="w-20 bg-white border-r flex flex-col items-center py-8 gap-8">
+          <aside className="w-20 bg-white border-r flex flex-col items-center py-8 gap-8">
           <UserIcon className="h-7 w-7 text-gray-400" />
-          <button className="bg-black rounded-full p-2 hover:bg-gray-800 transition">
-            <PlusIcon className="h-6 w-6 text-white" />
-          </button>
+          {user?.rol === 'admin' ? (
+            <button onClick={() => setShowAddStudent(true)} className="bg-black rounded-full p-2 hover:bg-gray-800 transition">
+              <PlusIcon className="h-6 w-6 text-white" />
+            </button>
+          ) : (
+            <button className="bg-gray-200 rounded-full p-2 cursor-not-allowed" title="Solo administradores"> 
+              <PlusIcon className="h-6 w-6 text-gray-400" />
+            </button>
+          )}
         </aside>
         {/* Main content */}
         <div className="flex-1 flex flex-col px-12 py-10">
@@ -133,7 +156,25 @@ export default function Students() {
                       <div className={`font-semibold text-lg ${selected === s.id ? 'text-white' : 'text-gray-900'}`}>{s.nombre} {s.apellido}</div>
                       <div className={`text-sm ${selected === s.id ? 'text-gray-200' : 'text-gray-500'}`}>{s.categoria}</div>
                     </div>
-                    <button className="absolute top-4 right-4"><EllipsisVerticalIcon className={`h-5 w-5 ${selected === s.id ? 'text-white' : 'text-gray-400'}`} /></button>
+                    <div className="absolute top-4 right-4">
+                      <button onClick={(e) => { e.stopPropagation(); setOpenMenuFor(openMenuFor === s.id ? null : s.id); }} className="p-1 rounded hover:bg-gray-100">
+                        <EllipsisVerticalIcon className={`h-5 w-5 ${selected === s.id ? 'text-white' : 'text-gray-400'}`} />
+                      </button>
+                      {openMenuFor === s.id && (
+                        <div className="mt-2 w-40 bg-white border rounded shadow-lg text-sm right-0 absolute">
+                          <ul>
+                            {user?.rol === 'admin' && (
+                              <li>
+                                <button onClick={(ev) => { ev.stopPropagation(); if (!window.confirm('¿Seguro que desea eliminar este alumno?')) { setOpenMenuFor(null); return; } handleDeleteStudent(s.id); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600">Eliminar</button>
+                              </li>
+                            )}
+                            <li>
+                              <button onClick={(ev) => { ev.stopPropagation(); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-gray-100">Cancelar</button>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
                   </div>
@@ -326,6 +367,12 @@ export default function Students() {
         <button className="fixed bottom-8 right-8 bg-black rounded-full p-4 shadow-lg hover:bg-gray-800 transition z-50">
           <EllipsisVerticalIcon className="h-6 w-6 text-white" />
         </button>
+          <AddStudentModal open={showAddStudent} onClose={() => setShowAddStudent(false)} onCreated={(created) => {
+            // Normalizar id y agregar al listado
+            const normalized = { id: created._id || created.id || created.dni, ...created };
+            setStudents(prev => [normalized, ...prev]);
+            setShowAddStudent(false);
+          }} />
       </div>
     </ProtectedRoute>
   );
