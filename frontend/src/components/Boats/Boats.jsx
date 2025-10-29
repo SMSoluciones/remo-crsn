@@ -45,7 +45,7 @@ export default function Boats() {
   ];
 
         return (
-          <ProtectedRoute allowedRoles={['admin', 'mantenimiento']}>
+          <ProtectedRoute>
             <div className="bg-gray-50 min-h-screen p-8 flex flex-col md:flex-row gap-8" data-aos="fade-up">
               <div className="flex-1 flex flex-col gap-8">
                 <div className="flex items-center gap-2 mb-2">

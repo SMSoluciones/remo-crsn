@@ -5,7 +5,7 @@ import { useAuth } from '../../context/useAuth';
 export default function UsersAdmin() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR });
+  const [form, setForm] = useState({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR, password: '' });
   const [editId, setEditId] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
 
@@ -26,19 +26,23 @@ export default function UsersAdmin() {
   const handleSubmit = async e => {
     e.preventDefault();
     if (editId) {
-      const updated = await updateUser(editId, form);
+      // If password is empty, don't send it to the server (so it won't be overwritten)
+      const payload = { ...form };
+      if (!payload.password) delete payload.password;
+      const updated = await updateUser(editId, payload);
       setUsers(users.map(u => u._id === editId ? updated : u));
       setEditId(null);
     } else {
       const created = await createUser(form);
       setUsers([...users, created]);
     }
-    setForm({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR });
+    setForm({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR, password: '' });
   };
 
   const handleEdit = user => {
     setEditId(user._id);
-    setForm({ nombre: user.nombre, apellido: user.apellido, email: user.email, rol: user.rol });
+    // Do not prefill password when editing
+    setForm({ nombre: user.nombre, apellido: user.apellido, email: user.email, rol: user.rol, password: '' });
   };
 
   const handleDelete = async id => {
@@ -55,10 +59,14 @@ export default function UsersAdmin() {
         <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" required className="px-3 py-2 border rounded w-40" />
         <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required className="px-3 py-2 border rounded w-40" />
         <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" className="px-3 py-2 border rounded w-56" />
+        <input name="password" value={form.password} onChange={handleChange} placeholder={editId ? 'Nueva contraseña (opcional)' : 'Contraseña'} type="password" className="px-3 py-2 border rounded w-40" required={!editId} />
+
         <select name="rol" value={form.rol} onChange={handleChange} required className="px-3 py-2 border rounded w-40">
           <option value={UserRoles.ADMIN}>Admin</option>
           <option value={UserRoles.ENTRENADOR}>Entrenador</option>
           <option value={UserRoles.MANTENIMIENTO}>Mantenimiento</option>
+          <option value={UserRoles.ALUMNOS}>Alumnos</option>
+          <option value={UserRoles.SUBCOMISION}>Subcomision</option>
         </select>
         <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded font-medium">{editId ? 'Actualizar' : 'Crear'} usuario</button>
         {editId && <button type="button" className="px-4 py-2 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditId(null); setForm({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR }); }}>Cancelar</button>}

@@ -44,6 +44,8 @@ export const UserRoles = {
   ADMIN: 'admin',
   ENTRENADOR: 'entrenador',
   MANTENIMIENTO: 'mantenimiento',
+  ALUMNOS: 'alumnos',
+  SUBCOMISION: 'subcomision',
 };
 
 export class User {

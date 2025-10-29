@@ -22,6 +22,13 @@ function MainApp() {
   const { user, logout } = useAuth();
   const [section, setSection] = useState('dashboard');
 
+  // Exponer setSection globalmente para permitir redirecciones desde componentes
+  useEffect(() => {
+    // exponer solo una referencia ligera
+    window.appSetSection = setSection;
+    return () => { delete window.appSetSection; };
+  }, [setSection]);
+
   useEffect(() => {
     AOS.init({ duration: 800, once: true });
   }, []);
@@ -36,10 +43,16 @@ function MainApp() {
     { label: 'Configuración', icon: <Cog6ToothIcon className="h-6 w-6" />, section: 'settings' },
   ];
 
+  // Filtrar elementos que no deberían verse por rol
+  const visibleNavItems = navItems.filter(item => {
+    if (item.section === 'sheets' && user?.rol === 'alumnos') return false;
+    return true;
+  });
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <aside className="bg-white shadow-lg h-screen w-24 flex flex-col items-center py-8 gap-8 fixed left-0 top-0 z-20">
-        {navItems.map(item => (
+        {visibleNavItems.map(item => (
           <button
             key={item.section}
             className={`flex flex-col items-center gap-1 text-gray-500 hover:text-green-700 focus:text-green-700 transition ${section === item.section ? 'text-green-700' : ''}`}
