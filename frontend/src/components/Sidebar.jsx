@@ -1,8 +1,8 @@
-import { AcademicCapIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 const navItems = [
   { label: 'Dashboard', icon: <ChartBarIcon className="h-6 w-6" />, section: 'dashboard' },
-  { label: 'Botes', icon: <AcademicCapIcon className="h-6 w-6" />, section: 'boats' },
+  { label: 'Botes', icon: <LifebuoyIcon className="h-6 w-6" />, section: 'boats' },
   { label: 'Alumnos', icon: <UserGroupIcon className="h-6 w-6" />, section: 'students' },
   { label: 'Fichas Técnicas', icon: <WrenchScrewdriverIcon className="h-6 w-6" />, section: 'sheets' },
   { label: 'Configuración', icon: <Cog6ToothIcon className="h-6 w-6" />, section: 'settings' },

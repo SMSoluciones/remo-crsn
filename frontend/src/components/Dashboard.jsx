@@ -1,5 +1,5 @@
 import ProtectedRoute from './ProtectedRoute';
-import { AcademicCapIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { fetchStudents } from '../models/Student';
 
@@ -55,7 +55,7 @@ export default function Dashboard() {
             <h2 className="text-3xl font-bold mb-4 text-gray-800 self-start">Dashboard</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 w-full">
               <div className="bg-green-700 text-white rounded-2xl p-10 shadow-lg flex flex-col items-center justify-center min-h-[160px]">
-                <AcademicCapIcon className="h-10 w-10 mb-3" />
+                <LifebuoyIcon className="h-10 w-10 mb-3" />
                 <span className="text-lg">Total de Botes</span>
                 <span className="text-5xl font-bold mt-2">{mockKPIs.totalBoats}</span>
               </div>

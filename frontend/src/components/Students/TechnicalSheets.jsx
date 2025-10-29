@@ -27,6 +27,8 @@ export default function TechnicalSheets() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ studentId: '', entrenadorId: '', fecha: '', postura: 5, remada: 5, equilibrio: 5, observaciones: '' });
   const [filter, setFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     let mounted = true;
@@ -182,7 +184,12 @@ export default function TechnicalSheets() {
     );
   });
 
-  
+  const paginatedSheets = filteredSheets.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredSheets.length / itemsPerPage);
 
   return (
     <div className="bg-gray-50 min-h-screen p-8">
@@ -310,7 +317,7 @@ export default function TechnicalSheets() {
               </tr>
             </thead>
             <tbody>
-              {filteredSheets.map(s => (
+              {paginatedSheets.map(s => (
                 <tr key={s._id || s.id} className="border-b">
                   <td className="py-2 px-4">{s.studentResolved || (s.studentId && (s.studentId.nombre ? `${s.studentId.nombre} ${s.studentId.apellido}` : s.studentId)) || s.student || ''}</td>
                   <td className="py-2 px-4">{s.entrenadorResolved || s.entrenador || (s.entrenadorId && s.entrenadorId.nombre) || ''}</td>
@@ -334,7 +341,25 @@ export default function TechnicalSheets() {
         </div>
       )}
 
-  <div className="bg-white rounded-xl shadow p-6 mb-8">
+  <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition disabled:opacity-50"
+        >
+          Anterior
+        </button>
+        <span>Página {currentPage} de {totalPages}</span>
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition disabled:opacity-50"
+        >
+          Siguiente
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4 text-gray-700">Evolución Técnica</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={sheets.map(s => ({ fecha: new Date(s.fecha).toLocaleDateString(), postura: s.postura, remada: s.remada, equilibrio: s.equilibrio }))}>
