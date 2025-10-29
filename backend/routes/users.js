@@ -13,10 +13,14 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { password, ...rest } = req.body;
+    if (!password) return res.status(400).json({ error: 'Password es requerido' });
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ ...rest, password: hashedPassword });
     await user.save();
-    res.status(201).json(user);
+    // Do not return password hash in response
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.status(201).json(userObj);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -46,8 +50,6 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // Ruta de login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -67,3 +69,5 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Error en el servidor' });
   }
 });
+
+module.exports = router;

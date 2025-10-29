@@ -47,7 +47,7 @@ export default function Dashboard() {
     return () => { mounted = false };
   }, []);
   return (
-    <ProtectedRoute allowedRoles={['admin', 'entrenador', 'mantenimiento']}>
+  <ProtectedRoute allowedRoles={['admin', 'entrenador', 'mantenimiento', 'alumnos']}>
       <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center py-12 px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full max-w-6xl mx-auto">
           {/* Columna principal Dashboard */}
