@@ -126,7 +126,7 @@ export default function Students() {
           {!showProfile ? (
             <>
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold text-gray-900">Team</h2>
+                <h2 className="text-3xl font-bold text-gray-900">Equipo</h2>
                 <div className="flex items-center gap-4">
                   <span className="font-semibold text-gray-700">Club Regatas San Nicolás</span>
                   <img src="/vite.svg" alt="logo" className="h-8 w-8" />

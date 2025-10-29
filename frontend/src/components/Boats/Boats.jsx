@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BoatStatus, BoatTypes } from '../../models/Boat';
 import ProtectedRoute from '../ProtectedRoute';
-import { AcademicCapIcon, WrenchScrewdriverIcon, FunnelIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { LifebuoyIcon, WrenchScrewdriverIcon, FunnelIcon, PlusIcon } from '@heroicons/react/24/outline';
 import Avatar from 'react-avatar';
 
 const mockBoats = [
@@ -49,7 +49,7 @@ export default function Boats() {
             <div className="bg-gray-50 min-h-screen p-8 flex flex-col md:flex-row gap-8" data-aos="fade-up">
               <div className="flex-1 flex flex-col gap-8">
                 <div className="flex items-center gap-2 mb-2">
-                  <AcademicCapIcon className="h-7 w-7 text-green-700" />
+                  <LifebuoyIcon className="h-7 w-7 text-green-700" />
                   <h2 className="text-2xl font-bold text-gray-800">Gestión de Botes</h2>
                 </div>
                 <div className="flex gap-4 mb-4">

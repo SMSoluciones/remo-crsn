@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { useEffect } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { AcademicCapIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import Avatar from 'react-avatar';
 import { useAuth } from './context/useAuth.js';
 import { AuthProvider } from './context/AuthContext.jsx';
@@ -31,7 +30,7 @@ function MainApp() {
 
   const navItems = [
     { label: 'Dashboard', icon: <ChartBarIcon className="h-6 w-6" />, section: 'dashboard' },
-    { label: 'Botes', icon: <AcademicCapIcon className="h-6 w-6" />, section: 'boats' },
+    { label: 'Botes', icon: <LifebuoyIcon className="h-6 w-6" />, section: 'boats' },
     { label: 'Alumnos', icon: <UserGroupIcon className="h-6 w-6" />, section: 'students' },
     { label: 'Fichas Técnicas', icon: <WrenchScrewdriverIcon className="h-6 w-6" />, section: 'sheets' },
     { label: 'Configuración', icon: <Cog6ToothIcon className="h-6 w-6" />, section: 'settings' },
