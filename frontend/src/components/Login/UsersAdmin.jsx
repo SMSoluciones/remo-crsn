@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchUsers, createUser, updateUser, deleteUser, UserRoles } from '../../models/User';
+import ChangePasswordModal from './ChangePasswordModal.jsx';
 import { useAuth } from '../../context/useAuth';
 
 export default function UsersAdmin() {
@@ -8,6 +9,8 @@ export default function UsersAdmin() {
   const [form, setForm] = useState({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR, password: '' });
   const [editId, setEditId] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
+  const [changeUser, setChangeUser] = useState(null);
+  const [showChangeModal, setShowChangeModal] = useState(false);
 
   useEffect(() => {
     if (user?.rol === UserRoles.ADMIN) {
@@ -95,6 +98,7 @@ export default function UsersAdmin() {
                   {menuOpen === u._id && (
                     <div className="absolute right-6 mt-2 w-40 bg-white border rounded shadow-lg z-20">
                       <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => { handleEdit(u); setMenuOpen(null); }}>Editar</button>
+                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => { setChangeUser(u); setShowChangeModal(true); setMenuOpen(null); }}>Cambiar contraseña</button>
                       <button className="block w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed" disabled>Desactivar</button>
                       <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onClick={() => handleDelete(u._id)}>Eliminar</button>
                     </div>
@@ -105,6 +109,7 @@ export default function UsersAdmin() {
           </tbody>
         </table>
       </div>
+      <ChangePasswordModal open={showChangeModal} onClose={() => { setShowChangeModal(false); setChangeUser(null); }} user={changeUser} />
     </div>
   );
 }

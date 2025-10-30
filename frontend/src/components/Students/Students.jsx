@@ -17,16 +17,22 @@ export default function Students() {
   const { user } = useAuth();
   const [selected, setSelected] = useState('s1');
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [openMenuFor, setOpenMenuFor] = useState(null);
   const [sheets, setSheets] = useState({}); // { studentId: [fichas...] }
   const [form, setForm] = useState({ fecha: '', entrenador: '', postura: 5, remada: 5, equilibrio: 5, coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
   const [showAddStudent, setShowAddStudent] = useState(false);
 
-  // Filtrado por nombre
-  const filtered = students.filter(s =>
-    (`${s.nombre} ${s.apellido}`.toLowerCase().includes(search.toLowerCase()))
-  );
+  // Lista de categorías disponibles (únicas)
+  const categories = Array.from(new Set(students.map(s => s.categoria).filter(Boolean)));
+
+  // Filtrado por nombre y categoría
+  const filtered = students.filter(s => {
+    const matchesName = (`${s.nombre} ${s.apellido}`.toLowerCase().includes(search.toLowerCase()));
+    const matchesCategory = !categoryFilter || s.categoria === categoryFilter;
+    return matchesName && matchesCategory;
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -129,10 +135,10 @@ export default function Students() {
                 <h2 className="text-3xl font-bold text-gray-900">Equipo</h2>
                 <div className="flex items-center gap-4">
                   <span className="font-semibold text-gray-700">Club Regatas San Nicolás</span>
-                  <img src="/vite.svg" alt="logo" className="h-8 w-8" />
+                  <img src="/icon.svg" alt="logo" className="h-8 w-8" />
                 </div>
               </div>
-              <div className="mb-8">
+              <div className="mb-8 flex items-center gap-4 flex-wrap">
                 <input
                   type="text"
                   value={search}
@@ -140,6 +146,14 @@ export default function Students() {
                   placeholder="Buscar alumno"
                   className="w-full max-w-md px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring focus:ring-green-200 bg-gray-100"
                 />
+                <div>
+                  <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="border rounded px-3 py-2 bg-white">
+                    <option value="">Todas las categorías</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               {loading ? (
                 <div className="text-center text-gray-500 py-8">Cargando alumnos...</div>
