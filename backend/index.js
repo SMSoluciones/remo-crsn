@@ -7,8 +7,8 @@ const cors = require('cors');
 const app = express();
 // Allow custom headers x-user-id and x-user-role for our header-based auth
 app.use(cors({
-  allowedHeaders: ['Content-Type', 'x-user-id', 'x-user-role'],
-  exposedHeaders: ['x-user-id', 'x-user-role'],
+  allowedHeaders: ['Content-Type', 'x-user-id', 'x-user-role', 'x-user-email'],
+  exposedHeaders: ['x-user-id', 'x-user-role', 'x-user-email'],
 }));
 app.use(express.json());
 
