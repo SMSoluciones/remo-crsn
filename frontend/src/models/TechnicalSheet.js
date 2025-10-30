@@ -16,7 +16,7 @@ export class TechnicalSheet {
 }
 
 export async function fetchSheetsByStudent(studentId, user) {
-  const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+  const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '', 'x-user-email': user.email || '' } : {};
   const res = await fetch(`${BASE}/student/${studentId}`, { headers });
   if (!res.ok) throw new Error('Error fetching technical sheets');
   return res.json();

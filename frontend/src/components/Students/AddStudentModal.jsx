@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createStudent } from '../../models/Student';
 import { showError, showSuccess } from '../../utils/toast';
+import { fetchStudents } from '../../models/Student';
 
 export default function AddStudentModal({ open, onClose, onCreated }) {
   const [loading, setLoading] = useState(false);
@@ -18,6 +19,13 @@ export default function AddStudentModal({ open, onClose, onCreated }) {
     }
     setLoading(true);
     try {
+      const existingStudent = await fetchStudents();
+      const emailExists = existingStudent.some(student => student.email === form.email);
+      if (emailExists) {
+        showError('El email ya fue utilizado');
+        setLoading(false);
+        return;
+      }
       const payload = { ...form };
       const created = await createStudent(payload);
       showSuccess('Alumno creado correctamente');

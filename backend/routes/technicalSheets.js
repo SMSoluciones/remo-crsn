@@ -8,7 +8,12 @@ const router = express.Router();
 function headerAuth(req, res, next) {
   const userId = req.header('x-user-id');
   const userRole = req.header('x-user-role');
+  const userEmail = req.header('x-user-email');
   if (userId) req.user = { id: userId, rol: userRole ? String(userRole).toLowerCase() : undefined };
+  if (userEmail) {
+    req.user = req.user || {};
+    req.user.email = String(userEmail).trim().toLowerCase();
+  }
   next();
 }
 
@@ -16,6 +21,34 @@ function requireTrainerOrAdmin(req, res, next) {
   const rol = req.user && req.user.rol;
   if (rol === 'admin' || rol === 'entrenador') return next();
   return res.status(403).json({ error: 'No autorizado' });
+}
+
+// Permite acceso si el usuario es admin/entrenador o si el email del usuario coincide con el
+// email del estudiante solicitado (propietario). Usar sólo en rutas de consulta del alumno.
+async function allowTrainerOrAdminOrOwner(req, res, next) {
+  const rol = req.user && req.user.rol;
+  if (rol === 'admin' || rol === 'entrenador') return next();
+  // Si no tenemos email del usuario, no podemos comprobar propietario
+  const userEmail = req.user && req.user.email;
+  if (!userEmail) return res.status(403).json({ error: 'No autorizado' });
+
+  // Resolver studentId param a documento y comparar emails
+  try {
+    let { studentId } = req.params;
+    let studentDoc = null;
+    if (mongoose.Types.ObjectId.isValid(studentId)) {
+      studentDoc = await Student.findById(studentId).select('email');
+    }
+    if (!studentDoc) {
+      studentDoc = await Student.findOne({ dni: studentId }).select('email');
+    }
+    if (!studentDoc) return res.status(403).json({ error: 'No autorizado' });
+    const studentEmail = (studentDoc.email || '').toString().trim().toLowerCase();
+    if (studentEmail && studentEmail === userEmail) return next();
+    return res.status(403).json({ error: 'No autorizado' });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
 }
 
 router.get('/', headerAuth, requireTrainerOrAdmin, async (req, res) => {
@@ -56,7 +89,7 @@ router.get('/', headerAuth, requireTrainerOrAdmin, async (req, res) => {
   }
 });
 
-router.get('/student/:studentId', headerAuth, requireTrainerOrAdmin, async (req, res) => {
+router.get('/student/:studentId', headerAuth, allowTrainerOrAdminOrOwner, async (req, res) => {
   try {
     const { studentId } = req.params;
     let idToQuery = studentId;
