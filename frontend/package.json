@@ -13,6 +13,8 @@
     "@heroicons/react": "^2.2.0",
     "@tailwindcss/vite": "^4.1.14",
     "aos": "^2.3.4",
+    "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
     "react": "^19.1.1",
     "react-avatar": "^5.0.4",
     "react-dom": "^19.1.1",

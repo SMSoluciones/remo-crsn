@@ -2,6 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
+const Boat = require('./models/Boat');
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -84,6 +85,16 @@ async function seed() {
     });
     await Student.insertMany(studentsToInsert);
     console.log('Estudiantes insertados correctamente');
+    // insertar botes
+    await Boat.deleteMany({});
+    const mockBoats = [
+      { nombre: 'Bote 1', tipo: 'single', estado: 'activo', fechaIngreso: new Date('2025-01-01'), nivelDif: 3, row: 2 },
+      { nombre: 'Bote 2', tipo: 'doble', estado: 'mantenimiento', fechaIngreso: new Date('2025-02-01'), nivelDif: 2, row: 4 },
+      { nombre: 'Bote 3', tipo: 'cuadruple', estado: 'fuera_servicio', fechaIngreso: new Date('2025-03-01'), nivelDif: 4, row: 8 },
+
+    ];
+    await Boat.insertMany(mockBoats);
+    console.log('Botes insertados correctamente');
   } catch (err) {
     console.error('Error al insertar usuarios:', err);
   } finally {

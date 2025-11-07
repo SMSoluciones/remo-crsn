@@ -1,21 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { BoatStatus, BoatTypes } from '../../models/Boat';
 import ProtectedRoute from '../ProtectedRoute';
 import { LifebuoyIcon, WrenchScrewdriverIcon, FunnelIcon, PlusIcon } from '@heroicons/react/24/outline';
 import Avatar from 'react-avatar';
-
-const mockBoats = [
-  { id: 'b1', nombre: 'Bote 1', tipo: 'single', estado: BoatStatus.ACTIVO, fechaIngreso: '2023-01-10' },
-  { id: 'b2', nombre: 'Bote 2', tipo: 'doble', estado: BoatStatus.MANTENIMIENTO, fechaIngreso: '2022-11-05' },
-];
-
+import axios from 'axios';
+import { API_BASE_URL } from '../../utils/apiConfig';
+import { format } from 'date-fns';
+import { AuthContext } from '../../context/AuthContext';
+import AddBoatsModal from './AddBoatsModal';
 
 export default function Boats() {
-  const [boats, setBoats] = useState(mockBoats);
+  const [boats, setBoats] = useState([]); // Asegurar que el estado inicial sea un array vacío
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState(BoatTypes[0]);
   const [estado, setEstado] = useState(BoatStatus.ACTIVO);
   const [showForm, setShowForm] = useState(false);
+  const [showAddBoatModal, setShowAddBoatModal] = useState(false);
+  const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    const fetchBoats = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/boats`);
+        if (Array.isArray(response.data)) {
+          setBoats(response.data);
+        } else {
+          console.error('La respuesta del backend no es un array:', response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching boats:', error);
+      }
+    };
+
+    fetchBoats();
+  }, []);
 
   const handleAddBoat = (e) => {
     e.preventDefault();
@@ -30,6 +48,10 @@ export default function Boats() {
     setTipo('');
     setEstado('');
     setShowForm(false);
+  };
+
+  const handleBoatAdded = (newBoat) => {
+    setBoats((prevBoats) => [...prevBoats, newBoat]);
   };
 
   const [filterTipo, setFilterTipo] = useState('');
@@ -67,9 +89,11 @@ export default function Boats() {
                       {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
-                  <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition">
-                    <PlusIcon className="h-5 w-5" /> Nuevo Bote
-                  </button>
+                  {user && (user.rol === 'admin' || user.rol === 'profesor') && (
+                    <button onClick={() => setShowAddBoatModal(true)} className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition">
+                      <PlusIcon className="h-5 w-5" /> Nuevo Bote
+                    </button>
+                  )}
                 </div>
                 {showForm && (
                   <form onSubmit={handleAddBoat} className="bg-white rounded-xl shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4" data-aos="zoom-in">
@@ -105,26 +129,28 @@ export default function Boats() {
                   <table className="min-w-full bg-white rounded-xl shadow">
                     <thead className="bg-gray-200">
                       <tr>
+                        <th className="py-2 px-4 text-left">Nombre</th>
+                        <th className="py-2 px-4 text-left">Tipo</th>
                         <th className="py-2 px-4 text-left flex items-center gap-1">
                           <WrenchScrewdriverIcon className="h-5 w-5 inline text-yellow-600" /> Estado
                         </th>
-                        <th className="py-2 px-4 text-left">Tipo</th>
-                        <th className="py-2 px-4 text-left">Nombre</th>
                         <th className="py-2 px-4 text-left">Fecha Ingreso</th>
+                        <th className="py-2 px-4 text-left">Row</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredBoats.map(b => (
-                        <tr key={b.id} className="border-b">
-                          <td className="py-2 px-4">
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${b.estado === 'mantenimiento' ? 'bg-yellow-200 text-yellow-800' : b.estado === 'fuera_servicio' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>{b.estado}</span>
-                          </td>
-                          <td className="py-2 px-4">{b.tipo}</td>
+                      {filteredBoats.map((b, index) => (
+                        <tr key={b.id || index} className="border-b">
                           <td className="py-2 px-4 flex items-center gap-2">
                             <Avatar name={b.nombre} size="28" round={true} />
                             <span>{b.nombre}</span>
                           </td>
-                          <td className="py-2 px-4">{b.fechaIngreso}</td>
+                          <td className="py-2 px-4">{b.tipo}</td>
+                          <td className="py-2 px-4">
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${b.estado === 'mantenimiento' ? 'bg-yellow-200 text-yellow-800' : b.estado === 'fuera_servicio' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>{b.estado}</span>
+                          </td>
+                          <td className="py-2 px-4">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</td>
+                          <td className="px-4 py-2 border">{b.row}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -147,15 +173,23 @@ export default function Boats() {
                 </div>
                 <div className="bg-white rounded-xl shadow p-6" data-aos="fade-right">
                   <h3 className="text-lg font-semibold mb-4 text-gray-700">Acciones rápidas</h3>
-                  <button onClick={() => setShowForm(true)} className="w-full flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition mb-2">
-                    <PlusIcon className="h-5 w-5" /> Nuevo Bote
-                  </button>
+                  {user && (user.rol === 'admin' || user.rol === 'profesor') && (
+                    <button onClick={() => setShowAddBoatModal(true)} className="w-full flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition mb-2">
+                      <PlusIcon className="h-5 w-5" /> Nuevo Bote
+                    </button>
+                  )}
                   <button className="w-full flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
                     <WrenchScrewdriverIcon className="h-5 w-5" /> Reportar Falla
                   </button>
                 </div>
               </div>
             </div>
+            {showAddBoatModal && (
+              <AddBoatsModal
+                onClose={() => setShowAddBoatModal(false)}
+                onBoatAdded={handleBoatAdded}
+              />
+            )}
           </ProtectedRoute>
         );
       }
