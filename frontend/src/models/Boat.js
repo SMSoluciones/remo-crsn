@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 // Modelo de datos para Botes
 export const BoatStatus = {
   ACTIVO: 'activo',
@@ -16,5 +18,15 @@ export class Boat {
     this.tipo = tipo;
     this.estado = estado;
     this.fechaIngreso = fechaIngreso;
+  }
+}
+
+export async function fetchBoats() {
+  try {
+    const response = await axios.get('/api/boats');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching boats:', error);
+    throw error;
   }
 }

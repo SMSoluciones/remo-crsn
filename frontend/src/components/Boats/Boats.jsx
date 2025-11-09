@@ -135,7 +135,7 @@ export default function Boats() {
                           <WrenchScrewdriverIcon className="h-5 w-5 inline text-yellow-600" /> Estado
                         </th>
                         <th className="py-2 px-4 text-left">Fecha Ingreso</th>
-                        <th className="py-2 px-4 text-left">Row</th>
+                        <th className="py-2 px-4 text-left">Remo</th>
                       </tr>
                     </thead>
                     <tbody>

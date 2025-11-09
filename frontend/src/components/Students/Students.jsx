@@ -11,7 +11,6 @@ import AddStudentModal from './AddStudentModal';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 export default function Students() {
-
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -24,6 +23,8 @@ export default function Students() {
   const [form, setForm] = useState({ fecha: '', entrenador: '', postura: 5, remada: 5, equilibrio: 5, coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [openingByEmail, setOpeningByEmail] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2;
 
   // Lista de categorías disponibles (únicas)
   const categories = Array.from(new Set(students.map(s => s.categoria).filter(Boolean)));
@@ -67,6 +68,7 @@ export default function Students() {
 
   const selectedStudent = students.find(s => s.id === selected);
   const studentSheets = sheets[selected] || [];
+  const paginatedSheets = studentSheets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Abrir perfil
   const handleOpenProfile = useCallback((id) => {
@@ -248,7 +250,9 @@ export default function Students() {
                   </div>
                 </div>
                 {loading ? (
-                  <div className="text-center text-gray-500 py-8">Cargando alumnos...</div>
+                  <div className="flex items-center justify-center w-full py-20">
+                    <ClipLoader color="#16a34a" loading={true} size={48} />
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filtered.map(s => (
@@ -288,31 +292,31 @@ export default function Students() {
               </>
             )
           ) : (
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <button className="mb-6 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setShowProfile(false)}>Volver</button>
               {!selectedStudent ? (
                 <div className="bg-white rounded-xl shadow p-8 mb-8 text-gray-700">Alumno no encontrado.</div>
               ) : (
                 <div className="bg-white rounded-xl shadow p-8 mb-8 flex gap-8 items-center">
-                  <Avatar name={`${selectedStudent.nombre} ${selectedStudent.apellido}`} size="80" round={true} />
+                  <Avatar name={`${selectedStudent.nombre} ${selectedStudent.apellido}`} size="100" round={true} />
                   <div>
-                    <div className="text-2xl font-bold text-gray-900 mb-2">{selectedStudent.nombre} {selectedStudent.apellido}</div>
-                    <div className="text-gray-700 mb-1">DNI: {selectedStudent.dni}</div>
-                    <div className="text-gray-700 mb-1">Edad: {selectedStudent.nacimiento}</div>
-                    <div className="text-gray-700 mb-1">Categoría: {selectedStudent.categoria}</div>
-                    <div className="text-gray-700 mb-1">Email: {selectedStudent.email}</div>
-                    <div className="text-gray-700 mb-1">Domicilio: {selectedStudent.domicilio}</div>
-                    <div className="text-gray-700 mb-1">Celular: {selectedStudent.celular}</div>
+                    <div className="text-3xl font-bold text-gray-900 mb-4">{selectedStudent.nombre} {selectedStudent.apellido}</div>
+                    <div className="text-gray-700 mb-2">DNI: {selectedStudent.dni}</div>
+                    <div className="text-gray-700 mb-2">Edad: {selectedStudent.nacimiento}</div>
+                    <div className="text-gray-700 mb-2">Categoría: {selectedStudent.categoria}</div>
+                    <div className="text-gray-700 mb-2">Email: {selectedStudent.email}</div>
+                    <div className="text-gray-700 mb-2">Domicilio: {selectedStudent.domicilio}</div>
+                    <div className="text-gray-700 mb-2">Celular: {selectedStudent.celular}</div>
                   </div>
                 </div>
               )}
               <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">Histórico de Fichas Técnicas</h3>
+                <h3 className="text-2xl font-semibold mb-6 text-gray-800">Histórico de Fichas Técnicas</h3>
                 {/* Gráfico de evolución de promedios */}
                 {studentSheets.length > 0 && (
-                  <div className="bg-white rounded-xl shadow p-6 mb-6">
-                    <h4 className="text-lg font-bold mb-2 text-gray-700">Evolución de Promedios</h4>
-                    <ResponsiveContainer width="100%" height={220}>
+                  <div className="bg-white rounded-xl shadow p-10 mb-8">
+                    <h4 className="text-xl font-bold mb-4 text-gray-700">Evolución de Promedios</h4>
+                    <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={studentSheets.map((sheet) => {
                         const puntajes = [sheet.postura, sheet.remada, sheet.equilibrio, sheet.coordinacion, sheet.resistencia, sheet.velocidad];
                         return {
@@ -326,11 +330,11 @@ export default function Students() {
                           velocidad: sheet.velocidad,
                         };
                       })}>
-                        <XAxis dataKey="fecha" stroke="#888" fontSize={12} />
-                        <YAxis domain={[0, 10]} stroke="#888" fontSize={12} />
+                        <XAxis dataKey="fecha" stroke="#888" fontSize={14} />
+                        <YAxis domain={[0, 10]} stroke="#888" fontSize={14} />
                         <Tooltip />
                         <Legend />
-                        <Line type="monotone" dataKey="promedio" stroke="#22c55e" strokeWidth={3} dot={{ r: 4 }} name="Promedio" />
+                        <Line type="monotone" dataKey="promedio" stroke="#22c55e" strokeWidth={3} dot={{ r: 5 }} name="Promedio" />
                         <Line type="monotone" dataKey="postura" stroke="#6366f1" strokeWidth={2} dot={false} name="Postura" />
                         <Line type="monotone" dataKey="remada" stroke="#f59e42" strokeWidth={2} dot={false} name="Remada" />
                         <Line type="monotone" dataKey="equilibrio" stroke="#06b6d4" strokeWidth={2} dot={false} name="Equilibrio" />
@@ -341,45 +345,62 @@ export default function Students() {
                     </ResponsiveContainer>
                   </div>
                 )}
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {studentSheets.length === 0 ? (
                     <div className="text-gray-500">No hay fichas técnicas registradas.</div>
                   ) : (
-                    studentSheets.map((sheet, idx) => {
-                      const puntajes = [sheet.postura, sheet.remada, sheet.equilibrio, sheet.coordinacion, sheet.resistencia, sheet.velocidad];
+                    paginatedSheets.map((sheet, idx) => {
+                      const puntajes = [sheet.postura, sheet.remada, sheet.equilibrio, sheet.coordinacion, sheet.resistencia, sheet.velocidad].map(p => Number(p) || 0);
                       const promedio = (puntajes.reduce((a, b) => a + b, 0) / puntajes.length).toFixed(1);
+                      const fechaFormateada = new Date(sheet.fecha).toLocaleDateString('es-ES');
                       return (
-                        <div key={idx} className="bg-white rounded-xl shadow-lg p-6 flex flex-col gap-4 border-l-4" style={{ borderColor: promedio >= 8 ? '#22c55e' : promedio >= 6 ? '#facc15' : '#ef4444' }}>
-                          <div className="flex gap-6 items-center mb-2">
-                            <span className="font-bold text-gray-700 text-lg">{sheet.fecha}</span>
+                        <div key={idx} className="bg-white rounded-xl shadow-lg p-8 flex flex-col gap-6 border-l-4" style={{ borderColor: promedio >= 8 ? '#22c55e' : promedio >= 6 ? '#facc15' : '#ef4444' }}>
+                          <div className="flex gap-8 items-center mb-4">
+                            <span className="font-bold text-gray-700 text-xl">{fechaFormateada}</span>
                             <span className="text-gray-500">Entrenador: <span className="font-semibold text-gray-700">{sheet.entrenador}</span></span>
-                            <span className={`ml-auto px-3 py-1 rounded-full text-white font-bold text-sm ${promedio >= 8 ? 'bg-green-600' : promedio >= 6 ? 'bg-yellow-500' : 'bg-red-500'}`}>Promedio: {promedio}</span>
+                            <span className={`ml-auto px-4 py-2 rounded-full text-white font-bold text-lg ${promedio >= 8 ? 'bg-green-600' : promedio >= 6 ? 'bg-yellow-500' : 'bg-red-500'}`}>Promedio: {promedio}</span>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${sheet.postura >= 8 ? 'bg-green-100 text-green-700' : sheet.postura >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Postura: {sheet.postura}</span>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                            <div className="flex items-center gap-3">
+                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.postura >= 8 ? 'bg-green-100 text-green-700' : sheet.postura >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Postura: {sheet.postura}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${sheet.remada >= 8 ? 'bg-green-100 text-green-700' : sheet.remada >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Remada: {sheet.remada}</span>
+                            <div className="flex items-center gap-3">
+                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.remada >= 8 ? 'bg-green-100 text-green-700' : sheet.remada >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Remada: {sheet.remada}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${sheet.equilibrio >= 8 ? 'bg-green-100 text-green-700' : sheet.equilibrio >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Equilibrio: {sheet.equilibrio}</span>
+                            <div className="flex items-center gap-3">
+                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.equilibrio >= 8 ? 'bg-green-100 text-green-700' : sheet.equilibrio >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Equilibrio: {sheet.equilibrio}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${sheet.coordinacion >= 8 ? 'bg-green-100 text-green-700' : sheet.coordinacion >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Coordinación: {sheet.coordinacion}</span>
+                            <div className="flex items-center gap-3">
+                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.coordinacion >= 8 ? 'bg-green-100 text-green-700' : sheet.coordinacion >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Coordinación: {sheet.coordinacion}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${sheet.resistencia >= 8 ? 'bg-green-100 text-green-700' : sheet.resistencia >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Resistencia: {sheet.resistencia}</span>
+                            <div className="flex items-center gap-3">
+                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.resistencia >= 8 ? 'bg-green-100 text-green-700' : sheet.resistencia >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Resistencia: {sheet.resistencia}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${sheet.velocidad >= 8 ? 'bg-green-100 text-green-700' : sheet.velocidad >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Velocidad: {sheet.velocidad}</span>
+                            <div className="flex items-center gap-3">
+                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.velocidad >= 8 ? 'bg-green-100 text-green-700' : sheet.velocidad >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Velocidad: {sheet.velocidad}</span>
                             </div>
                           </div>
-                          <div className="text-gray-700 mt-2"><span className="font-semibold">Observaciones:</span> {sheet.observaciones}</div>
+                          <div className="text-gray-700 mt-4"><span className="font-semibold">Observaciones:</span> {sheet.observaciones}</div>
                         </div>
                       );
                     })
                   )}
+                </div>
+                <div className="flex justify-center mt-6">
+                  <button
+                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 mx-2"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 mx-2"
+                    disabled={currentPage * itemsPerPage >= studentSheets.length}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    Siguiente
+                  </button>
                 </div>
               </div>
               {user.rol === 'entrenador' || user.rol === 'admin' ? (
