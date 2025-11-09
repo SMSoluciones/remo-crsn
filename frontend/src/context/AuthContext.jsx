@@ -19,7 +19,18 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  const login = (userData) => setUser(userData);
+  const login = (userData) => {
+    setUser(userData);
+    try {
+      const email = userData.email ? String(userData.email).trim().toLowerCase() : '';
+      if (email) {
+        localStorage.setItem('open_student_email', email);
+        console.log('Correo electrónico guardado en localStorage:', email);
+      }
+    } catch (error) {
+      console.error('Error al guardar el correo electrónico en localStorage:', error);
+    }
+  };
   const logout = () => setUser(null);
 
   return (
