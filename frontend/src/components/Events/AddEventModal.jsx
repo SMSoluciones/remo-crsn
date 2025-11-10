@@ -11,7 +11,6 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded }) => {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState(null);
 
   useEffect(() => {
     AOS.init({ duration: 300, easing: 'ease-out' });
@@ -23,18 +22,9 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded }) => {
       showError('Complete todos los campos requeridos: título, fecha y descripción');
       return;
     }
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('date', date);
-    formData.append('description', description);
-    if (image) formData.append('image', image);
 
     try {
-      const response = await axios.post('/api/events', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post('/api/events', { title, date, description });
       showSuccess('Evento creado correctamente');
       onEventAdded(response.data);
       onRequestClose();
@@ -75,11 +65,6 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded }) => {
             className="border rounded px-3 py-2"
             required
           ></textarea>
-          <input
-            type="file"
-            onChange={(e) => setImage(e.target.files[0])}
-            className="border rounded px-3 py-2"
-          />
           <div className="flex justify-end gap-4">
             <button
               type="button"
