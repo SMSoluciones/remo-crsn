@@ -2,6 +2,7 @@ import ProtectedRoute from './ProtectedRoute';
 import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { fetchStudents } from '../models/Student';
+import { fetchEvents } from '../models/Event';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -34,26 +35,35 @@ const mockProfile = {
   categoria: 'Senior',
 };
 
-const mockEvents = [
-  { id: 'e1', title: 'Regata Nacional', date: '2025-11-15' },
-  { id: 'e2', title: 'Entrenamiento Especial', date: '2025-11-20' },
-  { id: 'e3', title: 'Competencia Regional', date: '2025-12-05' },
-];
-
 export default function Dashboard() {
   const { user } = useAuth();
   const [studentCount, setStudentCount] = useState(mockKPIs.activeStudents);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [events, setEvents] = useState(mockEvents);
+  const [events, setEvents] = useState([]);
 
   useEffect(() => {
     let mounted = true;
+
+    // Fetch students
     fetchStudents().then(data => {
       if (!mounted) return;
       setStudentCount(Array.isArray(data) ? data.length : (data.count || mockKPIs.activeStudents));
     }).catch(err => {
       console.error('No se pudo obtener el conteo de alumnos:', err);
     });
+
+    // Fetch events using the Event model
+    fetchEvents()
+      .then(fetchedEvents => {
+        if (mounted) {
+          setEvents(fetchedEvents);
+        }
+      })
+      .catch(error => {
+        console.error('Error al obtener los eventos:', error);
+        setEvents([]); // Asegurarse de que events sea un array vacío en caso de error
+      });
+
     return () => { mounted = false };
   }, []);
 
@@ -76,10 +86,13 @@ export default function Dashboard() {
               slidesToShow={1}
               slidesToScroll={1}
             >
-              {events.map(event => (
-                <div key={event.id} className="p-4 bg-white rounded shadow-lg">
-                  <h3 className="text-lg font-semibold text-gray-800">{event.title}</h3>
-                  <p className="text-sm text-gray-500">{event.date}</p>
+              {Array.isArray(events) && events.map(event => (
+                <div key={event._id} className="p-4 bg-white rounded shadow-lg flex flex-col items-center">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{event.title}</h3>
+                  <p className="text-sm text-gray-500 mb-4">{new Date(event.date).toLocaleDateString()}</p>
+                  <div className="text-center">
+                    <p className="text-gray-700">{event.description}</p>
+                  </div>
                 </div>
               ))}
             </Slider>
