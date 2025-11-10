@@ -52,6 +52,7 @@ function MainApp() {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <aside className="bg-white shadow-lg h-screen w-24 flex flex-col items-center py-8 gap-8 fixed left-0 top-0 z-20">
+        <img src="icon.svg" alt="" className="h-10 w-10" />
         {/* Botón Mi Perfil arriba del Dashboard */}
         {user && (() => {
           const isEnabled = user?.rol === 'alumnos';
@@ -81,6 +82,7 @@ function MainApp() {
               <UserIcon className="h-6 w-6" />
               <span className="text-xs font-medium">Mi Perfil</span>
             </button>
+            
           );
         })()}
         {visibleNavItems.map(item => (

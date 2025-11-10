@@ -12,7 +12,7 @@ export default function Topbar({ onLogout }) {
   return (
   <header className="h-20 bg-white shadow flex items-center justify-between px-8 fixed top-0 left-24 right-0 z-10">
       <div className="flex items-center gap-4">
-        <h1 className="text-2xl font-bold text-blue-700">Club Regatas San Nicolás</h1>
+        
       </div>
       <div className="flex items-center gap-6 relative">
         <button className="relative">

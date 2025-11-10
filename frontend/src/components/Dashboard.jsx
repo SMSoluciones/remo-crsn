@@ -2,6 +2,10 @@ import ProtectedRoute from './ProtectedRoute';
 import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { fetchStudents } from '../models/Student';
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import AddEventModal from './Events/AddEventModal';
 
 const mockKPIs = {
   totalBoats: 5,
@@ -13,8 +17,6 @@ const mockKPIs = {
   ],
   avgTechnical: 7.8,
 };
-
-
 
 import Avatar from 'react-avatar';
 import UsersAdmin from './Login/UsersAdmin';
@@ -32,9 +34,17 @@ const mockProfile = {
   categoria: 'Senior',
 };
 
+const mockEvents = [
+  { id: 'e1', title: 'Regata Nacional', date: '2025-11-15' },
+  { id: 'e2', title: 'Entrenamiento Especial', date: '2025-11-20' },
+  { id: 'e3', title: 'Competencia Regional', date: '2025-12-05' },
+];
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [studentCount, setStudentCount] = useState(mockKPIs.activeStudents);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [events, setEvents] = useState(mockEvents);
 
   useEffect(() => {
     let mounted = true;
@@ -46,13 +56,33 @@ export default function Dashboard() {
     });
     return () => { mounted = false };
   }, []);
+
+  const handleEventAdded = (newEvent) => {
+    setEvents((prevEvents) => [...prevEvents, newEvent]);
+  };
+
   return (
-  <ProtectedRoute allowedRoles={['admin', 'entrenador', 'mantenimiento', 'alumnos']}>
+    <ProtectedRoute allowedRoles={['admin', 'entrenador', 'mantenimiento', 'alumnos']}>
       <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center py-12 px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full max-w-6xl mx-auto">
           {/* Columna principal Dashboard */}
           <div className="col-span-2 flex flex-col gap-10 items-center justify-center">
             <h2 className="text-3xl font-bold mb-4 text-gray-800 self-start">Dashboard</h2>
+            <Slider
+              className="w-full max-w-2xl mb-8"
+              dots={true}
+              infinite={true}
+              speed={500}
+              slidesToShow={1}
+              slidesToScroll={1}
+            >
+              {events.map(event => (
+                <div key={event.id} className="p-4 bg-white rounded shadow-lg">
+                  <h3 className="text-lg font-semibold text-gray-800">{event.title}</h3>
+                  <p className="text-sm text-gray-500">{event.date}</p>
+                </div>
+              ))}
+            </Slider>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 w-full">
               <div className="bg-green-700 text-white rounded-2xl p-10 shadow-lg flex flex-col items-center justify-center min-h-[160px]">
                 <LifebuoyIcon className="h-10 w-10 mb-3" />
@@ -87,6 +117,17 @@ export default function Dashboard() {
                 ))}
               </ul>
             </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Agregar Evento
+            </button>
+            <AddEventModal
+              isOpen={isModalOpen}
+              onRequestClose={() => setIsModalOpen(false)}
+              onEventAdded={handleEventAdded}
+            />
           </div>
           {/* Columna lateral Dashboard */}
           <div className="flex flex-col gap-8 w-full max-w-xs justify-start">
