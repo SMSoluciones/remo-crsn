@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const Boat = require('./models/Boat');
+const Event = require('./models/Event');
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -88,10 +89,10 @@ async function seed() {
     // insertar botes
     await Boat.deleteMany({});
     const mockBoats = [
-      { nombre: 'Bote 1', tipo: 'single', estado: 'activo', fechaIngreso: new Date('2025-01-01'), nivelDif: 3, row: 2 },
-      { nombre: 'Bote 2', tipo: 'doble', estado: 'mantenimiento', fechaIngreso: new Date('2025-02-01'), nivelDif: 2, row: 4 },
-      { nombre: 'Bote 3', tipo: 'cuadruple', estado: 'fuera_servicio', fechaIngreso: new Date('2025-03-01'), nivelDif: 4, row: 8 },
-
+      { name: 'Bote 1', type: 'single', status: 'activo', difficultyLevel: 1, oars: 1 },
+      { name: 'Bote 2', type: 'double', status: 'en reparación', difficultyLevel: 2, oars: 2 },
+      { name: 'Bote 3', type: 'quad', status: 'activo', difficultyLevel: 3, oars: 4 },
+      { name: 'Bote 4', type: 'eight', status: 'activo', difficultyLevel: 4, oars: 8 },
     ];
     await Boat.insertMany(mockBoats);
     console.log('Botes insertados correctamente');
@@ -103,4 +104,61 @@ async function seed() {
   }
 }
 
-seed();
+async function seedEvents() {
+  try {
+    await Event.deleteMany();
+    const mockEvents = [
+      { title: 'Regata Nacional', date: '2025-11-15', description: 'Competencia nacional de remo.', image: 'https://example.com/images/regata-nacional.jpg' },
+      { title: 'Entrenamiento Especial', date: '2025-11-20', description: 'Sesión de entrenamiento intensivo.', image: 'https://example.com/images/entrenamiento-especial.jpg' },
+      { title: 'Competencia Regional', date: '2025-12-05', description: 'Competencia entre clubes regionales.', image: 'https://example.com/images/competencia-regional.jpg' },
+    ];
+    await Event.insertMany(mockEvents);
+    console.log('Eventos mock agregados correctamente');
+  } catch (error) {
+    console.error('Error al agregar eventos mock:', error);
+  }
+}
+
+seed()
+  .then(seedEvents)
+  .catch(err => console.error(err));
+
+const additionalBoats = [
+  { name: 'Bote 5', type: 'single', status: 'activo', difficultyLevel: 1, oars: 1 },
+  { name: 'Bote 6', type: 'double', status: 'activo', difficultyLevel: 2, oars: 2 },
+  { name: 'Bote 7', type: 'quad', status: 'en reparación', difficultyLevel: 3, oars: 4 },
+  { name: 'Bote 8', type: 'eight', status: 'activo', difficultyLevel: 4, oars: 8 },
+  { name: 'Bote 9', type: 'single', status: 'activo', difficultyLevel: 1, oars: 1 },
+  { name: 'Bote 10', type: 'double', status: 'en reparación', difficultyLevel: 2, oars: 2 },
+];
+
+async function seedAdditionalBoats() {
+  try {
+    await Boat.insertMany(additionalBoats);
+    console.log('Botes adicionales mock agregados correctamente');
+  } catch (error) {
+    console.error('Error al agregar botes adicionales mock:', error);
+  }
+}
+
+seedAdditionalBoats();
+
+const additionalEvents = [
+  { title: 'Festival de Remo', date: '2025-12-10', description: 'Un festival para celebrar el deporte del remo.', image: 'https://via.placeholder.com/150' },
+  { title: 'Clínica de Remo', date: '2025-12-15', description: 'Sesión especial para mejorar técnicas de remo.', image: 'https://via.placeholder.com/150' },
+  { title: 'Competencia Internacional', date: '2026-01-05', description: 'Competencia con equipos internacionales.', image: 'https://via.placeholder.com/150' },
+  { title: 'Entrenamiento Avanzado', date: '2026-01-20', description: 'Entrenamiento para atletas avanzados.', image: 'https://via.placeholder.com/150' },
+  { title: 'Regata de Invierno', date: '2026-02-10', description: 'Competencia especial en temporada de invierno.', image: 'https://via.placeholder.com/150' },
+  { title: 'Taller de Estrategias', date: '2026-02-25', description: 'Taller para aprender estrategias de competencia.', image: 'https://via.placeholder.com/150' },
+];
+
+async function seedAdditionalEvents() {
+  try {
+    await Event.insertMany(additionalEvents);
+    console.log('Eventos adicionales mock agregados correctamente');
+  } catch (error) {
+    console.error('Error al agregar eventos adicionales mock:', error);
+  }
+}
+
+seedAdditionalEvents();

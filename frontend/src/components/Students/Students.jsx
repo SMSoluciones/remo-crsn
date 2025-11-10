@@ -250,9 +250,7 @@ export default function Students() {
                   </div>
                 </div>
                 {loading ? (
-                  <div className="flex items-center justify-center w-full py-20">
-                    <ClipLoader color="#16a34a" loading={true} size={48} />
-                  </div>
+                  <div className="text-center text-gray-500 py-8">Cargando alumnos...</div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filtered.map(s => (

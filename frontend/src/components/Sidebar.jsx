@@ -1,7 +1,9 @@
 import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Cog6ToothIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/useAuth';
 
+
 const navItems = [
+  
   { label: 'Dashboard', icon: <ChartBarIcon className="h-6 w-6" />, section: 'dashboard' },
   { label: 'Botes', icon: <LifebuoyIcon className="h-6 w-6" />, section: 'boats' },
   { label: 'Alumnos', icon: <UserGroupIcon className="h-6 w-6" />, section: 'students' },
@@ -19,7 +21,11 @@ export default function Sidebar({ section, setSection }) {
   });
 
   return (
+    <>
+    
     <aside className="bg-white shadow-lg h-screen w-20 flex flex-col items-center py-6 gap-6 fixed left-0 top-0 z-20">
+      
+      
       {visibleItems.map(item => (
         <button
           key={item.section}
@@ -51,10 +57,10 @@ export default function Sidebar({ section, setSection }) {
             aria-disabled={!isEnabled}
           >
             <UserIcon className="h-6 w-6" />
-            <span className="text-xs font-medium">Mi Perfil</span>
           </button>
         );
       })()}
-    </aside>
+      </aside>
+      </>
   );
 }
