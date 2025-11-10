@@ -30,9 +30,7 @@ app.use('/api/boats', require('./routes/boats'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/boat-reports', require('./routes/boatReports'));
 app.use('/api/technical-sheets', require('./routes/technicalSheets'));
-const eventsRouter = require('./routes/events');
-
-app.use('/api/events', eventsRouter);
+app.use('/api/events', require('./routes/events'));
 
 app.get('/', (req, res) => {
   res.send('API REMO-CRSN funcionando');
