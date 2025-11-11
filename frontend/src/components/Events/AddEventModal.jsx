@@ -4,10 +4,12 @@ import axios from 'axios';
 import { showError, showSuccess } from '../../utils/toast';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import { API_BASE_URL } from '../../utils/apiConfig';
 
 Modal.setAppElement('#root');
 
 const AddEventModal = ({ isOpen, onRequestClose, onEventAdded }) => {
+  const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
@@ -19,18 +21,23 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !date || !description) {
-      showError('Complete todos los campos requeridos: título, fecha y descripción');
+      showError('Complete los campos requeridos: título, fecha y descripción');
       return;
     }
-
+    setLoading(true);
     try {
-      const response = await axios.post('/api/events', { title, date, description });
+      const response = await axios.post(`${API_BASE_URL}/api/events`, { title, date, description });
       showSuccess('Evento creado correctamente');
+      setTitle('');
+      setDate('');
+      setDescription('');
       onEventAdded(response.data);
       onRequestClose();
     } catch (error) {
       console.error('Error al crear el evento:', error);
       showError('No se pudo crear el evento');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,9 +82,10 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              disabled={loading}
             >
-              Guardar
+              {loading ? 'Guardando...' : 'Guardar Evento'}
             </button>
           </div>
         </form>
@@ -88,17 +96,3 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded }) => {
 
 export default AddEventModal;
 
-// CSS para animación
-// .animate-slide-up {
-//   animation: slide-up 0.3s ease-out;
-// }
-// @keyframes slide-up {
-//   from {
-//     transform: translateY(100%);
-//     opacity: 0;
-//   }
-//   to {
-//     transform: translateY(0);
-//     opacity: 1;
-//   }
-// }
