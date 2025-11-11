@@ -1,10 +1,12 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/apiConfig';
 
-const API_URL = 'https://remo-crsn.onrender.com/api/events';
+const BASE = `${API_BASE_URL}/api/events`;
+
 
 export const fetchEvents = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await axios.get(BASE);
     return response.data;
   } catch (error) {
     console.error('Error al obtener los eventos:', error);
@@ -14,7 +16,7 @@ export const fetchEvents = async () => {
 
 export const createEvent = async (eventData) => {
   try {
-    const response = await axios.post(API_URL, eventData);
+    const response = await axios.post(BASE, eventData);
     return response.data;
   } catch (error) {
     console.error('Error al crear el evento:', error);
@@ -24,7 +26,7 @@ export const createEvent = async (eventData) => {
 
 export const updateEvent = async (eventId, eventData) => {
   try {
-    const response = await axios.put(`${API_URL}/${eventId}`, eventData);
+    const response = await axios.put(`${BASE}/${eventId}`, eventData);
     return response.data;
   } catch (error) {
     console.error('Error al actualizar el evento:', error);
@@ -34,7 +36,7 @@ export const updateEvent = async (eventId, eventData) => {
 
 export const deleteEvent = async (eventId) => {
   try {
-    const response = await axios.delete(`${API_URL}/${eventId}`);
+    const response = await axios.delete(`${BASE}/${eventId}`);
     return response.data;
   } catch (error) {
     console.error('Error al eliminar el evento:', error);
