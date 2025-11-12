@@ -8,6 +8,7 @@ import { fetchEvents } from '../models/Event';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import AddEventModal from './Events/AddEventModal';
 import {
   LifebuoyIcon,
   WrenchScrewdriverIcon,
@@ -30,6 +31,19 @@ export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(null);
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  // Ajustes del slider para eventos
+  const eventSliderSettings = {
+    dots: true,
+    infinite: events.length > 1,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3500,
+    arrows: false,
+    pauseOnHover: true,
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -130,8 +144,15 @@ export default function Dashboard() {
       <div className="flex justify-between items-center w-full max-w-6xl mb-6">
         <h1 className="text-4xl font-bold">Dashboard</h1>
         <div className="flex gap-4">
-          <button className="px-4 py-2 bg-gradient-to-b from-blue-900 to-blue-500 text-white rounded-full hover:opacity-90">Botón 1</button>
-          <button className="px-4 py-2 bg-gradient-to-b from-blue-900 to-blue-500 text-white rounded-full hover:opacity-90">Botón 2</button>
+          <button
+            onClick={() => setIsAddEventOpen(true)}
+            className="px-4 py-2 bg-gradient-to-b from-blue-900 to-blue-500 text-white rounded-full hover:opacity-90"
+          >
+            Agregar Evento
+          </button>
+          <button className="px-4 py-2 bg-gradient-to-b from-blue-900 to-blue-500 text-white rounded-full hover:opacity-90">Agregar Anuncio</button>
+          <button className="px-4 py-2 bg-gradient-to-b from-blue-900 to-blue-500 text-white rounded-full hover:opacity-90">Administrar cuentas</button>
+
         </div>
       </div>
       <div className="bg-white text-black rounded-2xl p-6 shadow-lg w-full max-w-6xl mb-6 h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105">
@@ -139,7 +160,7 @@ export default function Dashboard() {
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-6xl">
         {/* Casillero principal */}
-        <div className="bg-white text-black rounded-2xl p-4 shadow-lg h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-all duration-300 hover:scale-105 relative overflow-hidden">
+  <div className="group bg-white text-black rounded-2xl p-4 shadow-lg h-56 hover:h-80 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-all duration-500 ease-in-out hover:scale-105 relative overflow-hidden">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-bold">Eventos</h2>
             <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-green-800 hover:text-white">
@@ -153,17 +174,31 @@ export default function Dashboard() {
           ) : events.length === 0 ? (
             <div className="text-sm opacity-70 flex items-center justify-center h-24">No hay eventos</div>
           ) : (
-            <div className="h-24 overflow-y-auto pr-2 space-y-2">
-              {events.map(ev => {
-                const fecha = ev.date ? new Date(ev.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Sin fecha';
-                return (
-                  <div key={ev._id || ev.id} className="border rounded-lg px-3 py-2 text-xs bg-gray-50 hover:bg-gray-100 transition">
-                    <p className="font-semibold text-gray-800 truncate">{ev.title || 'Evento'}</p>
-                    <p className="mt-1 text-gray-600">{fecha}</p>
-                    <p className="mt-1 italic text-gray-500 truncate">{ev.description || 'Sin descripción'}</p>
-                  </div>
-                );
-              })}
+            <div className="h-36 group-hover:h-60 transition-all duration-500 ease-in-out overflow-hidden">
+              <Slider {...eventSliderSettings}>
+                {events.map((ev) => {
+                  const fecha = ev.date
+                    ? new Date(ev.date).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })
+                    : 'Sin fecha';
+                  return (
+                    <div key={ev._id || ev.id} className="px-1 h-full">
+                      <div className="h-full border rounded-lg px-3 py-2 text-xs bg-gray-50 hover:bg-gray-100 transition flex flex-col justify-start">
+                        <p className="font-semibold text-gray-800 truncate">
+                          {ev.title || 'Evento'}
+                        </p>
+                        <p className="mt-1 text-gray-600">{fecha}</p>
+                        <p className="mt-1 italic text-gray-500">
+                          {ev.description || 'Sin descripción'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </Slider>
             </div>
           )}
         </div>
@@ -235,6 +270,24 @@ export default function Dashboard() {
           <div className="text-4xl font-bold">24</div>
         </div>
       </div>
+      {/* Modal: Agregar Evento */}
+      <AddEventModal
+        isOpen={isAddEventOpen}
+        onRequestClose={() => setIsAddEventOpen(false)}
+        onEventAdded={(newEv) => {
+          // Inserta y reordena por fecha ascendente (solo eventos con fecha válida primero)
+          setEvents((prev) => {
+            const list = Array.isArray(prev) ? [...prev, newEv] : [newEv];
+            const withDate = list.filter((e) => e && e.date);
+            const withoutDate = list.filter((e) => !e || !e.date);
+            withDate.sort((a, b) => new Date(a.date) - new Date(b.date));
+            return [...withDate, ...withoutDate];
+          });
+        }}
+        onEventDeleted={(deletedId) => {
+          setEvents((prev) => prev.filter((e) => (e._id || e.id) !== deletedId));
+        }}
+      />
     </div>
   );
 }
