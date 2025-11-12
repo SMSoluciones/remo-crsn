@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/apiConfig';
 
 // Modelo de datos para Botes
 export const BoatStatus = {
@@ -23,10 +24,10 @@ export class Boat {
 
 export async function fetchBoats() {
   try {
-    const response = await axios.get('/api/boats');
-    return response.data;
+    const response = await axios.get(`${API_BASE_URL}/api/boats`);
+    return response.data || [];
   } catch (error) {
     console.error('Error fetching boats:', error);
-    throw error;
+    return [];
   }
 }
