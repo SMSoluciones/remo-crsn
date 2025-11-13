@@ -9,6 +9,7 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import AddEventModal from './Events/AddEventModal';
+import UsersAdminModal from './Login/UsersAdminModal.jsx';
 import {
   LifebuoyIcon,
   WrenchScrewdriverIcon,
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(null);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [isUsersAdminOpen, setIsUsersAdminOpen] = useState(false);
   // Ajustes del slider para eventos
   const eventSliderSettings = {
     dots: true,
@@ -146,12 +148,17 @@ export default function Dashboard() {
         <div className="flex gap-4">
           <button
             onClick={() => setIsAddEventOpen(true)}
-            className="px-4 py-2 bg-gradient-to-b from-blue-900 to-blue-500 text-white rounded-full hover:opacity-90"
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
           >
             Agregar Evento
           </button>
-          <button className="px-4 py-2 bg-gradient-to-b from-blue-900 to-blue-500 text-white rounded-full hover:opacity-90">Agregar Anuncio</button>
-          <button className="px-4 py-2 bg-gradient-to-b from-blue-900 to-blue-500 text-white rounded-full hover:opacity-90">Administrar cuentas</button>
+          <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors">Agregar Anuncio</button>
+          <button
+            onClick={() => setIsUsersAdminOpen(true)}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
+          >
+            Administrar cuentas
+          </button>
 
         </div>
       </div>
@@ -159,11 +166,11 @@ export default function Dashboard() {
         <h2 className="text-2xl font-bold">ANUNCIOS</h2>
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-6xl">
-        {/* Casillero principal */}
-  <div className="group bg-white text-black rounded-2xl p-4 shadow-lg h-56 hover:h-80 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-all duration-500 ease-in-out hover:scale-105 relative overflow-hidden">
+          {/* Casillero principal */}
+        <div className="bg-white text-black rounded-2xl p-4 shadow-lg h-56 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-bold">Eventos</h2>
-            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-green-800 hover:text-white">
+            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
               <ArrowUpRightIcon className="w-6 h-6" />
             </span>
           </div>
@@ -174,7 +181,7 @@ export default function Dashboard() {
           ) : events.length === 0 ? (
             <div className="text-sm opacity-70 flex items-center justify-center h-24">No hay eventos</div>
           ) : (
-            <div className="h-36 group-hover:h-60 transition-all duration-500 ease-in-out overflow-hidden">
+            <div className="h-36 overflow-hidden">
               <Slider {...eventSliderSettings}>
                 {events.map((ev) => {
                   const fecha = ev.date
@@ -206,8 +213,8 @@ export default function Dashboard() {
         {/* Casilleros secundarios */}
         <div className="bg-white text-black rounded-2xl p-6 shadow-lg flex flex-col justify-between h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold">Total Projects</h2>
-            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-green-800 hover:text-white">
+            <h2 className="text-lg font-bold">Ranking</h2>
+            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
               <ArrowUpRightIcon className="w-6 h-6" />
             </span>
           </div>
@@ -217,8 +224,8 @@ export default function Dashboard() {
 
         <div className="bg-white text-black rounded-2xl p-6 shadow-lg flex flex-col justify-between h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold">Total Projects</h2>
-            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-green-800 hover:text-white">
+            <h2 className="text-lg font-bold">Llegados</h2>
+            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
               <ArrowUpRightIcon className="w-6 h-6" />
             </span>
           </div>
@@ -261,10 +268,8 @@ export default function Dashboard() {
         <div className="bg-white text-black rounded-2xl p-6 shadow-lg flex flex-col justify-between h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">Total Projects</h2>
-            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-green-800 hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap ="round" strokeLinejoin="round" d="M8.25 15.75L15.75 8.25M8.25 8.25h7.5v7.5" />
-              </svg>
+            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
+              <ArrowUpRightIcon className="w-6 h-6" />
             </span>
           </div>
           <div className="text-4xl font-bold">24</div>
@@ -287,6 +292,11 @@ export default function Dashboard() {
         onEventDeleted={(deletedId) => {
           setEvents((prev) => prev.filter((e) => (e._id || e.id) !== deletedId));
         }}
+      />
+      {/* Modal: Administrar Usuarios */}
+      <UsersAdminModal
+        isOpen={isUsersAdminOpen}
+        onRequestClose={() => setIsUsersAdminOpen(false)}
       />
     </div>
   );

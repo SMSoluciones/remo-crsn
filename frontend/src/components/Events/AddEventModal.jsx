@@ -21,7 +21,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    AOS.init({ duration: 300, easing: 'ease-out' });
+    AOS.init({ duration: 300, easing: 'ease-out', once: true });
   }, []);
 
   const handleSubmit = async (e) => {
@@ -91,9 +91,10 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
     }
   };
 
+  if (!isOpen) return null;
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center ${isOpen ? '' : 'hidden'}`}>
-      <div className="absolute inset-0 bg-black opacity-40 backdrop-blur-sm" onClick={onRequestClose}></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onRequestClose}></div>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl p-6 z-10" data-aos="fade-up">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Agregar Nuevo Evento</h3>
