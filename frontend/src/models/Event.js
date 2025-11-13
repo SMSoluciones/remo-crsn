@@ -14,9 +14,11 @@ export const fetchEvents = async () => {
   }
 };
 
-export const createEvent = async (eventData) => {
+export const createEvent = async (eventData, auth) => {
   try {
-    const response = await axios.post(BASE, eventData);
+    const headers = {};
+    if (auth?.rol) headers['x-user-role'] = auth.rol;
+    const response = await axios.post(BASE, eventData, { headers });
     return response.data;
   } catch (error) {
     console.error('Error al crear el evento:', error);
@@ -24,9 +26,11 @@ export const createEvent = async (eventData) => {
   }
 };
 
-export const updateEvent = async (eventId, eventData) => {
+export const updateEvent = async (eventId, eventData, auth) => {
   try {
-    const response = await axios.put(`${BASE}/${eventId}`, eventData);
+    const headers = {};
+    if (auth?.rol) headers['x-user-role'] = auth.rol;
+    const response = await axios.put(`${BASE}/${eventId}`, eventData, { headers });
     return response.data;
   } catch (error) {
     console.error('Error al actualizar el evento:', error);
@@ -34,9 +38,11 @@ export const updateEvent = async (eventId, eventData) => {
   }
 };
 
-export const deleteEvent = async (eventId) => {
+export const deleteEvent = async (eventId, auth) => {
   try {
-    const response = await axios.delete(`${BASE}/${eventId}`);
+    const headers = {};
+    if (auth?.rol) headers['x-user-role'] = auth.rol;
+    const response = await axios.delete(`${BASE}/${eventId}`, { headers });
     return response.data;
   } catch (error) {
     console.error('Error al eliminar el evento:', error);

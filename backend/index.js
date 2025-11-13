@@ -31,6 +31,7 @@ app.use('/api/students', require('./routes/students'));
 app.use('/api/boat-reports', require('./routes/boatReports'));
 app.use('/api/technical-sheets', require('./routes/technicalSheets'));
 app.use('/api/events', require('./routes/events'));
+app.use('/api/announcements', require('./routes/announcements'));
 
 app.get('/', (req, res) => {
   res.send('API REMO-CRSN funcionando');
