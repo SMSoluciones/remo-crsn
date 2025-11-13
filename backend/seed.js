@@ -4,6 +4,7 @@ const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const Boat = require('./models/Boat');
 const Event = require('./models/Event');
+const Announcement = require('./models/Announcement');
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -120,6 +121,33 @@ async function seed() {
     ];
     await Event.insertMany(mockEvents);
     console.log('Eventos de remo agregados exitosamente.');
+
+    // insertar anuncios
+    await Announcement.deleteMany({});
+    const mockAnnouncements = [
+      {
+        title: 'Cierre por mantenimiento',
+        date: new Date('2025-01-20'),
+        description: 'El club permanecerá cerrado por tareas de mantenimiento general.'
+      },
+      {
+        title: 'Nueva indumentaria disponible',
+        date: new Date('2025-02-05'),
+        description: 'Ya está disponible la nueva ropa oficial del club en la secretaría.'
+      },
+      {
+        title: 'Reunión de subcomisión',
+        date: new Date('2025-03-10'),
+        description: 'Convocatoria a reunión mensual de la subcomisión de remo.'
+      },
+      {
+        title: 'Clases para principiantes',
+        date: new Date('2025-04-01'),
+        description: 'Se abren cupos para el curso inicial de remo nivel 1.'
+      }
+    ];
+    await Announcement.insertMany(mockAnnouncements);
+    console.log('Anuncios insertados correctamente');
   } catch (err) {
     console.error('Error al insertar usuarios:', err);
   } finally {

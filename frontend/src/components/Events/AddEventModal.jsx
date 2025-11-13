@@ -5,12 +5,14 @@ import { showError, showSuccess } from '../../utils/toast';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { API_BASE_URL } from '../../utils/apiConfig';
-import { fetchEvents as fetchEventsApi, deleteEvent as deleteEventApi } from '../../models/Event';
+import { fetchEvents as fetchEventsApi, deleteEvent as deleteEventApi, createEvent as createEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../../context/useAuth';
 
 Modal.setAppElement('#root');
 
 const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted }) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
@@ -32,12 +34,12 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
     }
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/events`, { title, date, description });
+      const data = await createEventApi({ title, date, description }, user);
       showSuccess('Evento creado correctamente');
       setTitle('');
       setDate('');
       setDescription('');
-      onEventAdded(response.data);
+      onEventAdded(data);
       onRequestClose();
     } catch (error) {
       console.error('Error al crear el evento:', error);
@@ -79,7 +81,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
     if (!ok) return;
     try {
       setDeletingId(id);
-      await deleteEventApi(id);
+      await deleteEventApi(id, user);
       setEvents((prev) => prev.filter((e) => (e._id || e.id) !== id));
       if (typeof onEventDeleted === 'function') onEventDeleted(id);
       showSuccess('Evento eliminado');

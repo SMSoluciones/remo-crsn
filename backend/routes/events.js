@@ -2,6 +2,19 @@ const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
 
+function headerAuth(req, res, next) {
+  const role = req.header('x-user-role');
+  if (role) req.user = { rol: String(role).toLowerCase() };
+  next();
+}
+
+function requireEventEditors(req, res, next) {
+  const rol = req.user && req.user.rol;
+  const allowed = ['admin', 'entrenador', 'mantenimiento', 'subcomision'];
+  if (allowed.includes(rol)) return next();
+  return res.status(403).json({ error: 'No autorizado' });
+}
+
 // Obtener todos los eventos
 router.get('/', async (req, res) => {
   try {
@@ -13,7 +26,7 @@ router.get('/', async (req, res) => {
 });
 
 // Crear un nuevo evento
-router.post('/', async (req, res) => {
+router.post('/', headerAuth, requireEventEditors, async (req, res) => {
   try {
     const { title, date, description } = req.body;
     const newEvent = new Event({ title, date, description });
@@ -25,7 +38,7 @@ router.post('/', async (req, res) => {
 });
 
 // Actualizar un evento
-router.put('/:id', async (req, res) => {
+router.put('/:id', headerAuth, requireEventEditors, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, date, description } = req.body;
@@ -37,7 +50,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar un evento
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', headerAuth, requireEventEditors, async (req, res) => {
   try {
     const { id } = req.params;
     await Event.findByIdAndDelete(id);

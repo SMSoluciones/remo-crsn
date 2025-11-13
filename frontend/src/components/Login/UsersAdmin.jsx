@@ -14,7 +14,7 @@ export default function UsersAdmin() {
 
   useEffect(() => {
     if (user?.rol === UserRoles.ADMIN) {
-      fetchUsers().then(setUsers);
+      fetchUsers(user).then(setUsers);
     }
   }, [user]);
 
@@ -32,11 +32,11 @@ export default function UsersAdmin() {
       // If password is empty, don't send it to the server (so it won't be overwritten)
       const payload = { ...form };
       if (!payload.password) delete payload.password;
-      const updated = await updateUser(editId, payload);
+      const updated = await updateUser(editId, payload, user);
       setUsers(users.map(u => u._id === editId ? updated : u));
       setEditId(null);
     } else {
-      const created = await createUser(form);
+      const created = await createUser(form, user);
       setUsers([...users, created]);
     }
     setForm({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR, password: '' });
@@ -49,7 +49,7 @@ export default function UsersAdmin() {
   };
 
   const handleDelete = async id => {
-    await deleteUser(id);
+    await deleteUser(id, user);
     setUsers(users.filter(u => u._id !== id));
     setMenuOpen(null);
   };

@@ -5,10 +5,12 @@ import { fetchBoats } from '../models/Boat';
 import { fetchAllSheets } from '../models/TechnicalSheet';
 import { useAuth } from '../context/useAuth';
 import { fetchEvents } from '../models/Event';
+import { fetchAnnouncements } from '../models/Announcement';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import AddEventModal from './Events/AddEventModal';
+import AddAnnouncementModal from './Announcements/AddAnnouncementModal.jsx';
 import UsersAdminModal from './Login/UsersAdminModal.jsx';
 import {
   LifebuoyIcon,
@@ -32,12 +34,29 @@ export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(null);
+  const [announcements, setAnnouncements] = useState([]);
+  const [annLoading, setAnnLoading] = useState(true);
+  const [annError, setAnnError] = useState(null);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);
   const [isUsersAdminOpen, setIsUsersAdminOpen] = useState(false);
+  const canManageEvents = ['admin','entrenador','mantenimiento','subcomision']
+    .includes(String(user?.rol || '').toLowerCase());
   // Ajustes del slider para eventos
   const eventSliderSettings = {
     dots: true,
     infinite: events.length > 1,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3500,
+    arrows: false,
+    pauseOnHover: true,
+  };
+  const announcementSliderSettings = {
+    dots: true,
+    infinite: announcements.length > 1,
     speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,
@@ -59,6 +78,26 @@ export default function Dashboard() {
         setStudentsError('No se pudo cargar');
         setStudentsCount(0);
       });
+    return () => { mounted = false };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    setAnnLoading(true);
+    fetchAnnouncements()
+      .then(list => {
+        if (!mounted) return;
+        const arr = Array.isArray(list) ? list : [];
+        const withDate = arr.filter(a => a && a.date);
+        const withoutDate = arr.filter(a => !a || !a.date);
+        withDate.sort((a,b) => new Date(a.date) - new Date(b.date));
+        setAnnouncements([...withDate, ...withoutDate]);
+      })
+      .catch(err => {
+        console.error('Error obteniendo anuncios:', err);
+        setAnnError('No se pudo cargar');
+      })
+      .finally(() => { if (mounted) setAnnLoading(false); });
     return () => { mounted = false };
   }, []);
 
@@ -146,24 +185,67 @@ export default function Dashboard() {
       <div className="flex justify-between items-center w-full max-w-6xl mb-6">
         <h1 className="text-4xl font-bold">Dashboard</h1>
         <div className="flex gap-4">
-          <button
-            onClick={() => setIsAddEventOpen(true)}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
-          >
-            Agregar Evento
-          </button>
-          <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors">Agregar Anuncio</button>
-          <button
-            onClick={() => setIsUsersAdminOpen(true)}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
-          >
-            Administrar cuentas
-          </button>
+          {canManageEvents && (
+            <button
+              onClick={() => setIsAddEventOpen(true)}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
+            >
+              Agregar Evento
+            </button>
+          )}
+          {canManageEvents && (
+            <button
+              onClick={() => setIsAddAnnouncementOpen(true)}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
+            >
+              Agregar Anuncio
+            </button>
+          )}
+          {user?.rol === 'admin' && (
+            <button
+              onClick={() => setIsUsersAdminOpen(true)}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
+            >
+              Administrar cuentas
+            </button>
+          )}
 
         </div>
       </div>
-      <div className="bg-white text-black rounded-2xl p-6 shadow-lg w-full max-w-6xl mb-6 h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105">
-        <h2 className="text-2xl font-bold">ANUNCIOS</h2>
+      <div className="bg-white text-black rounded-2xl p-6 shadow-lg w-full max-w-6xl mb-6 h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-2xl font-bold">ANUNCIOS</h2>
+        </div>
+        {annLoading ? (
+          <div className="flex items-center justify-center h-24">Cargando...</div>
+        ) : annError ? (
+          <div className="text-sm text-red-600">{annError}</div>
+        ) : announcements.length === 0 ? (
+          <div className="text-sm opacity-70 flex items-center justify-center h-24">No hay anuncios</div>
+        ) : (
+          <div className="h-24 overflow-hidden">
+            <Slider {...announcementSliderSettings}>
+              {announcements.map((an) => {
+                const fecha = an.date
+                  ? new Date(an.date).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })
+                  : 'Sin fecha';
+                return (
+                  <div key={an._id || an.id} className="px-1 h-full">
+                    <div className="h-full border rounded-lg px-3 py-2 text-xs bg-gray-50 hover:bg-gray-100 transition flex flex-col justify-start">
+                      <p className="font-semibold text-gray-800 truncate">{an.title || 'Anuncio'}</p>
+                      <p className="mt-1 text-gray-600">{fecha}</p>
+                      <p className="mt-1 italic text-gray-500">{an.description || 'Sin descripción'}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </Slider>
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-6xl">
           {/* Casillero principal */}
@@ -276,23 +358,43 @@ export default function Dashboard() {
         </div>
       </div>
       {/* Modal: Agregar Evento */}
-      <AddEventModal
-        isOpen={isAddEventOpen}
-        onRequestClose={() => setIsAddEventOpen(false)}
-        onEventAdded={(newEv) => {
+      {canManageEvents && (
+        <AddEventModal
+          isOpen={isAddEventOpen}
+          onRequestClose={() => setIsAddEventOpen(false)}
+          onEventAdded={(newEv) => {
           // Inserta y reordena por fecha ascendente (solo eventos con fecha válida primero)
-          setEvents((prev) => {
-            const list = Array.isArray(prev) ? [...prev, newEv] : [newEv];
-            const withDate = list.filter((e) => e && e.date);
-            const withoutDate = list.filter((e) => !e || !e.date);
-            withDate.sort((a, b) => new Date(a.date) - new Date(b.date));
-            return [...withDate, ...withoutDate];
-          });
-        }}
-        onEventDeleted={(deletedId) => {
-          setEvents((prev) => prev.filter((e) => (e._id || e.id) !== deletedId));
-        }}
-      />
+            setEvents((prev) => {
+              const list = Array.isArray(prev) ? [...prev, newEv] : [newEv];
+              const withDate = list.filter((e) => e && e.date);
+              const withoutDate = list.filter((e) => !e || !e.date);
+              withDate.sort((a, b) => new Date(a.date) - new Date(b.date));
+              return [...withDate, ...withoutDate];
+            });
+          }}
+          onEventDeleted={(deletedId) => {
+            setEvents((prev) => prev.filter((e) => (e._id || e.id) !== deletedId));
+          }}
+        />
+      )}
+      {canManageEvents && (
+        <AddAnnouncementModal
+          isOpen={isAddAnnouncementOpen}
+          onRequestClose={() => setIsAddAnnouncementOpen(false)}
+          onAnnouncementAdded={(an) => {
+            setAnnouncements((prev) => {
+              const list = Array.isArray(prev) ? [...prev, an] : [an];
+              const withDate = list.filter((e) => e && e.date);
+              const withoutDate = list.filter((e) => !e || !e.date);
+              withDate.sort((a, b) => new Date(a.date) - new Date(b.date));
+              return [...withDate, ...withoutDate];
+            });
+          }}
+          onAnnouncementDeleted={(deletedId) => {
+            setAnnouncements((prev) => prev.filter((e) => (e._id || e.id) !== deletedId));
+          }}
+        />
+      )}
       {/* Modal: Administrar Usuarios */}
       <UsersAdminModal
         isOpen={isUsersAdminOpen}

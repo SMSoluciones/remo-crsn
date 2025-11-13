@@ -3,14 +3,29 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 
+// Middleware simple de autorización por rol via header
+function requireAdmin(req, res, next) {
+  const role = String(req.headers['x-user-role'] || '').toLowerCase();
+  if (role !== 'admin') {
+    return res.status(403).json({ error: 'Acceso restringido a admin' });
+  }
+  next();
+}
+
 // Obtener todos los usuarios
-router.get('/', async (req, res) => {
-  const users = await User.find();
+router.get('/', requireAdmin, async (req, res) => {
+  const users = await User.find().select('-password');
   res.json(users);
 });
 
+// Listar solo entrenadores (abierto para lectura)
+router.get('/trainers', async (req, res) => {
+  const trainers = await User.find({ rol: 'entrenador' }).select('-password');
+  res.json(trainers);
+});
+
 // Crear usuario
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const { password, ...rest } = req.body;
     if (!password) return res.status(400).json({ error: 'Password es requerido' });
@@ -27,7 +42,7 @@ router.post('/', async (req, res) => {
 });
 
 // Actualizar usuario
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const updateData = { ...req.body };
     if (updateData.password) {
@@ -41,7 +56,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar usuario
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'Usuario eliminado' });

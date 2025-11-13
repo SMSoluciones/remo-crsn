@@ -1,40 +1,50 @@
 import { API_BASE_URL } from '../utils/apiConfig';
 
 const API_URL = `${API_BASE_URL}/api/users`;
+const TRAINERS_URL = `${API_BASE_URL}/api/users/trainers`;
 
-export async function fetchUsers() {
-  const res = await fetch(API_URL);
+export async function fetchUsers(auth) {
+  const headers = { };
+  if (auth?.rol) headers['x-user-role'] = auth.rol;
+  const res = await fetch(API_URL, { headers });
   if (!res.ok) throw new Error('Error fetching users');
   return res.json();
 }
 
 export async function fetchTrainers() {
-  const users = await fetchUsers();
-  return (users || []).filter(u => u.rol === 'entrenador');
+  const res = await fetch(TRAINERS_URL);
+  if (!res.ok) throw new Error('Error fetching trainers');
+  return res.json();
 }
 
-export async function createUser(data) {
+export async function createUser(data, auth) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth?.rol) headers['x-user-role'] = auth.rol;
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Error creating user');
   return await res.json();
 }
 
-export async function updateUser(id, data) {
+export async function updateUser(id, data, auth) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth?.rol) headers['x-user-role'] = auth.rol;
   const res = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Error updating user');
   return await res.json();
 }
 
-export async function deleteUser(id) {
-  const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+export async function deleteUser(id, auth) {
+  const headers = { };
+  if (auth?.rol) headers['x-user-role'] = auth.rol;
+  const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE', headers });
   if (!res.ok) throw new Error('Error deleting user');
   return await res.json();
 }
