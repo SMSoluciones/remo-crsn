@@ -21,6 +21,7 @@ import 'react-toastify/dist/ReactToastify.css';
 function MainApp() {
   const { user, logout } = useAuth();
   const [section, setSection] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Exponer setSection globalmente para permitir redirecciones desde componentes
   useEffect(() => {
@@ -51,7 +52,7 @@ function MainApp() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <aside className="bg-white shadow-lg h-screen w-24 flex flex-col items-center py-8 gap-8 fixed left-0 top-0 z-20">
+      <aside className="hidden md:flex md:flex-col bg-white shadow-lg h-screen w-24 items-center py-8 gap-8 fixed left-0 top-0 z-20">
         <img src="icon.svg" alt="" className="h-10 w-10" />
         {/* Botón Mi Perfil arriba del Dashboard */}
         {user && (() => {
@@ -97,10 +98,30 @@ function MainApp() {
           </button>
         ))}
       </aside>
-      <div className="flex-1 flex flex-col" style={{ marginLeft: 96 }}>
-  <Topbar onLogout={logout} />
+      {/* Mobile off-canvas menu */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-40" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="fixed left-0 top-0 h-full w-64 bg-white shadow p-6">
+            <img src="icon.svg" alt="" className="h-10 w-10 mb-6" />
+            {visibleNavItems.map(item => (
+              <button
+                key={item.section}
+                className={`flex items-center gap-3 w-full text-left text-gray-700 hover:text-green-700 py-3 ${section === item.section ? 'text-green-700' : ''}`}
+                onClick={() => { setSection(item.section); setMobileMenuOpen(false); }}
+                title={item.label}
+              >
+                {item.icon}
+                <span className="font-medium">{item.label}</span>
+              </button>
+            ))}
+          </aside>
+        </div>
+      )}
+      <div className="flex-1 flex flex-col md:ml-24">
+  <Topbar onLogout={logout} onMobileMenuToggle={setMobileMenuOpen} />
   <ToastContainer position="bottom-right" transition={Slide} />
-        <main className="flex flex-row gap-8 pt-28 px-10 pb-8">
+        <main className="flex flex-row gap-8 pt-24 md:pt-28 px-4 md:px-10 pb-8">
           <div className="flex-1">
             {section === 'dashboard' && <Dashboard />}
             {section === 'boats' && <Boats />}
