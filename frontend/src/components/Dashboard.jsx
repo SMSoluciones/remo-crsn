@@ -182,14 +182,14 @@ export default function Dashboard() {
     return () => { mounted = false };
   }, [user]);
   return (
-    <div className="bg-gray-50 min-h-screen flex flex-col items-center py-6 px-4">
+    <div className="bg-gray-50 min-h-screen flex flex-col items-stretch sm:items-center py-6 px-2 sm:px-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full max-w-6xl mb-6 gap-4">
-        <h1 className="text-2xl sm:text-4xl font-bold">Dashboard</h1>
-        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-4">
+        <h1 className="text-xl sm:text-2xl md:text-4xl font-bold">Dashboard</h1>
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4">
           {canManageEvents && (
             <button
               onClick={() => setIsAddEventOpen(true)}
-              className="w-full sm:w-auto px-3 py-2 text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
+              className="max-w-xs w-full sm:w-auto mx-auto sm:mx-0 px-4 py-3 text-base sm:text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors flex items-center justify-center text-center"
             >
               Agregar Evento
             </button>
@@ -197,7 +197,7 @@ export default function Dashboard() {
           {canManageEvents && (
             <button
               onClick={() => setIsAddAnnouncementOpen(true)}
-              className="w-full sm:w-auto px-3 py-2 text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
+              className="max-w-xs w-full sm:w-auto mx-auto sm:mx-0 px-4 py-3 text-base sm:text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors flex items-center justify-center text-center"
             >
               Agregar Anuncio
             </button>
@@ -205,7 +205,7 @@ export default function Dashboard() {
           {user?.rol === 'admin' && (
             <button
               onClick={() => setIsUsersAdminOpen(true)}
-              className="w-full sm:w-auto px-3 py-2 text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors"
+              className="max-w-xs w-full sm:w-auto mx-auto sm:mx-0 px-4 py-3 text-base sm:text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors flex items-center justify-center text-center"
             >
               Administrar cuentas
             </button>
@@ -213,9 +213,9 @@ export default function Dashboard() {
 
         </div>
       </div>
-      <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-6xl mb-6 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden box-border">
+      <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden box-border">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-2xl font-bold">ANUNCIOS</h2>
+          <h2 className="text-2xl font-bold uppercase">ANUNCIOS</h2>
         </div>
         {annLoading ? (
           <div className="flex items-center justify-center h-24">Cargando...</div>
@@ -224,7 +224,7 @@ export default function Dashboard() {
         ) : announcements.length === 0 ? (
           <div className="text-sm opacity-70 flex items-center justify-center h-24">No hay anuncios</div>
         ) : (
-          <div className="h-auto sm:h-24 overflow-hidden">
+            <div className="h-auto md:h-24 overflow-hidden">
             <Slider {...announcementSliderSettings}>
                 {announcements.map((an) => {
                 const fecha = an.date
@@ -234,10 +234,10 @@ export default function Dashboard() {
                       year: 'numeric',
                     })
                   : 'Sin fecha';
-                return (
-                  <div key={an._id || an.id} className="px-1 h-full w-full max-w-full box-border">
-                    <div className="h-full border rounded-lg px-3 py-2 text-xs bg-gray-50 hover:bg-gray-100 transition flex flex-col justify-start w-full max-w-full min-w-0">
-                      <p className="font-semibold text-gray-800 truncate">{an.title || 'Anuncio'}</p>
+                    return (
+                      <div key={an._id || an.id} className="px-1 h-full w-full max-w-full box-border flex justify-center">
+                        <div className="h-full border rounded-lg px-3 py-2 text-xs sm:text-sm bg-gray-50 hover:bg-gray-100 transition flex flex-col justify-start w-full max-w-xs lg:max-w-none mx-auto min-w-0">
+                      <p className="font-semibold text-gray-800 truncate text-base sm:text-lg">{an.title || 'Anuncio'}</p>
                       <p className="mt-1 text-gray-600">{fecha}</p>
                       <p className="mt-1 italic text-gray-500">{an.description || 'Sin descripción'}</p>
                     </div>
@@ -250,7 +250,7 @@ export default function Dashboard() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-6xl">
           {/* Casillero principal */}
-        <div className="bg-white text-black rounded-2xl p-4 shadow-lg h-auto sm:h-56 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden w-full max-w-full min-w-0 box-border">
+        <div className="bg-white text-black rounded-2xl p-4 shadow-lg h-auto md:h-56 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-bold">Eventos</h2>
             <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
@@ -264,7 +264,7 @@ export default function Dashboard() {
           ) : events.length === 0 ? (
             <div className="text-sm opacity-70 flex items-center justify-center h-24">No hay eventos</div>
           ) : (
-            <div className="h-auto sm:h-36 overflow-hidden">
+            <div className="h-auto md:h-36 overflow-hidden">
               <Slider {...eventSliderSettings}>
                 {events.map((ev) => {
                   const fecha = ev.date
@@ -274,9 +274,9 @@ export default function Dashboard() {
                         year: 'numeric',
                       })
                     : 'Sin fecha';
-                  return (
-                    <div key={ev._id || ev.id} className="px-1 h-full w-full max-w-full box-border">
-                      <div className="h-full border rounded-lg px-3 py-2 text-xs bg-gray-50 hover:bg-gray-100 transition flex flex-col justify-start w-full max-w-full min-w-0">
+                    return (
+                      <div key={ev._id || ev.id} className="px-1 h-full w-full max-w-full box-border flex justify-center">
+                        <div className="h-full border rounded-lg px-3 py-2 text-xs sm:text-sm bg-gray-50 hover:bg-gray-100 transition flex flex-col justify-start w-full max-w-xs lg:max-w-none mx-auto min-w-0">
                         <p className="font-semibold text-gray-800 truncate">
                           {ev.title || 'Evento'}
                         </p>
@@ -294,68 +294,68 @@ export default function Dashboard() {
         </div>
 
         {/* Casilleros secundarios */}
-        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto sm:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-full min-w-0 box-border">
+        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">Ranking</h2>
             <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
               <ArrowUpRightIcon className="w-6 h-6" />
             </span>
           </div>
-          <div className="text-4xl font-bold">24</div>
+          <div className="text-3xl sm:text-4xl font-bold">24</div>
        
         </div>
 
-        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto sm:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-full min-w-0 box-border">
+        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">Llegados</h2>
             <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
               <ArrowUpRightIcon className="w-6 h-6" />
             </span>
           </div>
-          <div className="text-4xl font-bold">24</div>
+          <div className="text-3xl sm:text-4xl font-bold">24</div>
        
         </div>
 
         {/* Casillero grande */}
-        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between md:col-span-2 h-auto">
+        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between md:col-span-2 h-auto w-full max-w-xs sm:max-w-full mx-auto sm:mx-0">
           <h2 className="text-lg font-bold mb-4">Estadísticas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-green-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-              <LifebuoyIcon className="w-10 h-10 mb-2" />
+              <LifebuoyIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
               <h3 className="text-lg font-bold">Total de Botes</h3>
-              <p className="text-2xl sm:text-4xl font-bold">{totalBoats === null ? '...' : totalBoats}</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{totalBoats === null ? '...' : totalBoats}</p>
               <p className="text-sm mt-1 opacity-90">Activos: {activeBoats === null ? '...' : activeBoats}</p>
               {boatsError && <span className="text-xs mt-1 opacity-80">{boatsError}</span>}
             </div>
             <div className="bg-yellow-500 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-              <WrenchScrewdriverIcon className="w-10 h-10 mb-2" />
+              <WrenchScrewdriverIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
               <h3 className="text-lg font-bold">Botes en reparación</h3>
-              <p className="text-2xl sm:text-4xl font-bold">{repairBoats === null ? '...' : repairBoats}</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{repairBoats === null ? '...' : repairBoats}</p>
               {boatsError && <span className="text-xs mt-1 opacity-80">{boatsError}</span>}
             </div>
             <div className="bg-blue-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-              <UserGroupIcon className="w-10 h-10 mb-2" />
+              <UserGroupIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
               <h3 className="text-lg font-bold">Alumnos activos</h3>
-              <p className="text-2xl sm:text-4xl font-bold">{studentsCount === null ? '...' : studentsCount}</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{studentsCount === null ? '...' : studentsCount}</p>
               {studentsError && <span className="text-xs mt-1 opacity-80">{studentsError}</span>}
             </div>
             <div className="bg-purple-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-              <ChartBarIcon className="w-10 h-10 mb-2" />
+              <ChartBarIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
               <h3 className="text-lg font-bold">Promedio técnico</h3>
-              <p className="text-2xl sm:text-4xl font-bold">{globalAvg === null ? '...' : globalAvg.toFixed(1)}</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{globalAvg === null ? '...' : globalAvg.toFixed(1)}</p>
               {avgError && <span className="text-xs mt-1 opacity-80">{avgError}</span>}
             </div>
           </div>
         </div>
 
-        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto sm:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105">
+        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">Total Projects</h2>
             <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
               <ArrowUpRightIcon className="w-6 h-6" />
             </span>
           </div>
-          <div className="text-4xl font-bold">24</div>
+          <div className="text-3xl sm:text-4xl font-bold">24</div>
         </div>
       </div>
       {/* Modal: Agregar Evento */}
