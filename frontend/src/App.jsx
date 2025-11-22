@@ -34,6 +34,16 @@ function MainApp() {
     AOS.init({ duration: 800, once: true });
   }, []);
 
+  // Refresh AOS when mobile menu opens so the animation runs on the freshly rendered aside
+  useEffect(() => {
+    try {
+      AOS.refresh();
+    } catch (err) {
+      // if AOS isn't available for some reason, ignore
+      console.warn('AOS refresh failed', err);
+    }
+  }, [mobileMenuOpen]);
+
   if (!user) return <Login />;
 
   const navItems = [
@@ -101,8 +111,12 @@ function MainApp() {
       {/* Mobile off-canvas menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-black bg-opacity-40" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="fixed left-0 top-0 h-full w-64 bg-white shadow p-6">
+          <div
+            className="fixed inset-0 bg-white/30 backdrop-blur-sm z-40"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <aside data-aos="fade-right" data-aos-duration="500" className="fixed left-0 top-0 h-full w-64 bg-white shadow p-6 z-50">
             <img src="icon.svg" alt="" className="h-10 w-10 mb-6" />
             {visibleNavItems.map(item => (
               <button

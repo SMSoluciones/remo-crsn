@@ -68,31 +68,35 @@ export default function Boats() {
 
         return (
           <ProtectedRoute>
-            <div className="bg-gray-50 min-h-screen p-8 flex flex-col md:flex-row gap-8" data-aos="fade-up">
+            <div className="bg-gray-50 min-h-screen px-2 py-6 sm:px-8 sm:py-8 flex flex-col md:flex-row gap-8 max-w-xs sm:max-w-6xl mx-auto" data-aos="fade-up">
               <div className="flex-1 flex flex-col gap-8">
                 <div className="flex items-center gap-2 mb-2">
                   <LifebuoyIcon className="h-7 w-7 text-green-700" />
                   <h2 className="text-2xl font-bold text-gray-800">Gestión de Botes</h2>
                 </div>
-                <div className="flex gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <FunnelIcon className="h-5 w-5 text-gray-400" />
-                    <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="border rounded px-2 py-1">
-                      <option value="">Tipo</option>
-                      {BoatTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FunnelIcon className="h-5 w-5 text-gray-400" />
-                    <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="border rounded px-2 py-1">
-                      <option value="">Estado</option>
-                      {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                <div className="flex flex-col sm:flex-row gap-4 mb-4 items-start">
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center gap-2">
+                      <FunnelIcon className="h-5 w-5 text-gray-400" />
+                      <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="border rounded px-2 py-1">
+                        <option value="">Tipo</option>
+                        {BoatTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FunnelIcon className="h-5 w-5 text-gray-400" />
+                      <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="border rounded px-2 py-1">
+                        <option value="">Estado</option>
+                        {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
                   </div>
                   {user && (user.rol === 'admin' || user.rol === 'profesor') && (
-                    <button onClick={() => setShowAddBoatModal(true)} className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition">
-                      <PlusIcon className="h-5 w-5" /> Nuevo Bote
-                    </button>
+                    <div className="w-full sm:w-auto sm:ml-auto">
+                      <button onClick={() => setShowAddBoatModal(true)} className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition">
+                        <PlusIcon className="h-5 w-5" /> Nuevo Bote
+                      </button>
+                    </div>
                   )}
                 </div>
                 {showForm && (
@@ -125,7 +129,31 @@ export default function Boats() {
                     <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 transition">Guardar</button>
                   </form>
                 )}
-                <div className="overflow-x-auto" data-aos="fade-left">
+                {/* Mobile: cards list (show on <sm) */}
+                <div className="sm:hidden space-y-4" data-aos="fade-left">
+                  {filteredBoats.map((b, index) => (
+                    <div key={b.id || index} className="bg-white rounded-xl shadow px-4 py-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar name={b.nombre} size="40" round={true} />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-semibold text-lg">{b.nombre}</div>
+                              <div className="text-sm text-gray-600">{b.tipo}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`inline-block px-2 py-1 rounded text-xs font-bold ${b.estado === 'mantenimiento' ? 'bg-yellow-200 text-yellow-800' : b.estado === 'fuera_servicio' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>{b.estado}</div>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-sm text-gray-500">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop: table (show on sm+) */}
+                <div className="hidden sm:block overflow-x-auto" data-aos="fade-left">
                   <table className="min-w-full bg-white rounded-xl shadow">
                     <thead className="bg-gray-200">
                       <tr>
@@ -158,7 +186,23 @@ export default function Boats() {
                 </div>
               </div>
               <div className="w-full md:w-80 flex flex-col gap-8">
-                <div className="bg-white rounded-xl shadow p-6" data-aos="fade-right">
+                {/* Mobile: cada reporte como tarjeta individual */}
+                <div className="sm:hidden space-y-3">
+                  <h3 className="text-lg font-semibold mb-2 text-gray-700">Últimos reportes</h3>
+                  {mockReports.map(r => (
+                    <div key={r.id} className="bg-white rounded-xl shadow px-4 py-3 flex items-center gap-3">
+                      <Avatar name={r.responsable} size="36" round={true} />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-800">{r.nombre}</div>
+                        <div className="text-sm text-gray-500">{r.fecha}</div>
+                      </div>
+                      <div className={`px-2 py-1 rounded text-xs font-bold ${r.estado === 'mantenimiento' ? 'bg-yellow-200 text-yellow-800' : r.estado === 'fuera_servicio' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>{r.estado}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop: card con la lista (mostrar en sm+) */}
+                <div className="hidden sm:block bg-white rounded-xl shadow p-6" data-aos="fade-right">
                   <h3 className="text-lg font-semibold mb-4 text-gray-700">Últimos reportes</h3>
                   <ul className="space-y-3">
                     {mockReports.map(r => (
