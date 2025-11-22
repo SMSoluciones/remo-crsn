@@ -204,7 +204,7 @@ export default function Students() {
     <ProtectedRoute>
       <div className="flex min-h-screen bg-gray-50">
         {/* Sidebar */}
-          <aside className="w-20 bg-white border-r flex flex-col items-center py-8 gap-8">
+          <aside className="hidden sm:flex w-20 bg-white border-r flex-col items-center py-8 gap-8">
           <UserIcon className="h-7 w-7 text-gray-400" />
           {user?.rol === 'admin' || user?.rol === 'entrenador' ? (
             <button onClick={() => setShowAddStudent(true)} className="bg-black rounded-full p-2 hover:bg-gray-800 transition">
@@ -217,7 +217,7 @@ export default function Students() {
           )}
         </aside>
         {/* Main content */}
-        <div className="flex-1 flex flex-col px-12 py-10">
+        <div className="flex-1 flex flex-col px-4 sm:px-12 py-6 sm:py-10 max-w-xs sm:max-w-6xl mx-auto">
           {!showProfile ? (
             openingByEmail ? (
               <div className="flex items-center justify-center w-full py-20 text-gray-600">
@@ -228,25 +228,33 @@ export default function Students() {
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-3xl font-bold text-gray-900">Equipo</h2>
                   <div className="flex items-center gap-4">
-                    <span className="font-semibold text-gray-700">Club Regatas San Nicolás - REMO</span>
+                    <span className="hidden sm:inline-block font-semibold text-gray-700">Club Regatas San Nicolás - REMO</span>
                     <img src="/icon.svg" alt="logo" className="h-8 w-8" />
                   </div>
                 </div>
-                <div className="mb-8 flex items-center gap-4 flex-wrap">
+                <div className="mb-8 flex flex-col sm:flex-row items-center gap-4">
                   <input
                     type="text"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Buscar alumno"
-                    className="w-full max-w-md px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring focus:ring-green-200 bg-gray-100"
+                    className="w-full sm:max-w-md px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring focus:ring-green-200 bg-gray-100"
                   />
-                  <div>
-                    <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="border rounded px-3 py-2 bg-white">
+                  <div className="w-full sm:w-auto">
+                    <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="border rounded px-3 py-2 bg-white w-full sm:w-auto">
                       <option value="">Todas las categorías</option>
                       {categories.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
+                  </div>
+                  {/* Botón "Nuevo Alumno" visible en móvil debajo de los filtros */}
+                  <div className="w-full sm:hidden">
+                    {user?.rol === 'admin' || user?.rol === 'entrenador' ? (
+                      <button onClick={() => setShowAddStudent(true)} className="w-full bg-black text-white rounded px-4 py-2">Nuevo alumno</button>
+                    ) : (
+                      <button className="w-full bg-gray-200 text-gray-500 rounded px-4 py-2 cursor-not-allowed" title="Solo administradores o entrenadores">Nuevo alumno</button>
+                    )}
                   </div>
                 </div>
                 {loading ? (
@@ -256,12 +264,12 @@ export default function Students() {
                     {filtered.map(s => (
                       <div
                         key={s.id}
-                        className={`relative rounded-xl shadow flex items-center gap-4 px-6 py-5 cursor-pointer transition-all ${selected === s.id ? 'bg-black' : 'bg-white hover:bg-gray-100'}`}
+                        className={`relative rounded-xl shadow flex items-center gap-4 px-4 py-4 sm:px-6 sm:py-5 cursor-pointer transition-all ${selected === s.id ? 'bg-black' : 'bg-white hover:bg-gray-100'}`}
                         onClick={() => handleOpenProfile(s.id)}
                       >
-                        <Avatar name={`${s.nombre} ${s.apellido}`} size="48" round={true} />
+                        <Avatar name={`${s.nombre} ${s.apellido}`} size={48} round={true} />
                         <div>
-                          <div className={`font-semibold text-lg ${selected === s.id ? 'text-white' : 'text-gray-900'}`}>{s.nombre} {s.apellido}</div>
+                          <div className={`font-semibold text-base sm:text-lg ${selected === s.id ? 'text-white' : 'text-gray-900'}`}>{s.nombre} {s.apellido}</div>
                           <div className={`text-sm ${selected === s.id ? 'text-gray-200' : 'text-gray-500'}`}>{s.categoria}</div>
                         </div>
                         <div className="absolute top-4 right-4">

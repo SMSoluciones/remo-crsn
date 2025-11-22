@@ -192,22 +192,22 @@ export default function TechnicalSheets() {
   const totalPages = Math.ceil(filteredSheets.length / itemsPerPage);
 
   return (
-    <div className="bg-gray-50 min-h-screen p-8">
+    <div className="bg-gray-50 min-h-screen px-4 sm:px-8 py-6 sm:py-8 max-w-xs sm:max-w-6xl mx-auto">
       <div className="flex items-center gap-2 mb-6">
         <ChartBarIcon className="h-7 w-7 text-purple-600" />
         <h2 className="text-2xl font-bold text-gray-800">Fichas Técnicas</h2>
       </div>
       {user && ['admin', 'entrenador'].includes((user.rol || '').toLowerCase()) && (
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row items-center gap-2 mb-4 w-full">
           <button
             onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+            className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
           >
             {showForm ? 'Cancelar' : 'Nueva Ficha Técnica'}
           </button>
           <button
             onClick={handleReload}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition flex items-center gap-2"
+            className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition flex items-center gap-2 justify-center"
             title="Forzar recarga de fichas"
           >
             {reloading ? (
@@ -302,7 +302,33 @@ export default function TechnicalSheets() {
       {loading ? (
         <div className="text-center text-gray-500 py-8">Cargando fichas y alumnos...</div>
   ) : (
-  <div className="overflow-x-auto mb-8">
+  <div className="mb-8">
+        {/* Mobile: cards */}
+        <div className="space-y-4 sm:hidden">
+          {paginatedSheets.map(s => (
+            <div key={s._id || s.id} className="bg-white rounded-xl shadow p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="font-semibold text-base text-gray-800">{s.studentResolved || (s.studentId && (s.studentId.nombre ? `${s.studentId.nombre} ${s.studentId.apellido}` : s.studentId)) || s.student || ''}</div>
+                  <div className="text-sm text-gray-600">{s.entrenadorResolved || s.entrenador || ''}</div>
+                  <div className="text-sm text-gray-500 mt-2">{new Date(s.fecha).toLocaleDateString()}</div>
+                </div>
+                <div className="text-right">
+                  <button onClick={() => handleDeleteSheet(s._id || s.id)} className="text-red-600 text-sm">Eliminar</button>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2 flex-wrap">
+                <span className="px-3 py-1 rounded bg-green-50 text-green-700 text-sm">Postura: {s.postura}</span>
+                <span className="px-3 py-1 rounded bg-blue-50 text-blue-700 text-sm">Remada: {s.remada}</span>
+                <span className="px-3 py-1 rounded bg-teal-50 text-teal-700 text-sm">Equilibrio: {s.equilibrio}</span>
+              </div>
+              {s.observaciones && <div className="mt-3 text-sm text-gray-600">{s.observaciones}</div>}
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full bg-white rounded-xl shadow">
             <thead className="bg-gray-200">
               <tr>
@@ -339,6 +365,7 @@ export default function TechnicalSheets() {
             </tbody>
           </table>
         </div>
+      </div>
       )}
 
   <div className="flex justify-between items-center mt-4">
