@@ -27,14 +27,25 @@ export async function deleteStudent(id) {
 }
 
 export default { fetchStudents, createStudent, updateStudent, deleteStudent };
-// Modelo de datos para Alumnos
+// Modelo de datos para Alumnos (clase ligera para manejo en frontend)
 export class Student {
-  constructor({ id, nombre, apellido, dni, categoria, fechaIngreso }) {
+  constructor({ id, socioN, tipo, ciudad, nombre, apellido, dni, categoria, domicilio, nacimiento, celular, email, beca, competitivo, federado, estado, fechaIngreso }) {
     this.id = id;
+    this.socioN = socioN;
+    this.tipo = tipo;
+    this.ciudad = ciudad;
     this.nombre = nombre;
     this.apellido = apellido;
     this.dni = dni;
     this.categoria = categoria;
+    this.domicilio = domicilio;
+    this.nacimiento = nacimiento;
+    this.celular = celular;
+    this.email = email;
+    this.beca = beca || false;
+    this.competitivo = competitivo || false;
+    this.federado = federado || false;
+    this.estado = estado || '';
     this.fechaIngreso = fechaIngreso;
   }
 }
