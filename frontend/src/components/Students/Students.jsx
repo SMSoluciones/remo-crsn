@@ -307,12 +307,19 @@ export default function Students() {
                   <Avatar name={`${selectedStudent.nombre} ${selectedStudent.apellido}`} size="100" round={true} />
                   <div>
                     <div className="text-3xl font-bold text-gray-900 mb-4">{selectedStudent.nombre} {selectedStudent.apellido}</div>
-                    <div className="text-gray-700 mb-2">DNI: {selectedStudent.dni}</div>
-                    <div className="text-gray-700 mb-2">Edad: {selectedStudent.nacimiento}</div>
-                    <div className="text-gray-700 mb-2">Categoría: {selectedStudent.categoria}</div>
-                    <div className="text-gray-700 mb-2">Email: {selectedStudent.email}</div>
-                    <div className="text-gray-700 mb-2">Domicilio: {selectedStudent.domicilio}</div>
-                    <div className="text-gray-700 mb-2">Celular: {selectedStudent.celular}</div>
+                      <div className="text-gray-700 mb-2">N° Socio: {selectedStudent.socioN || '—'}</div>
+                      <div className="text-gray-700 mb-2">Tipo: {selectedStudent.tipo || '—'}</div>
+                      <div className="text-gray-700 mb-2">DNI: {selectedStudent.dni}</div>
+                      <div className="text-gray-700 mb-2">Nacimiento: {selectedStudent.nacimiento ? (new Date(selectedStudent.nacimiento)).toLocaleDateString() : '—'}</div>
+                      <div className="text-gray-700 mb-2">Categoría: {selectedStudent.categoria}</div>
+                      <div className="text-gray-700 mb-2">Ciudad: {selectedStudent.ciudad || '—'}</div>
+                      <div className="text-gray-700 mb-2">Estado: {selectedStudent.estado || '—'}</div>
+                      <div className="text-gray-700 mb-2">Email: {selectedStudent.email}</div>
+                      <div className="text-gray-700 mb-2">Domicilio: {selectedStudent.domicilio}</div>
+                      <div className="text-gray-700 mb-2">Celular: {selectedStudent.celular}</div>
+                      <div className="text-gray-700 mb-2">Beca: {selectedStudent.beca ? 'SI' : 'NO'}</div>
+                      <div className="text-gray-700 mb-2">Competitivo: {selectedStudent.competitivo ? 'SI' : 'NO'}</div>
+                      <div className="text-gray-700 mb-2">Federado: {selectedStudent.federado ? 'SI' : 'NO'}</div>
                   </div>
                 </div>
               )}

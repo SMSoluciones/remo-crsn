@@ -213,6 +213,37 @@ export default function Dashboard() {
 
         </div>
       </div>
+      {/* Estadísticas - movidas para aparecer arriba */}
+      <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 transition-transform duration-300 relative overflow-hidden box-border">
+        <h2 className="text-lg font-bold mb-4">Estadísticas</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-green-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
+            <LifebuoyIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
+            <h3 className="text-lg font-bold">Total de Botes</h3>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{totalBoats === null ? '...' : totalBoats}</p>
+            <p className="text-sm mt-1 opacity-90">Activos: {activeBoats === null ? '...' : activeBoats}</p>
+            {boatsError && <span className="text-xs mt-1 opacity-80">{boatsError}</span>}
+          </div>
+          <div className="bg-yellow-500 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
+            <WrenchScrewdriverIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
+            <h3 className="text-lg font-bold">Botes en reparación</h3>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{repairBoats === null ? '...' : repairBoats}</p>
+            {boatsError && <span className="text-xs mt-1 opacity-80">{boatsError}</span>}
+          </div>
+          <div className="bg-blue-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
+            <UserGroupIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
+            <h3 className="text-lg font-bold">Alumnos activos</h3>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{studentsCount === null ? '...' : studentsCount}</p>
+            {studentsError && <span className="text-xs mt-1 opacity-80">{studentsError}</span>}
+          </div>
+          <div className="bg-purple-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
+            <ChartBarIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
+            <h3 className="text-lg font-bold">Promedio técnico</h3>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{globalAvg === null ? '...' : (typeof globalAvg === 'number' ? globalAvg.toFixed(1) : globalAvg)}</p>
+            {avgError && <span className="text-xs mt-1 opacity-80">{avgError}</span>}
+          </div>
+        </div>
+      </div>
       <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden box-border">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-2xl font-bold uppercase">ANUNCIOS</h2>
@@ -294,7 +325,7 @@ export default function Dashboard() {
         </div>
 
         {/* Casilleros secundarios */}
-        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
+        <div className="hidden bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">Ranking</h2>
             <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
@@ -302,7 +333,6 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="text-3xl sm:text-4xl font-bold">24</div>
-       
         </div>
 
         <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
@@ -313,42 +343,11 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="text-3xl sm:text-4xl font-bold">24</div>
-       
         </div>
 
-        {/* Casillero grande */}
-        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between md:col-span-2 h-auto w-full max-w-xs sm:max-w-full mx-auto sm:mx-0">
-          <h2 className="text-lg font-bold mb-4">Estadísticas</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-green-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-              <LifebuoyIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
-              <h3 className="text-lg font-bold">Total de Botes</h3>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{totalBoats === null ? '...' : totalBoats}</p>
-              <p className="text-sm mt-1 opacity-90">Activos: {activeBoats === null ? '...' : activeBoats}</p>
-              {boatsError && <span className="text-xs mt-1 opacity-80">{boatsError}</span>}
-            </div>
-            <div className="bg-yellow-500 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-              <WrenchScrewdriverIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
-              <h3 className="text-lg font-bold">Botes en reparación</h3>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{repairBoats === null ? '...' : repairBoats}</p>
-              {boatsError && <span className="text-xs mt-1 opacity-80">{boatsError}</span>}
-            </div>
-            <div className="bg-blue-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-              <UserGroupIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
-              <h3 className="text-lg font-bold">Alumnos activos</h3>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{studentsCount === null ? '...' : studentsCount}</p>
-              {studentsError && <span className="text-xs mt-1 opacity-80">{studentsError}</span>}
-            </div>
-            <div className="bg-purple-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-              <ChartBarIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
-              <h3 className="text-lg font-bold">Promedio técnico</h3>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{globalAvg === null ? '...' : globalAvg.toFixed(1)}</p>
-              {avgError && <span className="text-xs mt-1 opacity-80">{avgError}</span>}
-            </div>
-          </div>
-        </div>
+        
 
-        <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0">
+        <div className="hidden bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">Total Projects</h2>
             <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
