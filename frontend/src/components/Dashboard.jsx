@@ -4,6 +4,7 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { fetchStudents } from '../models/Student';
 import { fetchBoats } from '../models/Boat';
+import { createBoatUsage, fetchBoatUsages } from '../models/BoatUsage';
 import { fetchAllSheets, fetchSheetsByStudent } from '../models/TechnicalSheet';
 import { useAuth } from '../context/useAuth';
 import { fetchEvents } from '../models/Event';
@@ -18,6 +19,7 @@ import AnnouncementsListModal from './Announcements/AnnouncementsListModal';
 import UsersAdminModal from './Login/UsersAdminModal.jsx';
 import EventsListModal from './Events/EventsListModal';
 import ArrivalsListModal from './Students/ArrivalsListModal';
+import { showSuccess, showError } from '../utils/toast';
 import {
   LifebuoyIcon,
   WrenchScrewdriverIcon,
@@ -42,17 +44,26 @@ export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(null);
+  const [boatsList, setBoatsList] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [annLoading, setAnnLoading] = useState(true);
   const [annError, setAnnError] = useState(null);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);
   const [isUsersAdminOpen, setIsUsersAdminOpen] = useState(false);
+  const [isRemarHistoryOpen, setIsRemarHistoryOpen] = useState(false);
+  const [remarHistory, setRemarHistory] = useState([]);
+  const [remarHistoryLoading, setRemarHistoryLoading] = useState(false);
+  const [remarHistoryError, setRemarHistoryError] = useState(null);
   const role = String(user?.rol || '').trim().toLowerCase();
   const canManageEvents = ['admin','entrenador','mantenimiento','subcomision'].includes(role);
   const [isEventsListOpen, setIsEventsListOpen] = useState(false);
   const [isArrivalsListOpen, setIsArrivalsListOpen] = useState(false);
   const [isAnnouncementsListOpen, setIsAnnouncementsListOpen] = useState(false);
+  const [isRemarOpen, setIsRemarOpen] = useState(false);
+  const [selectedBoatId, setSelectedBoatId] = useState('');
+  const [durationHours, setDurationHours] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
   // Ajustes del slider para eventos
   
   const eventSliderSettings = {
@@ -180,6 +191,7 @@ export default function Dashboard() {
       .then((list) => {
         if (!mounted) return;
         const boats = Array.isArray(list) ? list : [];
+        setBoatsList(boats);
         const norm = (v) => (v ?? '').toString().trim().toLowerCase();
         setTotalBoats(boats.length);
         setActiveBoats(boats.filter(b => norm(b.estado) === 'activo').length);
@@ -278,6 +290,27 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4">
           {canManageEvents && (
             <button
+              onClick={async () => {
+                setIsRemarHistoryOpen(true);
+                setRemarHistoryLoading(true);
+                setRemarHistoryError(null);
+                try {
+                  const list = await fetchBoatUsages();
+                  setRemarHistory(list || []);
+                } catch (err) {
+                  console.error('Error cargando historial Remar', err);
+                  setRemarHistoryError('No se pudo cargar el historial');
+                } finally {
+                  setRemarHistoryLoading(false);
+                }
+              }}
+              className="max-w-xs w-full sm:w-auto mx-auto sm:mx-0 px-4 py-3 text-base sm:text-sm bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors flex items-center justify-center text-center"
+            >
+              Historial Remar
+            </button>
+          )}
+          {canManageEvents && (
+            <button
               onClick={() => setIsAddEventOpen(true)}
               className="max-w-xs w-full sm:w-auto mx-auto sm:mx-0 px-4 py-3 text-base sm:text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors flex items-center justify-center text-center"
             >
@@ -303,6 +336,53 @@ export default function Dashboard() {
 
         </div>
       </div>
+      {/* REMAR History Modal */}
+      {isRemarHistoryOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setIsRemarHistoryOpen(false)}>
+          <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg p-4 mx-4" onClick={(e) => e.stopPropagation()} data-aos="zoom-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Historial Remar</h3>
+              <button onClick={() => setIsRemarHistoryOpen(false)} className="text-gray-600 hover:text-gray-800">Cerrar</button>
+            </div>
+            {remarHistoryLoading ? (
+              <div className="py-6 flex justify-center"><BeatLoader color="#1E40AF" /></div>
+            ) : remarHistoryError ? (
+              <div className="text-red-600">{remarHistoryError}</div>
+            ) : (
+              <div className="overflow-auto max-h-96">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-sm text-gray-600 border-b">
+                      <th className="p-2">Bote</th>
+                      <th className="p-2">Usuario</th>
+                      <th className="p-2">Salida</th>
+                      <th className="p-2">Regreso estimado</th>
+                      <th className="p-2">Duración (h)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {remarHistory.length === 0 ? (
+                      <tr><td colSpan={5} className="p-4 text-sm text-gray-600">Sin registros</td></tr>
+                    ) : remarHistory.map((r) => {
+                      const boat = boatsList.find(b => (b._id || b.id) == (r.boatId || r.boat)) || {};
+                      return (
+                        <tr key={r._id || r.id} className="border-b hover:bg-gray-50">
+                          <td className="p-2 align-top">{boat.nombre || boat.name || (r.boatId || r.boat)}</td>
+                          <td className="p-2 align-top">{r.userName || r.userEmail || 'Desconocido'}</td>
+                          <td className="p-2 align-top">{r.requestedAt ? new Date(r.requestedAt).toLocaleString('es-ES') : ''}</td>
+                          <td className="p-2 align-top">{r.estimatedReturn ? new Date(r.estimatedReturn).toLocaleString('es-ES') : ''}</td>
+                          <td className="p-2 align-top">{r.durationHours}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* Estadísticas - movidas para aparecer arriba */}
       <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 transition-transform duration-300 relative overflow-hidden box-border">
         <h2 className="text-lg font-bold mb-4">Estadísticas</h2>
@@ -374,6 +454,25 @@ export default function Dashboard() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-6xl">
           {/* Casillero principal */}
+        {/* REMAR (same size as Eventos) */}
+        <div
+          data-aos="fade-up"
+          data-aos-duration="700"
+          data-aos-delay="480"
+          role="button"
+          tabIndex={0}
+          onClick={() => setIsRemarOpen(true)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsRemarOpen(true); } }}
+          className="bg-blue-600 text-white rounded-2xl p-4 shadow-lg h-auto md:h-56 transition-transform duration-300 hover:scale-105 transform relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border cursor-pointer"
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-2xl font-extrabold">REMAR</h2>
+            <button onClick={(e) => { e.stopPropagation(); setIsRemarOpen(true); }} aria-label="Abrir Remar" className="relative z-20 text-white bg-orange-500 rounded-full p-2 hover:bg-orange-600">
+              <ArrowUpRightIcon className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
         <div data-aos="fade-up" data-aos-duration="700" data-aos-delay="500" className="bg-white text-black rounded-2xl p-4 shadow-lg h-auto md:h-56 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-bold">Eventos</h2>
@@ -468,6 +567,59 @@ export default function Dashboard() {
 
         <ArrivalsListModal isOpen={isArrivalsListOpen} onRequestClose={() => setIsArrivalsListOpen(false)} />
         <AnnouncementsListModal isOpen={isAnnouncementsListOpen} onRequestClose={() => setIsAnnouncementsListOpen(false)} />
+
+        {/* REMAR Modal (select boat + duration) */}
+        {isRemarOpen && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setIsRemarOpen(false)}>
+            <div className="w-full max-w-lg mx-auto bg-white rounded-xl shadow-lg p-6 outline-none transform transition-all duration-300" onClick={(e) => e.stopPropagation()} data-aos="zoom-in">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Remar</h3>
+                <button onClick={() => setIsRemarOpen(false)} className="text-gray-600 hover:text-gray-800">Cerrar</button>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                <label className="text-sm font-medium">Seleccionar bote</label>
+                <select value={selectedBoatId} onChange={(e) => setSelectedBoatId(e.target.value)} className="border rounded px-3 py-2 w-full">
+                  <option value="">-- Seleccione un bote --</option>
+                  {boatsList.map((b) => (
+                    <option key={b._id || b.id} value={b._id || b.id}>{b.nombre || b.name || b.nombre}</option>
+                  ))}
+                </select>
+
+                <label className="text-sm font-medium">Duración estimada</label>
+                <div className="flex gap-2">
+                  {[1,2,3,4,6].map((h) => (
+                    <button key={h} onClick={() => setDurationHours(h)} type="button" className={`px-3 py-2 rounded ${durationHours===h? 'bg-blue-800 text-white':'bg-gray-100'}`}>
+                      {h} {h===1? 'hora' : 'horas'}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="text-sm text-gray-700">
+                  <div>Hora solicitada: {new Date().toLocaleString('es-ES')}</div>
+                  <div>Hora estimada de regreso: {new Date(Date.now() + (durationHours * 60 * 60 * 1000)).toLocaleString('es-ES')}</div>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={() => setIsRemarOpen(false)} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+                <button disabled={submitting} onClick={async () => {
+                  if (!selectedBoatId) { showError('Seleccione un bote'); return; }
+                  try {
+                    setSubmitting(true);
+                    await createBoatUsage({ boatId: selectedBoatId, durationHours }, user);
+                    showSuccess('Solicitud registrada');
+                    setIsRemarOpen(false);
+                    // reset
+                    setSelectedBoatId('');
+                    setDurationHours(1);
+                  } catch (err) {
+                    console.error(err);
+                    showError(err.message || 'Error al registrar solicitud');
+                  } finally { setSubmitting(false); }
+                }} className="px-4 py-2 bg-green-600 text-white rounded">{submitting? 'Enviando...' : 'Guardar'}</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         
 
