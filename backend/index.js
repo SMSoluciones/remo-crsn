@@ -7,7 +7,20 @@ const cors = require('cors');
 const app = express();
 // Add request logging and robust CORS to aid debugging from browser
 const morgan = require('morgan');
-app.use(morgan('dev'));
+const fs = require('fs');
+const logsDir = path.join(__dirname, 'logs');
+try {
+  if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
+} catch (err) {
+  console.warn('Could not create logs directory:', err);
+}
+// Use 'dev' format locally and 'combined' with file output in production
+if (process.env.NODE_ENV === 'production') {
+  const accessLogStream = fs.createWriteStream(path.join(logsDir, 'access.log'), { flags: 'a' });
+  app.use(morgan('combined', { stream: accessLogStream }));
+} else {
+  app.use(morgan('dev'));
+}
 
 // Allow custom headers x-user-id and x-user-role for our header-based auth
 const corsOptions = {
