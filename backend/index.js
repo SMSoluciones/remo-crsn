@@ -5,11 +5,20 @@ const cors = require('cors');
 
 
 const app = express();
+// Add request logging and robust CORS to aid debugging from browser
+const morgan = require('morgan');
+app.use(morgan('dev'));
+
 // Allow custom headers x-user-id and x-user-role for our header-based auth
-app.use(cors({
-  allowedHeaders: ['Content-Type', 'x-user-id', 'x-user-role', 'x-user-email'],
-  exposedHeaders: ['x-user-id', 'x-user-role', 'x-user-email'],
-}));
+const corsOptions = {
+  origin: true,
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  // Allow the custom user headers the frontend sends
+  allowedHeaders: ['Content-Type', 'x-user-id', 'x-user-role', 'x-user-email', 'x-user-name', 'x-user-fullname', 'x-user'],
+  exposedHeaders: ['x-user-id', 'x-user-role', 'x-user-email', 'x-user-name', 'x-user-fullname', 'x-user'],
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 const path = require('path');
 // Servir archivos subidos (fotos)

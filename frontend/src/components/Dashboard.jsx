@@ -342,7 +342,20 @@ export default function Dashboard() {
           <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg p-4 mx-4" onClick={(e) => e.stopPropagation()} data-aos="zoom-in">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Historial Remar</h3>
-              <button onClick={() => setIsRemarHistoryOpen(false)} className="text-gray-600 hover:text-gray-800">Cerrar</button>
+              <div className="flex items-center gap-2">
+                <button onClick={async () => {
+                  setRemarHistoryLoading(true);
+                  setRemarHistoryError(null);
+                  try {
+                    const list = await fetchBoatUsages();
+                    setRemarHistory(list || []);
+                  } catch (err) {
+                    console.error('Error refrescando historial', err);
+                    setRemarHistoryError('No se pudo cargar el historial');
+                  } finally { setRemarHistoryLoading(false); }
+                }} className="text-sm px-3 py-1 bg-gray-100 rounded">Refrescar</button>
+                <button onClick={() => setIsRemarHistoryOpen(false)} className="text-gray-600 hover:text-gray-800">Cerrar</button>
+              </div>
             </div>
             {remarHistoryLoading ? (
               <div className="py-6 flex justify-center"><BeatLoader color="#1E40AF" /></div>
@@ -604,13 +617,24 @@ export default function Dashboard() {
                 <button disabled={submitting} onClick={async () => {
                   if (!selectedBoatId) { showError('Seleccione un bote'); return; }
                   try {
-                    setSubmitting(true);
-                    await createBoatUsage({ boatId: selectedBoatId, durationHours }, user);
-                    showSuccess('Solicitud registrada');
-                    setIsRemarOpen(false);
-                    // reset
-                    setSelectedBoatId('');
-                    setDurationHours(1);
+                      setSubmitting(true);
+                      await createBoatUsage({ boatId: selectedBoatId, durationHours }, user);
+                      showSuccess('Solicitud registrada');
+                      // refresh history if open
+                      if (isRemarHistoryOpen) {
+                        setRemarHistoryLoading(true);
+                        try {
+                          const list = await fetchBoatUsages();
+                          setRemarHistory(list || []);
+                        } catch (err) {
+                          console.error('Error refrescando historial tras crear uso', err);
+                          // don't block success flow
+                        } finally { setRemarHistoryLoading(false); }
+                      }
+                      setIsRemarOpen(false);
+                      // reset
+                      setSelectedBoatId('');
+                      setDurationHours(1);
                   } catch (err) {
                     console.error(err);
                     showError(err.message || 'Error al registrar solicitud');
