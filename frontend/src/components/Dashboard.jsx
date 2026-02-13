@@ -5,6 +5,7 @@ import 'aos/dist/aos.css';
 import { fetchStudents } from '../models/Student';
 import { fetchBoats } from '../models/Boat';
 import { createBoatUsage, fetchBoatUsages } from '../models/BoatUsage';
+import { API_BASE_URL } from '../utils/apiConfig';
 import { fetchAllSheets, fetchSheetsByStudent } from '../models/TechnicalSheet';
 import { useAuth } from '../context/useAuth';
 import { fetchEvents } from '../models/Event';
@@ -55,6 +56,7 @@ export default function Dashboard() {
   const [remarHistory, setRemarHistory] = useState([]);
   const [remarHistoryLoading, setRemarHistoryLoading] = useState(false);
   const [remarHistoryError, setRemarHistoryError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const role = String(user?.rol || '').trim().toLowerCase();
   const canManageEvents = ['admin','entrenador','mantenimiento','subcomision'].includes(role);
   const [isEventsListOpen, setIsEventsListOpen] = useState(false);
@@ -371,11 +373,12 @@ export default function Dashboard() {
                       <th className="p-2">Salida</th>
                       <th className="p-2">Regreso estimado</th>
                       <th className="p-2">Duración (h)</th>
+                      <th className="p-2">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {remarHistory.length === 0 ? (
-                      <tr><td colSpan={5} className="p-4 text-sm text-gray-600">Sin registros</td></tr>
+                      <tr><td colSpan={6} className="p-4 text-sm text-gray-600">Sin registros</td></tr>
                     ) : remarHistory.map((r) => {
                       const boat = boatsList.find(b => (b._id || b.id) == (r.boatId || r.boat)) || {};
                       return (
@@ -385,6 +388,46 @@ export default function Dashboard() {
                           <td className="p-2 align-top">{r.requestedAt ? new Date(r.requestedAt).toLocaleString('es-ES') : ''}</td>
                           <td className="p-2 align-top">{r.estimatedReturn ? new Date(r.estimatedReturn).toLocaleString('es-ES') : ''}</td>
                           <td className="p-2 align-top">{r.durationHours}</td>
+                          <td className="p-2 align-top">
+                            {role === 'admin' ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  title="Eliminar"
+                                  disabled={deletingId === (r._id||r.id)}
+                                  onClick={async () => {
+                                    if (!window.confirm('¿Eliminar esta entrada del historial?')) return;
+                                    const id = r._id || r.id;
+                                    try {
+                                      setDeletingId(id);
+                                      const url = `${API_BASE_URL}/api/boat-usages/${id}`;
+                                      const headers = { 'Content-Type': 'application/json' };
+                                      const isLocal = API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
+                                      if (isLocal && user) {
+                                        if (user.rol) headers['x-user-role'] = user.rol;
+                                        if (user._id) headers['x-user-id'] = user._id;
+                                      }
+                                      const res = await fetch(url, { method: 'DELETE', headers, body: JSON.stringify({ userRole: user?.rol }) });
+                                      if (!res.ok) {
+                                        const body = await res.json().catch(() => ({}));
+                                        throw new Error(body.error || body.message || `HTTP ${res.status}`);
+                                      }
+                                      setRemarHistory(prev => prev.filter(it => String(it._id||it.id) !== String(id)));
+                                    } catch (err) {
+                                      console.error('Delete remar failed', err);
+                                      alert('No se pudo eliminar: ' + (err.message || 'error'));
+                                    } finally {
+                                      setDeletingId(null);
+                                    }
+                                  }}
+                                  className="text-white bg-red-600 hover:bg-red-700 w-6 h-6 flex items-center justify-center rounded-full text-sm"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-500">Sin permisos</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}

@@ -148,11 +148,21 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
                     <td className="px-2 py-2 align-top">{fmtDate(u.estimatedReturn)}</td>
                     <td className="px-2 py-2 align-top">{u.durationHours ?? u.hours ?? '—'}</td>
                     <td className="px-2 py-2 align-top">{u.note || u.nota || '—'}</td>
-                    <td className="px-2 py-2 align-top">
+                    <td className="px-2 py-2 align-top flex items-center gap-2">
                       {String(user?.rol || '').toLowerCase() === 'admin' ? (
-                        <button disabled={deletingId === (u._id||u.id)} onClick={() => handleDelete(u._id||u.id)} className="px-2 py-1 bg-red-500 text-white rounded">
-                          {deletingId === (u._id||u.id) ? 'Eliminando...' : 'Eliminar'}
-                        </button>
+                        <>
+                          <button
+                            title="Eliminar"
+                            disabled={deletingId === (u._id||u.id)}
+                            onClick={() => handleDelete(u._id||u.id)}
+                            className="text-white bg-red-600 hover:bg-red-700 w-6 h-6 flex items-center justify-center rounded-full text-sm"
+                          >
+                            ×
+                          </button>
+                          <button disabled={deletingId === (u._id||u.id)} onClick={() => handleDelete(u._id||u.id)} className="px-2 py-1 bg-red-500 text-white rounded">
+                            {deletingId === (u._id||u.id) ? 'Eliminando...' : 'Eliminar'}
+                          </button>
+                        </>
                       ) : (
                         <span className="text-xs text-gray-500">Sin permisos</span>
                       )}
