@@ -11,6 +11,9 @@ app.use(cors({
   exposedHeaders: ['x-user-id', 'x-user-role', 'x-user-email'],
 }));
 app.use(express.json());
+const path = require('path');
+// Servir archivos subidos (fotos)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const PORT = process.env.PORT || 5002;
 const MONGO_URI = process.env.MONGO_URI;
