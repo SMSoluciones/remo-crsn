@@ -22,7 +22,7 @@ async function getUsers() {
       nombre: 'Sebastian',
       apellido: 'Muñoz',
       email: 'smunoz.id@gmail.com',
-      rol: 'admin',
+      rol: 'alumnos',
       password: await bcrypt.hash('123456', 10),
     },
     {
@@ -39,6 +39,7 @@ async function getUsers() {
       rol: 'mantenimiento',
       password: await bcrypt.hash('123456', 10),
     },
+    
   ];
 }
 
@@ -783,7 +784,7 @@ async function seed() {
         Domicilio: "Rioja 66",
         Ciudad: "San Nicolas",
         Fecha_Nac: "1990-01-15 00:00:00",
-        Ingreso: "2026-01-01 00:00:00",
+        Ingreso: "2026-01-02 00:00:00",
         DNI: "35070283",
         Celular: "3364205059",
         Mail: "smunoz.id@gmail.com",

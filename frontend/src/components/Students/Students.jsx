@@ -5,7 +5,7 @@ import { showError, showSuccess } from '../../utils/toast';
 import { fetchStudents, deleteStudent } from '../../models/Student';
 import { fetchSheetsByStudent } from '../../models/TechnicalSheet';
 import Avatar from 'react-avatar';
-import ClipLoader from 'react-spinners/ClipLoader';
+import BeatLoader from 'react-spinners/BeatLoader';
 import { EllipsisVerticalIcon, UserIcon, PlusIcon } from '@heroicons/react/24/outline';
 import AddStudentModal from './AddStudentModal';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
@@ -14,9 +14,11 @@ export default function Students() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const role = String(user?.rol || '').trim().toLowerCase();
   const [selected, setSelected] = useState('s1');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [estadoFilter, setEstadoFilter] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [openMenuFor, setOpenMenuFor] = useState(null);
   const [sheets, setSheets] = useState({}); // { studentId: [fichas...] }
@@ -29,11 +31,21 @@ export default function Students() {
   // Lista de categorías disponibles (únicas)
   const categories = Array.from(new Set(students.map(s => s.categoria).filter(Boolean)));
 
-  // Filtrado por nombre y categoría
+  // Contadores por estado
+  const activeCount = students.filter(s => (String(s.estado || '').toUpperCase() === 'ACTIVO')).length;
+  const inactiveCount = students.filter(s => (String(s.estado || '').toUpperCase() === 'INACTIVO')).length;
+  // Roles que pueden ver alumnos INACTIVOS
+  const canViewInactive = ['entrenador', 'mantenimiento', 'admin'].includes(role);
+
+  // Filtrado por nombre, categoría y estado
   const filtered = students.filter(s => {
     const matchesName = (`${s.nombre} ${s.apellido}`.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = !categoryFilter || s.categoria === categoryFilter;
-    return matchesName && matchesCategory;
+    const matchesEstado = !estadoFilter || (String(s.estado || '').toUpperCase() === String(estadoFilter).toUpperCase());
+    const isInactive = String(s.estado || '').toUpperCase() === 'INACTIVO';
+    // Ocultar alumnos inactivos a roles no autorizados
+    if (isInactive && !canViewInactive) return false;
+    return matchesName && matchesCategory && matchesEstado;
   });
 
   useEffect(() => {
@@ -42,8 +54,8 @@ export default function Students() {
     fetchStudents()
       .then(data => {
         if (!mounted) return;
-        // API might return items with _id — normalize to id
-        const normalized = data.map(s => ({ id: s._id || s.id || s.dni, ...s }));
+        // API might return items with _id — normalize to id and guard non-array responses
+        const normalized = Array.isArray(data) ? data.map(s => ({ ...s, id: s._id || s.id || s.dni })) : [];
         setStudents(normalized);
       })
       .catch(err => {
@@ -71,31 +83,33 @@ export default function Students() {
   const paginatedSheets = studentSheets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Abrir perfil
-  const handleOpenProfile = useCallback((id) => {
+  const handleOpenProfile = useCallback(async (id) => {
     // Permitir acceso si:
     // - el usuario es admin
     // - el usuario es entrenador
     // - o el email del usuario logueado coincide con el email del estudiante (puede ver su propia ficha)
     const student = students.find(s => s.id === id);
-  const isAdminOrCoach = user && (user.rol === 'admin' || user.rol === 'entrenador');
-  // Normalizar y comparar trimming + lowercase para evitar fallos por espacios o mayúsculas
-  const userEmail = user && user.email ? String(user.email).trim().toLowerCase() : null;
-  const studentEmail = student && student.email ? String(student.email).trim().toLowerCase() : null;
-  const isSameEmail = userEmail && studentEmail && userEmail === studentEmail;
+    const isAdminOrCoach = role === 'admin' || role === 'entrenador';
+    // Normalizar y comparar trimming + lowercase para evitar fallos por espacios o mayúsculas
+    const userEmail = user && user.email ? String(user.email).trim().toLowerCase() : null;
+    const studentEmail = student && student.email ? String(student.email).trim().toLowerCase() : null;
+    const isSameEmail = userEmail && studentEmail && userEmail === studentEmail;
     if (!user || (!isAdminOrCoach && !isSameEmail)) {
       showError('No tienes permisos para ver el perfil del alumno.');
       return;
     }
-    // fetch sheets for this student (pass user so headers are included)
-    fetchSheetsByStudent(id, user).then(data => {
-      setSheets(prev => ({ ...prev, [id]: data }));
+
+    try {
+      const data = await fetchSheetsByStudent(id, user);
+      // Asegurar que almacenamos siempre un array
+      setSheets(prev => ({ ...prev, [id]: Array.isArray(data) ? data : [] }));
       setSelected(id);
       setShowProfile(true);
-    }).catch(err => {
+    } catch (err) {
       console.error('Error fetching sheets for student', err);
       showError('No se pudieron cargar las fichas del alumno.');
-    });
-  }, [students, user]);
+    }
+  }, [students, role, user]);
 
   // Si existe la key `open_student_email` en localStorage (pulsada desde la Sidebar),
   // buscar el alumno con ese email y abrir su ficha automáticamente.
@@ -177,7 +191,7 @@ export default function Students() {
   // Agregar ficha técnica (POST al backend)
   const handleAddSheet = async (e) => {
     e.preventDefault();
-    if (!user || (user.rol !== 'admin' && user.rol !== 'entrenador')) {
+    if (!user || !(role === 'admin' || role === 'entrenador')) {
       showError('No tiene permisos para crear fichas técnicas');
       return;
     }
@@ -196,33 +210,66 @@ export default function Students() {
     }
   };
 
-  if (user.role === 'student') {
-    return <ProtectedRoute />;
-  }
+  // Allow 'alumnos' to access the students view so they can see active students and their own profile.
 
   return (
     <ProtectedRoute>
       <div className="flex min-h-screen bg-gray-50">
-        {/* Sidebar */}
-          <aside className="hidden sm:flex w-20 bg-white border-r flex-col items-center py-8 gap-8">
-          <UserIcon className="h-7 w-7 text-gray-400" />
-          {user?.rol === 'admin' || user?.rol === 'entrenador' ? (
-            <button onClick={() => setShowAddStudent(true)} className="bg-black rounded-full p-2 hover:bg-gray-800 transition">
-              <PlusIcon className="h-6 w-6 text-white" />
+        {/* Sidebar: avatares para filtrar por estado */}
+        <aside className="hidden sm:flex w-24 bg-white border-r flex-col items-center py-6 gap-4">
+          <div className="flex flex-col items-center gap-4">
+            <button
+              onClick={(e) => { e.stopPropagation(); setEstadoFilter(prev => prev === 'ACTIVO' ? '' : 'ACTIVO'); }}
+              title="Activos"
+              className="flex flex-col items-center gap-1 focus:outline-none"
+            >
+              <div className={`relative w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 ${estadoFilter === 'ACTIVO' ? 'ring-2 ring-green-400' : ''}`}>
+                <UserIcon className={`h-6 w-6 ${estadoFilter === 'ACTIVO' ? 'text-green-700' : 'text-gray-500'}`} />
+                {activeCount > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-green-600 rounded-full">
+                    {activeCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-gray-700">Activos</span>
             </button>
-          ) : (
-            <button className="bg-gray-200 rounded-full p-2 cursor-not-allowed" title="Solo administradores o entrenadores"> 
-              <PlusIcon className="h-6 w-6 text-gray-400" />
+
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!canViewInactive) { showError('No tienes permisos para ver alumnos inactivos'); return; } setEstadoFilter(prev => prev === 'INACTIVO' ? '' : 'INACTIVO'); }}
+              title={canViewInactive ? 'Inactivos' : 'No autorizado'}
+              className={`flex flex-col items-center gap-1 focus:outline-none ${!canViewInactive ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
+              <div className={`relative w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 ${estadoFilter === 'INACTIVO' ? 'ring-2 ring-red-400' : ''}`}>
+                <UserIcon className={`h-6 w-6 ${estadoFilter === 'INACTIVO' ? 'text-red-700' : 'text-gray-500'}`} />
+                {inactiveCount > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                    {inactiveCount}
+                  </span>
+                )}
+                {/* tachado: línea sobre el icono */}
+                <div className="absolute left-0 right-0 top-1/2" style={{ height: 2, background: '#333', transform: 'rotate(-20deg)' }} />
+              </div>
+              <span className="text-xs text-gray-700">Inactivos</span>
             </button>
-          )}
+
+            {(role === 'admin' || role === 'entrenador') ? (
+              <button onClick={() => setShowAddStudent(true)} className="bg-black rounded-full p-2 hover:bg-gray-800 transition mt-2">
+                <PlusIcon className="h-6 w-6 text-white" />
+              </button>
+            ) : (
+              <button className="bg-gray-200 rounded-full p-2 cursor-not-allowed mt-2" title="Solo administradores o entrenadores"> 
+                <PlusIcon className="h-6 w-6 text-gray-400" />
+              </button>
+            )}
+          </div>
         </aside>
         {/* Main content */}
         <div className="flex-1 flex flex-col px-4 sm:px-12 py-6 sm:py-10 max-w-xs sm:max-w-6xl mx-auto">
           {!showProfile ? (
             openingByEmail ? (
               <div className="flex items-center justify-center w-full py-20 text-gray-600">
-                <ClipLoader color="#16a34a" loading={true} size={48} />
-              </div>
+                  <BeatLoader color="#16a34a" loading={true} size={12} />
+                </div>
             ) : (
               <>
                 <div className="flex items-center justify-between mb-8">
@@ -250,7 +297,7 @@ export default function Students() {
                   </div>
                   {/* Botón "Nuevo Alumno" visible en móvil debajo de los filtros */}
                   <div className="w-full sm:hidden">
-                    {user?.rol === 'admin' || user?.rol === 'entrenador' ? (
+                    {(role === 'admin' || role === 'entrenador') ? (
                       <button onClick={() => setShowAddStudent(true)} className="w-full bg-black text-white rounded px-4 py-2">Nuevo alumno</button>
                     ) : (
                       <button className="w-full bg-gray-200 text-gray-500 rounded px-4 py-2 cursor-not-allowed" title="Solo administradores o entrenadores">Nuevo alumno</button>
@@ -258,41 +305,41 @@ export default function Students() {
                   </div>
                 </div>
                 {loading ? (
-                  <div className="text-center text-gray-500 py-8">Cargando alumnos...</div>
+                  <div className="flex items-center justify-center py-8"><BeatLoader color="#1E40AF" /></div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filtered.map(s => (
-                      <div
-                        key={s.id}
-                        className={`relative rounded-xl shadow flex items-center gap-4 px-4 py-4 sm:px-6 sm:py-5 cursor-pointer transition-all ${selected === s.id ? 'bg-black' : 'bg-white hover:bg-gray-100'}`}
-                        onClick={() => handleOpenProfile(s.id)}
-                      >
-                        <Avatar name={`${s.nombre} ${s.apellido}`} size={48} round={true} />
-                        <div>
-                          <div className={`font-semibold text-base sm:text-lg ${selected === s.id ? 'text-white' : 'text-gray-900'}`}>{s.nombre} {s.apellido}</div>
-                          <div className={`text-sm ${selected === s.id ? 'text-gray-200' : 'text-gray-500'}`}>{s.categoria}</div>
-                        </div>
-                        <div className="absolute top-4 right-4">
-                          <button onClick={(e) => { e.stopPropagation(); setOpenMenuFor(openMenuFor === s.id ? null : s.id); }} className="p-1 rounded hover:bg-gray-100">
-                            <EllipsisVerticalIcon className={`h-5 w-5 ${selected === s.id ? 'text-white' : 'text-gray-400'}`} />
-                          </button>
-                          {openMenuFor === s.id && (
-                            <div className="mt-2 w-40 bg-white border rounded shadow-lg text-sm right-0 absolute">
-                              <ul>
-                                {user?.rol === 'admin' && (
+                        <div
+                          key={s.id}
+                          className="relative rounded-xl shadow flex items-center gap-4 px-4 py-4 sm:px-6 sm:py-5 cursor-pointer transition-all bg-white hover:bg-blue-600 group"
+                          onClick={() => handleOpenProfile(s.id)}
+                        >
+                          <Avatar name={`${s.nombre} ${s.apellido}`} size={48} round={true} />
+                          <div>
+                            <div className="font-semibold text-base sm:text-lg text-gray-900 group-hover:text-white">{s.nombre} {s.apellido}</div>
+                            <div className="text-sm text-gray-500 group-hover:text-white">{s.categoria}</div>
+                          </div>
+                          <div className="absolute top-4 right-4">
+                            <button onClick={(e) => { e.stopPropagation(); setOpenMenuFor(openMenuFor === s.id ? null : s.id); }} className="p-1 rounded">
+                              <EllipsisVerticalIcon className="h-5 w-5 text-gray-400 group-hover:text-white" />
+                            </button>
+                            {openMenuFor === s.id && (
+                              <div className="mt-2 w-40 bg-white border rounded shadow-lg text-sm right-0 absolute">
+                                <ul>
+                                  {role === 'admin' && (
+                                    <li>
+                                      <button onClick={(ev) => { ev.stopPropagation(); if (!window.confirm('¿Seguro que desea eliminar este alumno?')) { setOpenMenuFor(null); return; } handleDeleteStudent(s.id); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600">Eliminar</button>
+                                    </li>
+                                  )}
                                   <li>
-                                    <button onClick={(ev) => { ev.stopPropagation(); if (!window.confirm('¿Seguro que desea eliminar este alumno?')) { setOpenMenuFor(null); return; } handleDeleteStudent(s.id); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600">Eliminar</button>
+                                    <button onClick={(ev) => { ev.stopPropagation(); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-gray-100">Cancelar</button>
                                   </li>
-                                )}
-                                <li>
-                                  <button onClick={(ev) => { ev.stopPropagation(); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-gray-100">Cancelar</button>
-                                </li>
-                              </ul>
-                            </div>
-                          )}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 )}
               </>
@@ -366,8 +413,8 @@ export default function Students() {
                       const puntajes = [sheet.postura, sheet.remada, sheet.equilibrio, sheet.coordinacion, sheet.resistencia, sheet.velocidad].map(p => Number(p) || 0);
                       const promedio = (puntajes.reduce((a, b) => a + b, 0) / puntajes.length).toFixed(1);
                       const fechaFormateada = new Date(sheet.fecha).toLocaleDateString('es-ES');
-                      return (
-                        <div key={idx} className="bg-white rounded-xl shadow-lg p-8 flex flex-col gap-6 border-l-4" style={{ borderColor: promedio >= 8 ? '#22c55e' : promedio >= 6 ? '#facc15' : '#ef4444' }}>
+                        return (
+                        <div key={sheet._id || sheet.id || idx} className="bg-white rounded-xl shadow-lg p-8 flex flex-col gap-6 border-l-4" style={{ borderColor: promedio >= 8 ? '#22c55e' : promedio >= 6 ? '#facc15' : '#ef4444' }}>
                           <div className="flex gap-8 items-center mb-4">
                             <span className="font-bold text-gray-700 text-xl">{fechaFormateada}</span>
                             <span className="text-gray-500">Entrenador: <span className="font-semibold text-gray-700">{sheet.entrenador}</span></span>
@@ -416,7 +463,7 @@ export default function Students() {
                   </button>
                 </div>
               </div>
-              {user.rol === 'entrenador' || user.rol === 'admin' ? (
+              {(role === 'entrenador' || role === 'admin') ? (
                 <div className="mb-8">
                   <h3 className="text-xl font-semibold mb-4 text-gray-800">Agregar Ficha Técnica</h3>
                   <form onSubmit={handleAddSheet} className="bg-white rounded-xl shadow p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -454,7 +501,7 @@ export default function Students() {
       </div>
       <AddStudentModal open={showAddStudent} onClose={() => setShowAddStudent(false)} onCreated={(created) => {
             // Normalizar id y agregar al listado
-            const normalized = { id: created._id || created.id || created.dni, ...created };
+            const normalized = { ...created, id: created._id || created.id || created.dni };
             setStudents(prev => [normalized, ...prev]);
             setShowAddStudent(false);
           }} />
