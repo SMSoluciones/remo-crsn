@@ -1,5 +1,7 @@
 # Ignorar archivos de entorno
 .env
+seed.js
+
 # Logs
 logs
 *.log
