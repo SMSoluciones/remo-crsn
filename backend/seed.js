@@ -23,7 +23,7 @@ async function getUsers() {
       nombre: 'Sebastian',
       apellido: 'Muñoz',
       email: 'smunoz.id@gmail.com',
-      rol: 'subcomision',
+      rol: 'alumnos',
       password: await bcrypt.hash('123456', 10),
     },
         {
