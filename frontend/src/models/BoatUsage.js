@@ -1,26 +1,44 @@
 import { API_BASE_URL } from '../utils/apiConfig';
 
 export async function createBoatUsage({ boatId, durationHours, note }, user) {
+  const url = `${API_BASE_URL}/api/boat-usages`;
   const headers = { 'Content-Type': 'application/json' };
   if (user) {
     if (user._id) headers['x-user-id'] = user._id;
     if (user.email) headers['x-user-email'] = user.email;
     if (user.nombre || user.name || user.fullName) headers['x-user-name'] = user.nombre || user.name || user.fullName;
   }
-  const res = await fetch(`${API_BASE_URL}/api/boat-usages`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ boatId, durationHours, note }),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || 'Error creating boat usage');
+  try {
+    console.debug('createBoatUsage -> POST', url, { body: { boatId, durationHours, note }, headers });
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ boatId, durationHours, note }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const errMsg = body && (body.error || body.message) ? (body.error || body.message) : `HTTP ${res.status}`;
+      throw new Error(errMsg);
+    }
+    return res.json();
+  } catch (err) {
+    console.error('createBoatUsage fetch failed:', err);
+    throw new Error(err.message || 'Network error');
   }
-  return res.json();
 }
 
 export async function fetchBoatUsages() {
-  const res = await fetch(`${API_BASE_URL}/api/boat-usages`);
-  if (!res.ok) throw new Error('Error fetching boat usages');
-  return res.json();
+  const url = `${API_BASE_URL}/api/boat-usages`;
+  try {
+    console.debug('fetchBoatUsages -> GET', url);
+    const res = await fetch(url);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  } catch (err) {
+    console.error('fetchBoatUsages failed:', err);
+    throw new Error(err.message || 'Network error');
+  }
 }
