@@ -47,6 +47,16 @@ export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [],
         fd.append('reporterId', user.id || user._id || '');
         fd.append('reporterName', user.nombre || user.name || user.email || '');
       }
+      // Debug: log FormData entries to help diagnose missing fields from the client
+      try {
+        console.group('AddBoatReport Modal - FormData');
+        for (const pair of fd.entries()) {
+          console.log(pair[0], pair[1]);
+        }
+        console.groupEnd();
+      } catch (e) {
+        // ignore
+      }
       const created = await createBoatReport(fd, user);
       showSuccess('Reporte creado');
       if (typeof onReportAdded === 'function') onReportAdded(created);

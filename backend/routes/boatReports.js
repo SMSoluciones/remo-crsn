@@ -22,7 +22,38 @@ router.get('/', async (req, res) => {
 // Accept multipart/form-data with optional 'foto' file
 router.post('/', upload.single('foto'), async (req, res) => {
   try {
-    const payload = { ...req.body };
+    // Debug: log received body keys (helps diagnosing missing form fields)
+    console.log('POST /api/boat-reports - headers content-type:', req.headers['content-type']);
+    console.log('POST /api/boat-reports - req.body keys:', Object.keys(req.body || {}));
+
+    // Build payload from parsed bodies (accept multipart/form-data or application/json)
+    let payload = {};
+    // If client sent a JSON stringified payload inside a form field named `payload`, parse it
+    if (req.body && typeof req.body.payload === 'string') {
+      try {
+        const parsed = JSON.parse(req.body.payload);
+        payload = { ...parsed };
+      } catch (e) {
+        // ignore parse error and fallback to other fields
+      }
+    }
+    // Merge direct body fields (multipart or json)
+    payload = { ...payload, ...(req.body || {}) };
+
+    // Helper to pick first available alias
+    const pick = (obj, aliases) => {
+      for (const a of aliases) {
+        if (obj[a] !== undefined && obj[a] !== '') return obj[a];
+      }
+      return undefined;
+    };
+
+    // Normalize common field aliases
+    payload.boatId = pick(payload, ['boatId', 'boat_id', 'boat', 'boatID', 'boat_id[]']);
+    payload.descripcion = pick(payload, ['descripcion', 'description', 'desc']);
+    payload.detectedByName = pick(payload, ['detectedByName', 'detected_by', 'detectedBy', 'detector']);
+    payload.reporterId = pick(payload, ['reporterId', 'reporter_id', 'userId']);
+    payload.reporterName = pick(payload, ['reporterName', 'reporter_name', 'reporter']);
     // If file provided, upload to Cloudinary
     if (req.file && req.file.buffer) {
       const streamUpload = (buffer) => new Promise((resolve, reject) => {
@@ -39,6 +70,15 @@ router.post('/', upload.single('foto'), async (req, res) => {
     if (payload.fecha && payload.hora) {
       payload.fechaReporte = new Date(`${payload.fecha}T${payload.hora}`);
     }
+
+    // Basic validation: require boatId and descripcion
+    const missing = [];
+    if (!payload.boatId) missing.push('boatId');
+    if (!payload.descripcion) missing.push('descripcion');
+    if (missing.length > 0) {
+      return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+    }
+
     const report = new BoatReport(payload);
     await report.save();
     res.status(201).json(report);
