@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 
 
 const app = express();
@@ -31,9 +32,7 @@ const corsOptions = {
   exposedHeaders: ['x-user-id', 'x-user-role', 'x-user-email', 'x-user-name', 'x-user-fullname', 'x-user'],
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 app.use(express.json());
-const path = require('path');
 // Servir archivos subidos (fotos)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
