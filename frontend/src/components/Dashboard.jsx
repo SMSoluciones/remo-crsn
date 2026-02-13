@@ -66,6 +66,7 @@ export default function Dashboard() {
   const [selectedBoatId, setSelectedBoatId] = useState('');
   const [durationHours, setDurationHours] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [activeBoatLocks, setActiveBoatLocks] = useState({});
   // Ajustes del slider para eventos
   
   const eventSliderSettings = {
@@ -285,6 +286,32 @@ export default function Dashboard() {
   useEffect(() => {
     try { AOS.refresh(); } catch (err) { console.warn('AOS refresh failed', err); }
   }, [totalBoats, activeBoats, repairBoats, studentsCount, announcements.length, events.length, recentArr.length]);
+
+  // When opening the Remar modal, compute which boats are currently in use and poll periodically
+  useEffect(() => {
+    if (!isRemarOpen) return;
+    let mounted = true;
+    const POLL_INTERVAL = 10000; // ms
+    const fetchLocks = async () => {
+      try {
+        const list = await fetchBoatUsages();
+        const now = new Date();
+        const locks = {};
+        (list || []).forEach(item => {
+          const bid = String(item.boatId || item.boat || '');
+          const et = item.estimatedReturn ? new Date(item.estimatedReturn) : null;
+          if (et && et > now) locks[bid] = et.toISOString();
+        });
+        if (mounted) setActiveBoatLocks(locks);
+      } catch (e) {
+        console.error('Error fetching boat usages for locks', e);
+      }
+    };
+    // initial
+    fetchLocks();
+    const timer = setInterval(fetchLocks, POLL_INTERVAL);
+    return () => { mounted = false; clearInterval(timer); };
+  }, [isRemarOpen]);
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col items-stretch sm:items-center py-6 px-2 sm:px-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full max-w-6xl mb-6 gap-4">
@@ -636,9 +663,15 @@ export default function Dashboard() {
                 <label className="text-sm font-medium">Seleccionar bote</label>
                 <select value={selectedBoatId} onChange={(e) => setSelectedBoatId(e.target.value)} className="border rounded px-3 py-2 w-full">
                   <option value="">-- Seleccione un bote --</option>
-                  {boatsList.map((b) => (
-                    <option key={b._id || b.id} value={b._id || b.id}>{b.nombre || b.name || b.nombre}</option>
-                  ))}
+                  {boatsList.map((b) => {
+                    const id = b._id || b.id;
+                    const lockIso = activeBoatLocks[String(id)];
+                    const locked = lockIso ? (new Date(lockIso) > new Date()) : false;
+                    const label = `${b.nombre || b.name || id}${locked ? ` (En uso hasta ${new Date(lockIso).toLocaleString('es-ES')})` : ''}`;
+                    return (
+                      <option key={id} value={id} disabled={locked}>{label}</option>
+                    );
+                  })}
                 </select>
 
                 <label className="text-sm font-medium">Duración estimada</label>
