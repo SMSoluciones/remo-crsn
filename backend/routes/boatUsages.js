@@ -20,10 +20,10 @@ router.post('/', async (req, res) => {
     const boat = await Boat.findById(boatId).lean();
     if (!boat) return res.status(404).json({ error: 'Boat not found' });
 
-    // Read user info from headers if available
-    const userId = req.header('x-user-id') || null;
-    const userEmail = req.header('x-user-email') || '';
-    const userName = req.header('x-user-name') || req.header('x-user-fullname') || req.header('x-user') || 'Desconocido';
+    // Read user info from headers if available; fall back to body fields (frontend may send these)
+    const userId = req.header('x-user-id') || req.body.userId || null;
+    const userEmail = req.header('x-user-email') || req.body.userEmail || '';
+    const userName = req.header('x-user-name') || req.header('x-user-fullname') || req.header('x-user') || req.body.userName || 'Desconocido';
 
     const requestedAt = new Date();
     const estimatedReturn = new Date(requestedAt.getTime() + hours * 60 * 60 * 1000);
@@ -70,14 +70,45 @@ router.get('/', async (req, res) => {
     }
     let q = BoatUsage.find(filter).sort({ requestedAt: -1 }).limit(200);
     // populate boat name
-    q = q.populate('boatId', 'nombre');
+    q = q.populate('boatId', 'nombre name');
     const list = await q.lean();
-    console.log(`GET /api/boat-usages -> returned ${Array.isArray(list) ? list.length : 0} items (filter: ${JSON.stringify(filter)})`);
-    return res.json(list);
+    // Normalize output: provide a string `boatDisplay` and keep boatId as id
+    const out = (Array.isArray(list) ? list : []).map((item) => {
+      const b = item.boatId;
+      let boatDisplay = '';
+      let boatRef = item.boatId || item.boat || '';
+      if (b && typeof b === 'object') {
+        boatDisplay = b.nombre || b.name || String(b._id || '');
+        boatRef = b._id || boatRef;
+      } else {
+        boatDisplay = b || item.boat || '';
+      }
+      return { ...item, boatDisplay, boatId: boatRef };
+    });
+    console.log(`GET /api/boat-usages -> returned ${out.length} items (filter: ${JSON.stringify(filter)})`);
+    return res.json(out);
   } catch (err) {
     console.error('Error fetching boat usages:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// DELETE /api/boat-usages/:id - only admin can delete
+router.delete('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const role = String(req.header('x-user-role') || req.body.userRole || '').toLowerCase();
+    if (role !== 'admin') return res.status(403).json({ error: 'Acceso restringido a admin' });
+    const existing = await BoatUsage.findById(id);
+    if (!existing) return res.status(404).json({ error: 'Registro no encontrado' });
+    await BoatUsage.findByIdAndDelete(id);
+    console.log('Deleted BoatUsage', id);
+    return res.json({ message: 'Eliminado' });
+  } catch (err) {
+    console.error('Error deleting boat usage:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
+
