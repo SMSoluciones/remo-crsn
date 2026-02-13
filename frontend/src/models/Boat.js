@@ -31,3 +31,25 @@ export async function fetchBoats() {
     return [];
   }
 }
+
+export async function updateBoat(id, data, user) {
+  try {
+    const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+    const res = await axios.put(`${API_BASE_URL}/api/boats/${id}`, data, { headers });
+    return res.data;
+  } catch (err) {
+    console.error('Error updating boat:', err);
+    throw err;
+  }
+}
+
+export async function deleteBoat(id, user) {
+  try {
+    const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+    const res = await axios.delete(`${API_BASE_URL}/api/boats/${id}`, { headers });
+    return res.data;
+  } catch (err) {
+    console.error('Error deleting boat:', err);
+    throw err;
+  }
+}
