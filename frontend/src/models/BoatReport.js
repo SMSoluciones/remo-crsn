@@ -15,3 +15,33 @@ export class BoatReport {
     this.status = status;
   }
 }
+
+import { API_BASE_URL } from '../utils/apiConfig';
+
+export async function fetchBoatReports() {
+  const res = await fetch(`${API_BASE_URL}/api/boat-reports`);
+  if (!res.ok) throw new Error('Error fetching boat reports');
+  return res.json();
+}
+
+export async function createBoatReport(formData, user) {
+  // formData should be a FormData instance (multipart)
+  const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '', 'x-user-email': user.email || '' } : {};
+  const res = await fetch(`${API_BASE_URL}/api/boat-reports`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error creating report');
+  }
+  return res.json();
+}
+
+export async function deleteBoatReport(id, user) {
+  const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+  const res = await fetch(`${API_BASE_URL}/api/boat-reports/${id}`, { method: 'DELETE', headers });
+  if (!res.ok) throw new Error('Error deleting report');
+  return res.json();
+}
