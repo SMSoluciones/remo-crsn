@@ -36,12 +36,9 @@ export default function AddBoatsModal({ onClose, onBoatAdded }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-transparent backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
-      data-aos="fade-down"
-      data-aos-duration="300"
-    >
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div data-aos="zoom-in" data-aos-duration="300" className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md transform transition-all duration-300">
         <h2 className="text-xl font-bold mb-4">Agregar Nuevo Bote</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

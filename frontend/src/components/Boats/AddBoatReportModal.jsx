@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Modal from 'react-modal';
 import BeatLoader from 'react-spinners/BeatLoader';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -17,6 +17,7 @@ export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [],
   const [descripcion, setDescripcion] = useState('');
   const [foto, setFoto] = useState(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,7 +56,7 @@ export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [],
         }
         console.groupEnd();
       } catch (e) {
-        // ignore
+        console.warn('FormData debug failed', e);
       }
       const created = await createBoatReport(fd, user);
       showSuccess('Reporte creado');
@@ -71,9 +72,9 @@ export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [],
 
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onRequestClose}></div>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl p-6 z-10 overflow-auto">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="absolute inset-0" onClick={onRequestClose}></div>
+      <div data-aos="zoom-in" data-aos-duration="300" className="bg-white rounded-xl shadow-lg w-full max-w-2xl p-6 z-10 overflow-auto transform transition-all duration-300">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Reportar Falla de Bote</h3>
           <button onClick={onRequestClose} className="text-gray-500 hover:text-gray-700"><XMarkIcon className="w-6 h-6"/></button>
@@ -103,7 +104,17 @@ export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [],
           <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} className="border rounded px-3 py-2" rows={4} />
 
           <label className="text-sm">Foto (opcional)</label>
-          <input type="file" accept="image/*" onChange={e => setFoto(e.target.files[0] || null)} />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={e => setFoto(e.target.files[0] || null)} className="hidden" />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              className="px-3 py-2 border rounded bg-gray-100 hover:bg-gray-200"
+            >
+              Cargar foto
+            </button>
+            {foto && <span className="text-sm text-gray-600">{foto.name}</span>}
+          </div>
 
           <div className="flex justify-end gap-2 mt-2">
             <button type="button" onClick={onRequestClose} className="px-4 py-2 border rounded">Cancelar</button>
