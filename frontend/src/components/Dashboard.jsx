@@ -2,16 +2,20 @@ import ProtectedRoute from './ProtectedRoute';
 import { useEffect, useState } from 'react';
 import { fetchStudents } from '../models/Student';
 import { fetchBoats } from '../models/Boat';
-import { fetchAllSheets } from '../models/TechnicalSheet';
+import { fetchAllSheets, fetchSheetsByStudent } from '../models/TechnicalSheet';
 import { useAuth } from '../context/useAuth';
 import { fetchEvents } from '../models/Event';
 import { fetchAnnouncements } from '../models/Announcement';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import BeatLoader from 'react-spinners/BeatLoader';
 import AddEventModal from './Events/AddEventModal';
 import AddAnnouncementModal from './Announcements/AddAnnouncementModal.jsx';
+import AnnouncementsListModal from './Announcements/AnnouncementsListModal';
 import UsersAdminModal from './Login/UsersAdminModal.jsx';
+import EventsListModal from './Events/EventsListModal';
+import ArrivalsListModal from './Students/ArrivalsListModal';
 import {
   LifebuoyIcon,
   WrenchScrewdriverIcon,
@@ -24,6 +28,8 @@ import {
 export default function Dashboard() {
   const [studentsCount, setStudentsCount] = useState(null);
   const [studentsError, setStudentsError] = useState(null);
+  const [recentArr, setRecentArr] = useState([]);
+  const [recentLoading, setRecentLoading] = useState(true);
   const [totalBoats, setTotalBoats] = useState(null);
   const [activeBoats, setActiveBoats] = useState(null);
   const [repairBoats, setRepairBoats] = useState(null);
@@ -40,8 +46,11 @@ export default function Dashboard() {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);
   const [isUsersAdminOpen, setIsUsersAdminOpen] = useState(false);
-  const canManageEvents = ['admin','entrenador','mantenimiento','subcomision']
-    .includes(String(user?.rol || '').toLowerCase());
+  const role = String(user?.rol || '').trim().toLowerCase();
+  const canManageEvents = ['admin','entrenador','mantenimiento','subcomision'].includes(role);
+  const [isEventsListOpen, setIsEventsListOpen] = useState(false);
+  const [isArrivalsListOpen, setIsArrivalsListOpen] = useState(false);
+  const [isAnnouncementsListOpen, setIsAnnouncementsListOpen] = useState(false);
   // Ajustes del slider para eventos
   
   const eventSliderSettings = {
@@ -66,19 +75,53 @@ export default function Dashboard() {
     arrows: false,
     pauseOnHover: true,
   };
+  const recentSliderSettings = {
+    dots: true,
+    infinite: recentArr.length > 1,
+    speed: 400,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 3000,
+    arrows: false,
+    pauseOnHover: true,
+  };
 
   useEffect(() => {
     let mounted = true;
+    setRecentLoading(true);
     fetchStudents()
       .then((list) => {
         if (!mounted) return;
-        setStudentsCount(Array.isArray(list) ? list.length : 0);
+        const arr = Array.isArray(list) ? list : [];
+        setStudentsCount(arr.length);
+        // Ordenar por fecha de ingreso de la ficha del alumno (más reciente primero)
+        const toDate = (v) => {
+          if (!v) return null;
+          const d = new Date(v);
+          return Number.isNaN(d.getTime()) ? null : d;
+        };
+        const cutoff = new Date();
+        cutoff.setHours(0,0,0,0);
+        cutoff.setDate(cutoff.getDate() - 10);
+        const recent = arr
+          .map(s => ({
+            src: s,
+            fecha: toDate(s.fechaIngreso || s.fecha_ingreso || s.ingreso)
+          }))
+          .filter(item => item && item.fecha && item.fecha >= cutoff)
+          .sort((a, b) => b.fecha - a.fecha)
+          .slice(0, 10)
+          .map(item => item.src);
+        setRecentArr(recent);
       })
       .catch((err) => {
         console.error('Error obteniendo alumnos:', err);
         setStudentsError('No se pudo cargar');
         setStudentsCount(0);
-      });
+        setRecentArr([]);
+      })
+      .finally(() => { if (mounted) setRecentLoading(false); });
     return () => { mounted = false };
   }, []);
 
@@ -111,7 +154,6 @@ export default function Dashboard() {
         const arr = Array.isArray(list) ? list : [];
         const allSorted = arr.filter(ev => ev.date).sort((a,b) => new Date(a.date) - new Date(b.date));
         setEvents(allSorted);
-        console.log('Eventos cargados:', allSorted);
       })
       .catch(err => {
         console.error('Error obteniendo eventos:', err);
@@ -150,32 +192,64 @@ export default function Dashboard() {
 
   useEffect(() => {
     let mounted = true;
-    // Necesita rol entrenador o admin según backend; si falta user/rol, no intenta.
-    if (!user || !user.rol || !['admin','entrenador'].includes(String(user.rol).toLowerCase())) {
-      setAvgError('Rol no autorizado');
-      setGlobalAvg(0);
-      return;
-    }
-    fetchAllSheets(user)
+    // Mostrar el promedio técnico a TODOS los roles: intentamos obtener las fichas
+    const effectiveUser = user || {};
+    const effectiveRole = String(effectiveUser?.rol || '').trim().toLowerCase();
+    fetchAllSheets(effectiveUser)
       .then(sheets => {
         if (!mounted) return;
         const rows = Array.isArray(sheets) ? sheets : [];
         let sum = 0;
         let count = 0;
         for (const sh of rows) {
-          // Cada ficha: postura, remada, equilibrio, coordinacion, resistencia, velocidad
           const nums = [sh.postura, sh.remada, sh.equilibrio, sh.coordinacion, sh.resistencia, sh.velocidad]
             .map(n => Number(n) || 0);
-          if (nums.every(v => v === 0)) continue; // si todas 0, posiblemente ficha vacía
+          if (nums.every(v => v === 0)) continue;
           const avg = nums.reduce((a,b)=>a+b,0)/nums.length;
           sum += avg;
           count += 1;
         }
         const finalAvg = count === 0 ? 0 : (sum / count);
         setGlobalAvg(finalAvg);
+        setAvgError(null);
       })
-      .catch(err => {
-        console.error('Error obteniendo fichas técnicas:', err);
+      .catch(async () => {
+        // Fallback: si el usuario es alumno, intentamos obtener sus propias fichas
+        if (effectiveRole === 'alumno' || effectiveRole === 'alumnos') {
+          try {
+            const allStudents = await fetchStudents();
+            const arr = Array.isArray(allStudents) ? allStudents : [];
+            const email = (effectiveUser?.email || '').toString().trim().toLowerCase();
+            const found = arr.find(s => s.email && String(s.email).trim().toLowerCase() === email);
+            if (!found) {
+              setAvgError('No se pudo cargar');
+              setGlobalAvg(0);
+              return;
+            }
+            const sid = found._id || found.id || found.dni;
+            const sheetsForStudent = await fetchSheetsByStudent(sid, effectiveUser).catch(() => []);
+            const rows = Array.isArray(sheetsForStudent) ? sheetsForStudent : [];
+            let sum = 0;
+            let count = 0;
+            for (const sh of rows) {
+              const nums = [sh.postura, sh.remada, sh.equilibrio, sh.coordinacion, sh.resistencia, sh.velocidad]
+                .map(n => Number(n) || 0);
+              if (nums.every(v => v === 0)) continue;
+              const avg = nums.reduce((a,b)=>a+b,0)/nums.length;
+              sum += avg;
+              count += 1;
+            }
+            const finalAvg = count === 0 ? 0 : (sum / count);
+            setGlobalAvg(finalAvg);
+            setAvgError(null);
+            return;
+          } catch (er) {
+            console.error('Fallback alumno error:', er);
+            setAvgError('No se pudo cargar');
+            setGlobalAvg(0);
+            return;
+          }
+        }
         setAvgError('No se pudo cargar');
         setGlobalAvg(0);
       });
@@ -246,10 +320,13 @@ export default function Dashboard() {
       </div>
       <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden box-border">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-2xl font-bold uppercase">ANUNCIOS</h2>
+          <h2 className="text-2xl font-bold uppercase">Anuncios</h2>
+          <button onClick={() => setIsAnnouncementsListOpen(true)} aria-label="Ver anuncios" className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
+            <ArrowUpRightIcon className="w-6 h-6" />
+          </button>
         </div>
         {annLoading ? (
-          <div className="flex items-center justify-center h-24">Cargando...</div>
+          <div className="flex items-center justify-center h-24"><BeatLoader color="#1E40AF" /></div>
         ) : annError ? (
           <div className="text-sm text-red-600">{annError}</div>
         ) : announcements.length === 0 ? (
@@ -284,13 +361,13 @@ export default function Dashboard() {
         <div className="bg-white text-black rounded-2xl p-4 shadow-lg h-auto md:h-56 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-bold">Eventos</h2>
-            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
+            <button onClick={() => setIsEventsListOpen(true)} aria-label="Ver eventos" className="relative z-20 text-black bg-gray-300  rounded-full p-2 hover:bg-orange-500 hover:text-white">
               <ArrowUpRightIcon className="w-6 h-6" />
-            </span>
+            </button>
           </div>
           {eventsLoading ? (
-            <div className="flex items-center justify-center h-24">Cargando...</div>
-          ) : eventsError ? (
+          <div className="flex items-center justify-center h-24"><BeatLoader color="#1E40AF" /></div>
+        ) : eventsError ? (
             <div className="text-sm text-red-600">{eventsError}</div>
           ) : events.length === 0 ? (
             <div className="text-sm opacity-70 flex items-center justify-center h-24">No hay eventos</div>
@@ -328,22 +405,53 @@ export default function Dashboard() {
         <div className="hidden bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">Ranking</h2>
-            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
-              <ArrowUpRightIcon className="w-6 h-6" />
-            </span>
+            <div className="flex gap-2">
+              <button onClick={() => setIsEventsListOpen(true)} aria-label="Ver eventos" className="relative z-20 text-black bg-gray-300  rounded-full p-2 hover:bg-orange-500 hover:text-white">
+                <ArrowUpRightIcon className="w-6 h-6" />
+              </button>
+              <button onClick={() => setIsAnnouncementsListOpen(true)} aria-label="Ver anuncios" className="relative z-20 text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 10-14 0v3a1 1 0 001 1h3l3 3v-7a1 1 0 011-1h6a1 1 0 011 1v3"/></svg>
+              </button>
+            </div>
           </div>
           <div className="text-3xl sm:text-4xl font-bold">24</div>
         </div>
 
         <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col justify-between h-auto md:h-40 hover:bg-gradient-to-b hover:from-blue-900 hover:to-blue-500 hover:text-white transition-transform duration-300 hover:scale-105 w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold">Llegados</h2>
-            <span className="text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
-              <ArrowUpRightIcon className="w-6 h-6" />
-            </span>
-          </div>
-          <div className="text-3xl sm:text-4xl font-bold">24</div>
+              <h2 className="text-lg font-bold">Llegados</h2>
+              <button onClick={() => setIsArrivalsListOpen(true)} aria-label="Ver llegados" className="relative z-20 text-black bg-gray-300 rounded-full p-2 hover:bg-orange-500 hover:text-white">
+                <ArrowUpRightIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="mt-2">
+              {recentLoading ? (
+                <div className="flex items-center justify-center h-8"><BeatLoader size={8} color="#1E40AF" /></div>
+              ) : recentArr.length === 0 ? (
+                <div className="text-sm opacity-70">Sin novedades 🚣‍♂️</div>
+              ) : (
+                <div className="h-24 overflow-hidden">
+                  <Slider {...recentSliderSettings}>
+                    {recentArr.map((s) => {
+                      const first = s.nombre || s.name || s.firstName || s.nombres || '';
+                      const last = s.apellido || s.lastname || s.lastName || s.apellidos || '';
+                      const display = (first + ' ' + last).trim() || (s.dni || s._id || 'Sin nombre');
+                      return (
+                        <div key={s._id || s.id || s.dni} className="px-1 h-full w-full box-border flex items-center">
+                          <div className="h-full border rounded-lg px-3 py-3 text-base sm:text-lg bg-gray-50 hover:bg-gray-100 transition flex items-center w-full">
+                            <p className="font-semibold text-gray-800 truncate">{String(display).toUpperCase()}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </Slider>
+                </div>
+              )}
+            </div>
         </div>
+
+        <ArrivalsListModal isOpen={isArrivalsListOpen} onRequestClose={() => setIsArrivalsListOpen(false)} />
+        <AnnouncementsListModal isOpen={isAnnouncementsListOpen} onRequestClose={() => setIsAnnouncementsListOpen(false)} />
 
         
 
@@ -357,6 +465,7 @@ export default function Dashboard() {
           <div className="text-3xl sm:text-4xl font-bold">24</div>
         </div>
       </div>
+      <EventsListModal isOpen={isEventsListOpen} onRequestClose={() => setIsEventsListOpen(false)} />
       {/* Modal: Agregar Evento */}
       {canManageEvents && (
         <AddEventModal

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
-import axios from 'axios';
 import { showError, showSuccess } from '../../utils/toast';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -8,6 +7,7 @@ import { API_BASE_URL } from '../../utils/apiConfig';
 import { fetchEvents as fetchEventsApi, deleteEvent as deleteEventApi, createEvent as createEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/useAuth';
+import BeatLoader from 'react-spinners/BeatLoader';
 
 Modal.setAppElement('#root');
 
@@ -147,7 +147,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-base font-semibold">Eventos existentes</h4>
-            {listLoading && <span className="text-sm text-gray-500">Cargando...</span>}
+            {listLoading && <div className="flex items-center"><BeatLoader size={6} color="#6B7280" /></div>}
           </div>
           {listError ? (
             <div className="text-sm text-red-600">{listError}</div>

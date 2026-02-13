@@ -7,6 +7,7 @@ import { fetchAllSheets, createSheet } from '../../models/TechnicalSheet';
 import { fetchStudents } from '../../models/Student';
 import { fetchTrainers } from '../../models/User';
 import { API_BASE_URL } from '../../utils/apiConfig';
+import BeatLoader from 'react-spinners/BeatLoader';
 
 export default function TechnicalSheets() {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ export default function TechnicalSheets() {
     setLoading(true);
 
   const effectiveUser = user || getStoredUser();
-  const role = (effectiveUser?.rol || '').toLowerCase();
+  const role = String(effectiveUser?.rol || '').trim().toLowerCase();
 
     async function loadData() {
       try {
@@ -83,7 +84,7 @@ export default function TechnicalSheets() {
   const handleReload = async () => {
     setReloading(true);
     const effectiveUser = user || getStoredUser();
-    const role = (effectiveUser?.rol || '').toLowerCase();
+    const role = String(effectiveUser?.rol || '').trim().toLowerCase();
     if (!effectiveUser || !['admin', 'entrenador'].includes(role)) {
       setReloading(false);
       showError('No hay usuario autenticado con permisos para recargar fichas');
@@ -211,11 +212,8 @@ export default function TechnicalSheets() {
             title="Forzar recarga de fichas"
           >
             {reloading ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a12 12 0 00-12 12h4z"></path></svg>
-                <span>Recargando...</span>
-              </>
-            ) : (
+                <div className="flex items-center gap-2"><BeatLoader size={6} color="#6B7280" /><span className="text-sm text-gray-700">Recargando...</span></div>
+              ) : (
               'Recargar fichas'
             )}
           </button>
@@ -300,8 +298,8 @@ export default function TechnicalSheets() {
       </div>
       
       {loading ? (
-        <div className="text-center text-gray-500 py-8">Cargando fichas y alumnos...</div>
-  ) : (
+        <div className="flex items-center justify-center py-8"><BeatLoader color="#1E40AF" /></div>
+      ) : (
   <div className="mb-8">
         {/* Mobile: cards */}
         <div className="space-y-4 sm:hidden">
