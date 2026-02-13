@@ -3,7 +3,10 @@ import { API_BASE_URL } from '../utils/apiConfig';
 export async function createBoatUsage({ boatId, durationHours, note }, user) {
   const url = `${API_BASE_URL}/api/boat-usages`;
   const headers = { 'Content-Type': 'application/json' };
-  if (user) {
+  // Only send custom x-user-* headers in local development (backend on localhost).
+  // Remote deployments may block these headers via CORS; prefer server-side CORS update.
+  const isLocalBackend = API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
+  if (isLocalBackend && user) {
     if (user._id) headers['x-user-id'] = user._id;
     if (user.email) headers['x-user-email'] = user.email;
     if (user.nombre || user.name || user.fullName) headers['x-user-name'] = user.nombre || user.name || user.fullName;
