@@ -35,7 +35,7 @@ export default function Students() {
   const activeCount = students.filter(s => (String(s.estado || '').toUpperCase() === 'ACTIVO')).length;
   const inactiveCount = students.filter(s => (String(s.estado || '').toUpperCase() === 'INACTIVO')).length;
   // Roles que pueden ver alumnos INACTIVOS
-  const canViewInactive = ['entrenador', 'mantenimiento', 'admin'].includes(role);
+  const canViewInactive = ['entrenador', 'mantenimiento', 'subcomision', 'admin'].includes(role);
 
   // Filtrado por nombre, categoría y estado
   const filtered = students.filter(s => {
@@ -350,23 +350,23 @@ export default function Students() {
               {!selectedStudent ? (
                 <div className="bg-white rounded-xl shadow p-8 mb-8 text-gray-700">Alumno no encontrado.</div>
               ) : (
-                <div className="bg-white rounded-xl shadow p-8 mb-8 flex gap-8 items-center">
+                <div className="bg-white rounded-xl shadow p-8 mb-8 flex flex-col items-center gap-6">
                   <Avatar name={`${selectedStudent.nombre} ${selectedStudent.apellido}`} size="100" round={true} />
-                  <div>
+                  <div className="text-center max-w-2xl">
                     <div className="text-3xl font-bold text-gray-900 mb-4">{selectedStudent.nombre} {selectedStudent.apellido}</div>
-                      <div className="text-gray-700 mb-2">N° Socio: {selectedStudent.socioN || '—'}</div>
-                      <div className="text-gray-700 mb-2">Tipo: {selectedStudent.tipo || '—'}</div>
-                      <div className="text-gray-700 mb-2">DNI: {selectedStudent.dni}</div>
-                      <div className="text-gray-700 mb-2">Nacimiento: {selectedStudent.nacimiento ? (new Date(selectedStudent.nacimiento)).toLocaleDateString() : '—'}</div>
-                      <div className="text-gray-700 mb-2">Categoría: {selectedStudent.categoria}</div>
-                      <div className="text-gray-700 mb-2">Ciudad: {selectedStudent.ciudad || '—'}</div>
-                      <div className="text-gray-700 mb-2">Estado: {selectedStudent.estado || '—'}</div>
-                      <div className="text-gray-700 mb-2">Email: {selectedStudent.email}</div>
-                      <div className="text-gray-700 mb-2">Domicilio: {selectedStudent.domicilio}</div>
-                      <div className="text-gray-700 mb-2">Celular: {selectedStudent.celular}</div>
-                      <div className="text-gray-700 mb-2">Beca: {selectedStudent.beca ? 'SI' : 'NO'}</div>
-                      <div className="text-gray-700 mb-2">Competitivo: {selectedStudent.competitivo ? 'SI' : 'NO'}</div>
-                      <div className="text-gray-700 mb-2">Federado: {selectedStudent.federado ? 'SI' : 'NO'}</div>
+                    <div className="text-gray-700 mb-2">N° Socio: {selectedStudent.socioN || '—'}</div>
+                    <div className="text-gray-700 mb-2">Tipo: {selectedStudent.tipo || '—'}</div>
+                    <div className="text-gray-700 mb-2">DNI: {selectedStudent.dni}</div>
+                    <div className="text-gray-700 mb-2">Nacimiento: {selectedStudent.nacimiento ? (new Date(selectedStudent.nacimiento)).toLocaleDateString() : '—'}</div>
+                    <div className="text-gray-700 mb-2">Categoría: {selectedStudent.categoria}</div>
+                    <div className="text-gray-700 mb-2">Ciudad: {selectedStudent.ciudad || '—'}</div>
+                    <div className="text-gray-700 mb-2">Estado: {selectedStudent.estado || '—'}</div>
+                    <div className="text-gray-700 mb-2">Email: {selectedStudent.email}</div>
+                    <div className="text-gray-700 mb-2">Domicilio: {selectedStudent.domicilio}</div>
+                    <div className="text-gray-700 mb-2">Celular: {selectedStudent.celular}</div>
+                    <div className="text-gray-700 mb-2">Beca: {selectedStudent.beca ? 'SI' : 'NO'}</div>
+                    <div className="text-gray-700 mb-2">Competitivo: {selectedStudent.competitivo ? 'SI' : 'NO'}</div>
+                    <div className="text-gray-700 mb-2">Federado: {selectedStudent.federado ? 'SI' : 'NO'}</div>
                   </div>
                 </div>
               )}

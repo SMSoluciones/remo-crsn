@@ -80,7 +80,7 @@ export default function Boats() {
   };
 
   const handleDeleteReport = async (id) => {
-    const allowed = ['admin', 'mantenimiento'];
+    const allowed = ['admin', 'mantenimiento', 'subcomision'];
     if (!allowed.includes(role)) { showError('No tienes permisos para eliminar reportes'); return; }
     if (!window.confirm('¿Eliminar este reporte?')) return;
     try {
@@ -244,7 +244,7 @@ export default function Boats() {
                           </div>
                           <div className="flex items-center gap-2">
                             <div className={`px-2 py-1 rounded text-xs font-bold ${r.status === 'en_reparacion' ? 'bg-yellow-200 text-yellow-800' : r.status === 'cerrado' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>{r.status}</div>
-                            {['admin','mantenimiento'].includes(role) && (
+                            {['admin','mantenimiento','subcomision'].includes(role) && (
                               <button onClick={() => handleDeleteReport(id)} aria-label="Eliminar reporte" className="text-red-600 hover:text-red-800">
                                 <XMarkIcon className="w-4 h-4" />
                               </button>
@@ -276,7 +276,7 @@ export default function Boats() {
                             <span className="font-medium text-gray-800">{boatName}</span>
                             <span className={`px-2 py-1 rounded text-xs font-bold ${r.status === 'en_reparacion' ? 'bg-yellow-200 text-yellow-800' : r.status === 'cerrado' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>{r.status}</span>
                             <span className="ml-auto text-gray-500">{fecha}</span>
-                            {['admin','mantenimiento'].includes(role) && (
+                            {['admin','mantenimiento','subcomision'].includes(role) && (
                               <button onClick={() => handleDeleteReport(id)} aria-label="Eliminar reporte" className="ml-3 text-red-600 hover:text-red-800">
                                 <XMarkIcon className="w-4 h-4" />
                               </button>
@@ -294,7 +294,7 @@ export default function Boats() {
                       <PlusIcon className="h-5 w-5" /> Nuevo Bote
                     </button>
                   )}
-                  {['admin','mantenimiento','entrenador'].includes(role) && (
+                  {['admin','mantenimiento','subcomision','entrenador'].includes(role) && (
                     <button onClick={() => setShowManageBoatsModal(true)} className="w-full flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition mb-2">
                       <PlusIcon className="h-5 w-5" /> Administrar botes
                     </button>
@@ -303,7 +303,7 @@ export default function Boats() {
                     <button onClick={() => setShowAddReportModal(true)} className="w-full flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
                       <WrenchScrewdriverIcon className="h-5 w-5" /> Reportar Falla
                     </button>
-                    {['admin','mantenimiento','entrenador'].includes(role) && (
+                    {['admin','mantenimiento','subcomision','entrenador'].includes(role) && (
                       <button onClick={() => setShowManageReportsModal(true)} className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
                         <WrenchScrewdriverIcon className="h-5 w-5" /> Administrar reportes
                       </button>

@@ -8,6 +8,7 @@ const Announcement = require('./models/Announcement');
 
 const MONGO_URI = process.env.MONGO_URI;
 
+// 
 async function getUsers() {
   const hashedAdmin = await bcrypt.hash('admin', 10);
   return [
@@ -22,7 +23,14 @@ async function getUsers() {
       nombre: 'Sebastian',
       apellido: 'Muñoz',
       email: 'smunoz.id@gmail.com',
-      rol: 'alumnos',
+      rol: 'subcomision',
+      password: await bcrypt.hash('123456', 10),
+    },
+        {
+      nombre: 'Estudiante',
+      apellido: 'Test',
+      email: 'test@test.com',
+      rol: 'admin',
       password: await bcrypt.hash('123456', 10),
     },
     {
@@ -36,13 +44,30 @@ async function getUsers() {
       nombre: 'Pamela',
       apellido: 'Borgetto',
       email: 'pborgetto@gmail.com',
-      rol: 'mantenimiento',
+      rol: 'subcomision',
       password: await bcrypt.hash('123456', 10),
     },
+        {
+      nombre: 'Marcelo',
+      apellido: 'Brenna',
+      email: 'marcelobrenna@hotmail.com',
+      rol: 'subcomision',
+      password: await bcrypt.hash('123456', 10),
+    },
+    {
+      nombre: 'Luis',
+      apellido: 'Espindola',
+      email: 'luisespindola752@gmail.com',
+      rol: 'subcomision',
+      password: await bcrypt.hash('123456', 10),
+
+        }
+        
     
   ];
 }
 
+// Estudiantes
 async function seed() {
   try {
     await mongoose.connect(MONGO_URI);
