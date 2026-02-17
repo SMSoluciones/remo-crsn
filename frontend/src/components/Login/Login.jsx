@@ -39,10 +39,11 @@ export default function Login() {
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Club Regatas San Nicolás</h2>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
-            type="email"
-              placeholder="Documento"
-              value={documento}
-              onChange={e => setDocumento(e.target.value)}
+            type="text"
+            inputMode="numeric"
+            placeholder="Documento"
+            value={documento}
+            onChange={e => setDocumento(e.target.value)}
             className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
             disabled={loading}
             required
