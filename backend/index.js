@@ -28,8 +28,8 @@ const corsOptions = {
   origin: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   // Allow the custom user headers the frontend sends
-  allowedHeaders: ['Content-Type', 'x-user-id', 'x-user-role', 'x-user-email', 'x-user-name', 'x-user-fullname', 'x-user'],
-  exposedHeaders: ['x-user-id', 'x-user-role', 'x-user-email', 'x-user-name', 'x-user-fullname', 'x-user'],
+    allowedHeaders: ['Content-Type', 'x-user-id', 'x-user-role', 'x-user-email', 'x-user-name', 'x-user-fullname', 'x-user', 'x-user-documento'],
+    exposedHeaders: ['x-user-id', 'x-user-role', 'x-user-email', 'x-user-name', 'x-user-fullname', 'x-user', 'x-user-documento'],
 };
 app.use(cors(corsOptions));
 app.use(express.json());
