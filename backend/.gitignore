@@ -26,3 +26,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Seeds and generated/sample data (do not commit)
+seedComponents/
+seedComponents/*
+seed*.js
+
+# Sensitive files
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Optional: ignore credentials and keys
+*.key
+*.pem
+credentials.json

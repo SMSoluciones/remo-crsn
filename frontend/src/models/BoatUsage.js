@@ -18,8 +18,16 @@ export async function createBoatUsage({ boatId, durationHours, note, zone }, use
     else if (user.fullName) headers['x-user-name'] = user.fullName;
   }
   try {
-    console.debug('createBoatUsage -> POST', url, { body: { boatId, durationHours, note }, headers });
+    // build body and include user identifying fields as fallback for servers that
+    // don't accept custom headers or when CORS blocks them
+    const first = user?.nombre || user?.name || user?.firstName || '';
+    const last = user?.apellido || user?.lastname || user?.lastName || '';
+    const fullName = [first, last].filter(Boolean).join(' ').trim() || undefined;
+    console.debug('createBoatUsage -> POST', url, { body: { boatId, durationHours, note, zone, userName: fullName }, headers });
     const body = { boatId, durationHours, note };
+    if (fullName) body.userName = fullName;
+    if (user?.email) body.userEmail = user.email;
+    if (user?.documento) body.userDocumento = user.documento;
     if (zone) body.zone = zone;
     const res = await fetch(url, {
       method: 'POST',
