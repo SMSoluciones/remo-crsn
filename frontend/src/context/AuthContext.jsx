@@ -26,6 +26,10 @@ export function AuthProvider({ children }) {
       if (email) {
         localStorage.setItem('open_student_email', email);
       }
+      const documento = userData.documento ? String(userData.documento).trim() : '';
+      if (documento) {
+        localStorage.setItem('open_student_documento', documento);
+      }
     } catch (error) {
       console.error('Error al guardar el correo electrónico en localStorage:', error);
     }

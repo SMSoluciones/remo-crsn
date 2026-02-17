@@ -74,14 +74,17 @@ function MainApp() {
                 if (!isEnabled) return;
                 // Intentar usar la función global expuesta por Students para abrir directamente el perfil
                 try {
+                  const documento = user.documento ? String(user.documento).trim() : '';
                   const email = user.email ? String(user.email).trim().toLowerCase() : '';
+                  const identifier = documento || email;
                   setSection('students');
                   if (window.appOpenStudentProfile) {
                     // slight delay to ensure Students is mounted
-                    setTimeout(() => window.appOpenStudentProfile(email), 50);
+                    setTimeout(() => window.appOpenStudentProfile(identifier), 50);
                   } else {
                     // fallback: store in localStorage para que Students lo detecte
-                    if (email) localStorage.setItem('open_student_email', email);
+                    if (documento) localStorage.setItem('open_student_documento', documento);
+                    else if (email) localStorage.setItem('open_student_email', email);
                   }
                 } catch { /* ignore */ }
               }}

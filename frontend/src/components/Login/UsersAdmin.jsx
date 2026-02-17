@@ -6,7 +6,7 @@ import { useAuth } from '../../context/useAuth';
 export default function UsersAdmin() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR, password: '' });
+  const [form, setForm] = useState({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
   const [editId, setEditId] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
   const [changeUser, setChangeUser] = useState(null);
@@ -39,13 +39,13 @@ export default function UsersAdmin() {
       const created = await createUser(form, user);
       setUsers([...users, created]);
     }
-    setForm({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR, password: '' });
+    setForm({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
   };
 
   const handleEdit = user => {
     setEditId(user._id);
     // Do not prefill password when editing
-    setForm({ nombre: user.nombre, apellido: user.apellido, email: user.email, rol: user.rol, password: '' });
+    setForm({ nombre: user.nombre, apellido: user.apellido, email: user.email, documento: user.documento || '', rol: user.rol, password: '' });
   };
 
   const handleDelete = async id => {
@@ -62,6 +62,7 @@ export default function UsersAdmin() {
         <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" required className="px-3 py-2 border rounded w-40" />
         <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required className="px-3 py-2 border rounded w-40" />
         <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" className="px-3 py-2 border rounded w-56" />
+        <input name="documento" value={form.documento} onChange={handleChange} placeholder="Documento" className="px-3 py-2 border rounded w-40" />
         <input name="password" value={form.password} onChange={handleChange} placeholder={editId ? 'Nueva contraseña (opcional)' : 'Contraseña'} type="password" className="px-3 py-2 border rounded w-40" required={!editId} />
 
         <select name="rol" value={form.rol} onChange={handleChange} required className="px-3 py-2 border rounded w-40">

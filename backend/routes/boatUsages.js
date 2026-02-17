@@ -23,6 +23,7 @@ router.post('/', async (req, res) => {
     // Read user info from headers if available; fall back to body fields (frontend may send these)
     const userId = req.header('x-user-id') || req.body.userId || null;
     const userEmail = req.header('x-user-email') || req.body.userEmail || '';
+    const userDocumento = req.header('x-user-documento') || req.body.userDocumento || '';
     const userName = req.header('x-user-name') || req.header('x-user-fullname') || req.header('x-user') || req.body.userName || 'Desconocido';
 
     const requestedAt = new Date();
@@ -43,6 +44,7 @@ router.post('/', async (req, res) => {
       userId: userId || undefined,
       userName,
       userEmail,
+      userDocumento,
       requestedAt,
       durationHours: hours,
       estimatedReturn,

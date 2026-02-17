@@ -27,6 +27,7 @@ export async function fetchBoatReports() {
 export async function createBoatReport(formData, user) {
   // formData should be a FormData instance (multipart)
   const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '', 'x-user-email': user.email || '' } : {};
+  if (user && user.documento) headers['x-user-documento'] = user.documento;
   const res = await fetch(`${API_BASE_URL}/api/boat-reports`, {
     method: 'POST',
     headers,
@@ -41,6 +42,7 @@ export async function createBoatReport(formData, user) {
 
 export async function deleteBoatReport(id, user) {
   const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+  if (user && user.documento) headers['x-user-documento'] = user.documento;
   const res = await fetch(`${API_BASE_URL}/api/boat-reports/${id}`, { method: 'DELETE', headers });
   if (!res.ok) throw new Error('Error deleting report');
   return res.json();
@@ -48,6 +50,7 @@ export async function deleteBoatReport(id, user) {
 
 export async function updateBoatReport(id, data, user) {
   const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '', 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+  if (user && user.documento) headers['x-user-documento'] = user.documento;
   const res = await fetch(`${API_BASE_URL}/api/boat-reports/${id}`, { method: 'PUT', headers, body: JSON.stringify(data) });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

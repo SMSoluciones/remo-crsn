@@ -9,6 +9,7 @@ export async function createBoatUsage({ boatId, durationHours, note }, user) {
   if (isLocalBackend && user) {
     if (user._id) headers['x-user-id'] = user._id;
     if (user.email) headers['x-user-email'] = user.email;
+    if (user.documento) headers['x-user-documento'] = user.documento;
     if (user.nombre || user.name || user.fullName) headers['x-user-name'] = user.nombre || user.name || user.fullName;
   }
   try {

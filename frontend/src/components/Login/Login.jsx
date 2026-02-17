@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../../utils/apiConfig';
 
 export default function Login() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [documento, setDocumento] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,11 +18,11 @@ export default function Login() {
       const res = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ documento, password }),
       });
       const data = await res.json();
       if (res.ok) {
-        login(data);
+          login(data);
       } else {
         setError(data.error || 'Credenciales incorrectas');
       }
@@ -40,9 +40,9 @@ export default function Login() {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
             type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
+              placeholder="Documento"
+              value={documento}
+              onChange={e => setDocumento(e.target.value)}
             className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
             disabled={loading}
             required

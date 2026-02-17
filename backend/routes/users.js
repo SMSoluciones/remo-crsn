@@ -67,9 +67,18 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 
 // Ruta de login
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, documento } = req.body;
   try {
-    const user = await User.findOne({ email });
+    // Soportar login por documento o por email (compatibilidad)
+    let user = null;
+    if (documento) {
+      user = await User.findOne({ documento: String(documento).trim() });
+    } else if (email) {
+      user = await User.findOne({ email: String(email).trim().toLowerCase() });
+    } else {
+      return res.status(400).json({ error: 'Email o documento requerido' });
+    }
+
     if (!user) {
       return res.status(401).json({ error: 'Usuario no encontrado' });
     }

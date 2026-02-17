@@ -17,6 +17,7 @@ export class TechnicalSheet {
 
 export async function fetchSheetsByStudent(studentId, user) {
   const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '', 'x-user-email': user.email || '' } : {};
+  if (user && user.documento) headers['x-user-documento'] = user.documento;
   const res = await fetch(`${BASE}/student/${studentId}`, { headers });
   if (!res.ok) throw new Error('Error fetching technical sheets');
   return res.json();
@@ -40,6 +41,8 @@ export async function createSheet(data, user) {
       'x-user-id': user?.id || user?._id || '',
       'x-user-role': user?.rol || ''
     },
+    // include documento if available
+    ...(user && user.documento ? { 'x-user-documento': user.documento } : {}),
     body: JSON.stringify(data)
   });
   if (!res.ok) throw new Error('Error creating technical sheet');

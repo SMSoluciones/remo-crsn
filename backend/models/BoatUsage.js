@@ -5,6 +5,7 @@ const BoatUsageSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   userName: { type: String, required: true },
   userEmail: { type: String },
+  userDocumento: { type: String },
   requestedAt: { type: Date, default: Date.now },
   durationHours: { type: Number, required: true },
   estimatedReturn: { type: Date, required: true },

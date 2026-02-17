@@ -9,10 +9,15 @@ function headerAuth(req, res, next) {
   const userId = req.header('x-user-id');
   const userRole = req.header('x-user-role');
   const userEmail = req.header('x-user-email');
+  const userDocumento = req.header('x-user-documento');
   if (userId) req.user = { id: userId, rol: userRole ? String(userRole).toLowerCase() : undefined };
   if (userEmail) {
     req.user = req.user || {};
     req.user.email = String(userEmail).trim().toLowerCase();
+  }
+  if (userDocumento) {
+    req.user = req.user || {};
+    req.user.documento = String(userDocumento).trim();
   }
   next();
 }
@@ -28,9 +33,10 @@ function requireTrainerOrAdmin(req, res, next) {
 async function allowTrainerOrAdminOrOwner(req, res, next) {
   const rol = req.user && req.user.rol;
   if (rol === 'admin' || rol === 'entrenador') return next();
-  // Si no tenemos email del usuario, no podemos comprobar propietario
+  // Si no tenemos email del usuario, intentar comprobar propietario por documento (dni)
   const userEmail = req.user && req.user.email;
-  if (!userEmail) return res.status(403).json({ error: 'No autorizado' });
+  const userDocumento = req.user && req.user.documento;
+  if (!userEmail && !userDocumento) return res.status(403).json({ error: 'No autorizado' });
 
   // Resolver studentId param a documento y comparar emails
   try {
@@ -44,7 +50,9 @@ async function allowTrainerOrAdminOrOwner(req, res, next) {
     }
     if (!studentDoc) return res.status(403).json({ error: 'No autorizado' });
     const studentEmail = (studentDoc.email || '').toString().trim().toLowerCase();
-    if (studentEmail && studentEmail === userEmail) return next();
+    const studentDni = (studentDoc.dni || '').toString().trim();
+    if (studentEmail && userEmail && studentEmail === userEmail) return next();
+    if (studentDni && userDocumento && studentDni === userDocumento) return next();
     return res.status(403).json({ error: 'No autorizado' });
   } catch (err) {
     return res.status(400).json({ error: err.message });

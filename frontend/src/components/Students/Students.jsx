@@ -71,8 +71,9 @@ export default function Students() {
   // Si se solicitó abrir un perfil (desde el botón Mi Perfil), marcar state para ocultar la lista
   useEffect(() => {
     try {
-      const key = localStorage.getItem('open_student_email');
-      if (key) setOpeningByEmail(true);
+      const keyEmail = localStorage.getItem('open_student_email');
+      const keyDoc = localStorage.getItem('open_student_documento');
+      if (keyEmail || keyDoc) setOpeningByEmail(true);
     } catch {
       // ignore
     }
@@ -115,9 +116,22 @@ export default function Students() {
   // buscar el alumno con ese email y abrir su ficha automáticamente.
   useEffect(() => {
     try {
-      const key = localStorage.getItem('open_student_email');
-      if (!key) return;
-      const target = String(key).trim().toLowerCase();
+      const keyEmail = localStorage.getItem('open_student_email');
+      const keyDoc = localStorage.getItem('open_student_documento');
+      if (!keyEmail && !keyDoc) return;
+      if (keyDoc) {
+        const target = String(keyDoc).trim();
+        const found = students.find(s => (s.dni && String(s.dni).trim() === target) || (s.documento && String(s.documento).trim() === target));
+        localStorage.removeItem('open_student_documento');
+        if (found) {
+          handleOpenProfile(found.id);
+          setOpeningByEmail(false);
+          return;
+        }
+        setOpeningByEmail(false);
+        return;
+      }
+      const target = String(keyEmail).trim().toLowerCase();
       const found = students.find(s => s.email && String(s.email).trim().toLowerCase() === target);
       // limpiar la key para evitar reaperturas
       localStorage.removeItem('open_student_email');
@@ -136,20 +150,25 @@ export default function Students() {
   // Registrar una función global que el sidebar/app puede invocar directamente
   // para abrir el perfil del alumno relacionado con un email.
   useEffect(() => {
-    window.appOpenStudentProfile = (rawEmail) => {
+    window.appOpenStudentProfile = (rawId) => {
       try {
-        const email = rawEmail ? String(rawEmail).trim().toLowerCase() : null;
-        if (!email) return;
-        // si ya tenemos la lista de students, abrir directamente
+        if (!rawId) return;
+        const raw = String(rawId).trim();
+        // si ya tenemos la lista de students, abrir directamente (buscar por email o por documento/dni)
         if (students && students.length > 0) {
-          const found = students.find(s => s.email && String(s.email).trim().toLowerCase() === email);
-          if (found) {
-            handleOpenProfile(found.id);
+          const byEmail = students.find(s => s.email && String(s.email).trim().toLowerCase() === raw.toLowerCase());
+          if (byEmail) {
+            handleOpenProfile(byEmail.id);
+            return;
+          }
+          const byDoc = students.find(s => (s.dni && String(s.dni).trim() === raw) || (s.documento && String(s.documento).trim() === raw));
+          if (byDoc) {
+            handleOpenProfile(byDoc.id);
             return;
           }
         }
         // si no está la lista aún, marcar pending y show loading
-        window.pendingOpenStudentEmail = email;
+        window.pendingOpenStudentEmail = raw;
         setOpeningByEmail(true);
       } catch {
         // ignore
@@ -163,7 +182,7 @@ export default function Students() {
     try {
       const pending = window.pendingOpenStudentEmail;
       if (!pending) return;
-      const found = students.find(s => s.email && String(s.email).trim().toLowerCase() === pending);
+      const found = students.find(s => (s.email && String(s.email).trim().toLowerCase() === String(pending).toLowerCase()) || (s.dni && String(s.dni).trim() === String(pending)) || (s.documento && String(s.documento).trim() === String(pending)));
       if (found) {
         handleOpenProfile(found.id);
         delete window.pendingOpenStudentEmail;

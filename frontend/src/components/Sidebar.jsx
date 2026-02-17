@@ -46,8 +46,10 @@ export default function Sidebar({ section, setSection }) {
             onClick={() => {
               if (!isEnabled) return;
               try {
+                const documento = user.documento ? String(user.documento).trim() : '';
                 const email = user.email ? String(user.email).trim().toLowerCase() : '';
-                if (email) localStorage.setItem('open_student_email', email);
+                if (documento) localStorage.setItem('open_student_documento', documento);
+                else if (email) localStorage.setItem('open_student_email', email);
               } catch { /* ignore */ }
               setSection('students');
             }}
