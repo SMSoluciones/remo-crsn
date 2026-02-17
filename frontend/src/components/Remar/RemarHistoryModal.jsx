@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchBoatUsages } from '../models/BoatUsage';
-import { API_BASE_URL } from '../utils/apiConfig';
+import { fetchBoatUsages } from '../../models/BoatUsage';
+import { API_BASE_URL } from '../../utils/apiConfig';
 
 export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [] }) {
   const [list, setList] = useState([]);
@@ -54,7 +54,6 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
       const found = boatsList.find(x => String(x._id) === String(b) || String(x.id) === String(b));
       return found ? (found.nombre || found.name || found.modelo || String(found._id)) : String(b);
     }
-    // b might be a populated boat object
     try {
       return String(b.nombre || b.name || b.modelo || b._id || 'Desconocido');
     } catch (e) {
@@ -64,10 +63,8 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
 
   const getUserDisplay = (usage) => {
     if (!usage) return 'Desconocido';
-    // direct fields
     if (usage.userName) return String(usage.userName);
     if (usage.userFullName) return String(usage.userFullName);
-    // populated user object
     const u = usage.user || usage.userId || usage.userData || null;
     if (u && typeof u === 'object') {
       const first = u.nombre || u.name || u.firstName || u.nombres || '';
@@ -76,7 +73,6 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
       return disp;
     }
     if (usage.userEmail) return String(usage.userEmail);
-    // fallback: maybe the usage stores a plain name
     if (usage.requestedBy) return String(usage.requestedBy);
     return 'Desconocido';
   };
@@ -88,7 +84,6 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
     try {
       const url = `${API_BASE_URL}/api/boat-usages/${id}`;
       const headers = { 'Content-Type': 'application/json' };
-      // allow server to check role from header when running locally
       const isLocal = API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
       if (isLocal && user) {
         if (user.rol) headers['x-user-role'] = user.rol;
@@ -99,7 +94,6 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || body.message || `HTTP ${res.status}`);
       }
-      // remove from list
       setList(prev => prev.filter(it => String(it._id) !== String(id)));
     } catch (err) {
       console.error('Delete failed', err);
@@ -135,7 +129,7 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
                   <th className="px-2 py-2">Salida</th>
                   <th className="px-2 py-2">Regreso estimado</th>
                   <th className="px-2 py-2">Horas</th>
-                  <th className="px-2 py-2">Nota</th>
+                  <th className="px-2 py-2">Zona</th>
                   <th className="px-2 py-2">Acciones</th>
                 </tr>
               </thead>
@@ -147,7 +141,7 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
                     <td className="px-2 py-2 align-top">{fmtDate(u.requestedAt || u.salida || u.createdAt)}</td>
                     <td className="px-2 py-2 align-top">{fmtDate(u.estimatedReturn)}</td>
                     <td className="px-2 py-2 align-top">{u.durationHours ?? u.hours ?? '—'}</td>
-                    <td className="px-2 py-2 align-top">{u.note || u.nota || '—'}</td>
+                    <td className="px-2 py-2 align-top">{u.zone || u.zona || '—'}</td>
                     <td className="px-2 py-2 align-top flex items-center gap-2">
                       {String(user?.rol || '').toLowerCase() === 'admin' ? (
                         <>

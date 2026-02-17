@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../utils/apiConfig';
 
-export async function createBoatUsage({ boatId, durationHours, note }, user) {
+export async function createBoatUsage({ boatId, durationHours, note, zone }, user) {
   const url = `${API_BASE_URL}/api/boat-usages`;
   const headers = { 'Content-Type': 'application/json' };
   // Only send custom x-user-* headers in local development (backend on localhost).
@@ -10,14 +10,21 @@ export async function createBoatUsage({ boatId, durationHours, note }, user) {
     if (user._id) headers['x-user-id'] = user._id;
     if (user.email) headers['x-user-email'] = user.email;
     if (user.documento) headers['x-user-documento'] = user.documento;
-    if (user.nombre || user.name || user.fullName) headers['x-user-name'] = user.nombre || user.name || user.fullName;
+    // Prefer full name composed of nombre + apellido when available
+    const first = user.nombre || user.name || user.firstName || '';
+    const last = user.apellido || user.lastname || user.lastName || '';
+    const fullName = [first, last].filter(Boolean).join(' ').trim();
+    if (fullName) headers['x-user-name'] = fullName;
+    else if (user.fullName) headers['x-user-name'] = user.fullName;
   }
   try {
     console.debug('createBoatUsage -> POST', url, { body: { boatId, durationHours, note }, headers });
+    const body = { boatId, durationHours, note };
+    if (zone) body.zone = zone;
     const res = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ boatId, durationHours, note }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));

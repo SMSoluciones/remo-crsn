@@ -6,7 +6,7 @@ const Boat = require('../models/Boat');
 // POST /api/boat-usages
 router.post('/', async (req, res) => {
   try {
-    const { boatId, durationHours, note } = req.body || {};
+    const { boatId, durationHours, note, zone } = req.body || {};
     console.log('POST /api/boat-usages headers:', {
       id: req.header('x-user-id'),
       email: req.header('x-user-email'),
@@ -49,6 +49,7 @@ router.post('/', async (req, res) => {
       durationHours: hours,
       estimatedReturn,
       note: note || '',
+      zone: zone ? String(zone).slice(0,20) : '',
     });
 
     console.log('Created BoatUsage', usage._id);

@@ -11,6 +11,7 @@ const BoatUsageSchema = new mongoose.Schema({
   estimatedReturn: { type: Date, required: true },
   createdAt: { type: Date, default: Date.now },
   note: { type: String },
+  zone: { type: String, maxlength: 20 },
 });
 
 module.exports = mongoose.model('BoatUsage', BoatUsageSchema);
