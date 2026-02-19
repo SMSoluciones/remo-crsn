@@ -3,15 +3,12 @@ import { API_BASE_URL } from '../../utils/apiConfig';
 import { showSuccess, showError } from '../../utils/toast';
 import { useAuth } from '../../context/useAuth';
 import { updateStudentByIdentifier, updateMyProfile } from '../../models/Student';
+import ChangePasswordModal from '../Login/ChangePasswordModal';
 
 export default function Settings() {
   const { user } = useAuth();
   const [profile, setProfile] = useState({ nombre: '', email: '', direccion: '', telefono: '' });
   const [changePwdOpen, setChangePwdOpen] = useState(false);
-  const [currentPwd, setCurrentPwd] = useState('');
-  const [newPwd, setNewPwd] = useState('');
-  const [confirmPwd, setConfirmPwd] = useState('');
-  const [changing, setChanging] = useState(false);
   const [photoPreview, setPhotoPreview] = useState('');
   const fileInputRef = useRef(null);
 
@@ -91,44 +88,7 @@ export default function Settings() {
     reader.readAsDataURL(file);
   };
 
-  const handleChangePassword = async () => {
-    if (!newPwd || newPwd.length < 6) {
-      showError('La nueva contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-    if (newPwd !== confirmPwd) {
-      showError('Las contraseñas no coinciden');
-      return;
-    }
-    setChanging(true);
-    try {
-      // send identifier-based change-password (pre-JWT flow)
-      const identifier = user?.documento || user?.dni || user?.email;
-      if (!identifier) {
-        showError('No se pudo identificar al usuario para cambiar la contraseña');
-        setChanging(false);
-        return;
-      }
-      const res = await fetch(`${API_BASE_URL}/api/users/change-password`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, currentPassword: currentPwd, newPassword: newPwd })
-      });
-      const payload = await res.json();
-      if (!res.ok) {
-        showError(payload.error || 'No se pudo cambiar la contraseña');
-        setChanging(false);
-        return;
-      }
-      setChangePwdOpen(false);
-      setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
-      showSuccess('Contraseña cambiada correctamente');
-    } catch (err) {
-      console.error('Error cambiando contraseña', err);
-      showError('No se pudo cambiar la contraseña');
-    } finally {
-      setChanging(false);
-    }
-  };
+  // Password change handled by shared ChangePasswordModal
 
   return (
     <div className="bg-white rounded-xl shadow p-8 text-gray-700 max-w-3xl">
@@ -179,23 +139,7 @@ export default function Settings() {
         <button onClick={handleReset} className="bg-gray-200 px-4 py-2 rounded">Restaurar</button>
       </div>
 
-      {changePwdOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setChangePwdOpen(false)} />
-          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Cambiar contraseña</h3>
-            <div className="flex flex-col gap-3">
-              <input type="password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="Contraseña actual" className="border rounded px-3 py-2" />
-              <input type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Nueva contraseña" className="border rounded px-3 py-2" />
-              <input type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} placeholder="Confirmar nueva contraseña" className="border rounded px-3 py-2" />
-            </div>
-            <div className="flex justify-end gap-3 mt-4">
-              <button onClick={() => setChangePwdOpen(false)} className="px-4 py-2 rounded bg-gray-200">Cancelar</button>
-              <button onClick={handleChangePassword} disabled={changing} className="px-4 py-2 rounded bg-green-600 text-white">{changing ? 'Cambiando...' : 'Guardar'}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ChangePasswordModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} user={user} />
     </div>
   );
 }

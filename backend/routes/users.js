@@ -1,7 +1,14 @@
 const express = require('express');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-// jsonwebtoken removed
+const crypto = require('crypto');
+let nodemailer;
+try {
+  nodemailer = require('nodemailer');
+} catch (err) {
+  nodemailer = null;
+  console.warn('nodemailer not available. Install with `npm i nodemailer` to enable email sending.');
+}
 const router = express.Router();
 
 // JWT authentication removed; reverting to previous non-JWT behavior
@@ -100,16 +107,89 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Error en el servidor' });
   }
 });
-// Cambiar contraseña (usa identifier, sin JWT)
+
+// Request a password-change token via email
+router.post('/request-password-change', async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier) return res.status(400).json({ error: 'identifier is required' });
+    const query = { $or: [{ documento: identifier }, { email: identifier }, { _id: identifier }] };
+    const user = await User.findOne(query);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // generate token
+    const token = crypto.randomBytes(24).toString('hex');
+    user.resetToken = token;
+    user.resetTokenExpires = Date.now() + 1000 * 60 * 60; // 1 hour
+    await user.save();
+
+    const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontend.replace(/\/$/, '')}/reset-password?token=${token}`;
+
+    // try to send email
+    if (nodemailer && process.env.SMTP_HOST && process.env.SMTP_USER) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT || 587),
+          secure: String(process.env.SMTP_SECURE || 'false') === 'true',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        });
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || 'no-reply@remocrsn.local',
+          to: user.email,
+          subject: 'Cambio de contraseña - REMO CRSN',
+          text: `Para cambiar tu contraseña, visita: ${resetUrl}\nSi no solicitaste esto, ignora este mensaje.`,
+          html: `<p>Para cambiar tu contraseña, haz click <a href="${resetUrl}">aquí</a>.</p><p>Si no solicitaste esto, ignora este mensaje.</p>`,
+        });
+        return res.json({ message: 'Email de verificación enviado' });
+      } catch (err) {
+        console.warn('Error sending email:', err);
+        // fallthrough to return token in response as fallback (not ideal for production)
+      }
+    }
+
+    // Fallback: return token in response (useful for local/dev)
+    res.json({ message: 'Token generado (dev fallback)', token, resetUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Error generando token' });
+  }
+});
+
+// Confirm password change using token
+router.post('/confirm-password-change', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'token and newPassword are required' });
+    const user = await User.findOne({ resetToken: token, resetTokenExpires: { $gt: Date.now() } });
+    if (!user) return res.status(400).json({ error: 'Token inválido o expirado' });
+    if (String(newPassword).length < 6) return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetToken = undefined;
+    user.resetTokenExpires = undefined;
+    await user.save();
+    res.json({ message: 'Contraseña actualizada' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error confirmando el cambio de contraseña' });
+  }
+});
+// Cambiar contraseña (usa identifier). Si no se provee currentPassword, se permite actualizar directamente.
 router.post('/change-password', async (req, res) => {
   try {
     const { identifier, currentPassword, newPassword } = req.body;
-    if (!identifier || !currentPassword || !newPassword) return res.status(400).json({ error: 'identifier, currentPassword and newPassword are required' });
+    if (!identifier || !newPassword) return res.status(400).json({ error: 'identifier and newPassword are required' });
     const query = { $or: [{ documento: identifier }, { email: identifier }] };
     const user = await User.findOne(query);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+    if (currentPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+    } else {
+      // WARNING: No current password provided — allowing direct password reset for identifier.
+      // This is less secure; ensure this behavior is acceptable for your deployment.
+    }
     if (String(newPassword).length < 6) return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
