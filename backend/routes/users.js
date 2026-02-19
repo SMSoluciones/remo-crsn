@@ -177,6 +177,32 @@ router.post('/request-password-change', async (req, res) => {
   }
 });
 
+// Dev-only: return a token directly for testing (disabled in production)
+router.post('/dev-request-password-change', async (req, res) => {
+  try {
+    if (process.env.NODE_ENV === 'production') return res.status(403).json({ error: 'Not allowed in production' });
+    const { identifier } = req.body;
+    if (!identifier) return res.status(400).json({ error: 'identifier is required' });
+    const ors = [{ documento: identifier }, { email: identifier }];
+    if (mongoose.Types.ObjectId.isValid(String(identifier))) ors.push({ _id: identifier });
+    const user = await User.findOne({ $or: ors });
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const token = crypto.randomBytes(24).toString('hex');
+    const expires = Date.now() + 1000 * 60 * 60; // 1 hour
+    try {
+      await User.findByIdAndUpdate(user._id, { resetToken: token, resetTokenExpires: expires }, { new: true, runValidators: false });
+    } catch (err) {
+      console.error('Error saving reset token in dev endpoint:', err);
+    }
+    const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontend.replace(/\/$/, '')}/reset-password?token=${token}`;
+    return res.json({ message: 'Dev token generado', token, resetUrl });
+  } catch (err) {
+    console.error('Error in /dev-request-password-change:', err);
+    return res.status(500).json({ error: err.message || 'Error generando token (dev)' });
+  }
+});
+
 // Confirm password change using token
 router.post('/confirm-password-change', async (req, res) => {
   try {
