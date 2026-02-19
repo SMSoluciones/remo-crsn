@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 let nodemailer;
@@ -113,8 +114,12 @@ router.post('/request-password-change', async (req, res) => {
   try {
     const { identifier } = req.body;
     if (!identifier) return res.status(400).json({ error: 'identifier is required' });
-    const query = { $or: [{ documento: identifier }, { email: identifier }, { _id: identifier }] };
-    const user = await User.findOne(query);
+    // Build a safe $or query; only include _id clause if identifier is a valid ObjectId to avoid CastError
+    const ors = [{ documento: identifier }, { email: identifier }];
+    if (mongoose.Types.ObjectId.isValid(String(identifier))) {
+      ors.push({ _id: identifier });
+    }
+    const user = await User.findOne({ $or: ors });
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
     // generate token and persist it using an update (avoids full document validation errors)
     const token = crypto.randomBytes(24).toString('hex');
