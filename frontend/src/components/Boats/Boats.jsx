@@ -9,7 +9,9 @@ import AddBoatsModal from './AddBoatsModal';
 import AddBoatReportModal from './AddBoatReportModal';
 import ManageReportsModal from './ManageReportsModal';
 import ManageBoatsModal from './ManageBoatsModal';
+import Remar from '../Remar/Remar';
 import { fetchBoatReports, deleteBoatReport } from '../../models/BoatReport';
+import { fetchBoatUsages } from '../../models/BoatUsage';
 import { showError, showSuccess } from '../../utils/toast';
 
 export default function Boats() {
@@ -24,8 +26,52 @@ export default function Boats() {
   const [showManageBoatsModal, setShowManageBoatsModal] = useState(false);
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(false);
+  const [showRemarModal, setShowRemarModal] = useState(false);
+  const [remarBoatId, setRemarBoatId] = useState('');
+  const [activeBoatLocks, setActiveBoatLocks] = useState({});
   const { user } = useContext(AuthContext);
   const role = String(user?.rol || '').trim().toLowerCase();
+
+  const loadActiveLocks = async () => {
+    try {
+      const usages = await fetchBoatUsages().catch(() => []);
+      let arr = [];
+      if (Array.isArray(usages)) arr = usages;
+      else if (usages && Array.isArray(usages.data)) arr = usages.data;
+      else if (usages && Array.isArray(usages.items)) arr = usages.items;
+      else arr = [];
+      const locks = {};
+      const now = new Date();
+      arr.forEach(u => {
+        const boatId = (u.boatId || u.boat || (u.boat && u.boat._id) || null);
+        if (!boatId) return;
+        let endIso = u.estimatedReturn || u.estimated_return || u.estimatedReturnAt || null;
+        if (!endIso) {
+          const start = u.requestedAt || u.salida || u.createdAt || u.requested_at || null;
+          const hours = (u.durationHours ?? u.hours ?? u.horas) || null;
+          if (start && hours) {
+            try {
+              const d = new Date(start);
+              if (!isNaN(d.getTime())) d.setHours(d.getHours() + Number(hours));
+              endIso = d.toISOString();
+            } catch (e) { console.log(`Error calculating end date for boat ${boatId}:`, e); }
+          }
+        }
+        if (endIso) {
+          try {
+            const endDate = new Date(endIso);
+            if (!isNaN(endDate.getTime()) && endDate > now) {
+              locks[String(boatId)] = endDate.toISOString();
+            }
+          } catch (e) { console.log(`Error parsing end date for boat ${boatId}:`, e); }
+        }
+      });
+      setActiveBoatLocks(locks);
+    } catch (err) {
+      console.error('Error cargando usos de botes:', err);
+      setActiveBoatLocks({});
+    }
+  };
 
   const getBoatName = (boatRef) => {
     if (!boatRef) return 'Bote';
@@ -44,6 +90,8 @@ export default function Boats() {
         console.error('Error cargando botes:');
       }
     })();
+    // load active boat usages / locks
+    loadActiveLocks();
     // load reports
     const loadReports = async () => {
       setReportsLoading(true);
@@ -104,7 +152,7 @@ export default function Boats() {
 
         return (
           <ProtectedRoute>
-            <div className="bg-gray-50 min-h-screen px-2 py-6 sm:px-8 sm:py-8 flex flex-col md:flex-row gap-8 max-w-xs sm:max-w-6xl mx-auto" data-aos="fade-up">
+            <div className="bg-gray-50 min-h-screen px-4 py-8 sm:px-10 sm:py-10 flex flex-col md:flex-row gap-8 w-full sm:max-w-7xl mx-auto" data-aos="fade-up">
               <div className="flex-1 flex flex-col gap-8">
                 <div className="flex items-center gap-2 mb-2">
                   <LifebuoyIcon className="h-7 w-7 text-green-700" />
@@ -199,6 +247,7 @@ export default function Boats() {
                           <WrenchScrewdriverIcon className="h-5 w-5 inline text-yellow-600" /> Estado
                         </th>
                         <th className="py-2 px-4 text-left">Fecha Ingreso</th>
+                        <th className="py-2 px-4 text-left">Remos</th>
                         <th className="py-2 px-4 text-left">Remo</th>
                       </tr>
                     </thead>
@@ -214,7 +263,27 @@ export default function Boats() {
                             <span className={`px-2 py-1 rounded text-xs font-bold ${b.estado === 'mantenimiento' ? 'bg-yellow-200 text-yellow-800' : b.estado === 'fuera_servicio' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>{b.estado}</span>
                           </td>
                           <td className="py-2 px-4">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</td>
-                          <td className="px-4 py-2 border">{b.row}</td>
+                          <td className="py-2 px-4">{(b.row !== undefined && b.row !== null) ? b.row : '—'}</td>
+                          <td className="px-4 py-2 border">
+                            {(() => {
+                                const unavailable = b.estado === BoatStatus.MANTENIMIENTO || b.estado === BoatStatus.FUERA_SERVICIO;
+                                const lockIso = activeBoatLocks[String(b._id || b.id)];
+                                const locked = lockIso ? (new Date(lockIso) > new Date()) : false;
+                                const disabled = unavailable || locked;
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      disabled={disabled}
+                                      onClick={() => { setRemarBoatId(b._id || b.id); setShowRemarModal(true); }}
+                                      className={`px-3 py-1 rounded text-sm ${disabled ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                                    >
+                                      Remar
+                                    </button>
+                                    {disabled && <span className="text-xs text-red-600">No disponible</span>}
+                                  </div>
+                                );
+                              })()}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -352,6 +421,16 @@ export default function Boats() {
                   onRequestClose={() => { setShowManageBoatsModal(false); /* refresh */ (async () => { const data = await fetchBoats().catch(() => []); setBoats(Array.isArray(data) ? data : []); })(); }}
                   user={user}
                   onUpdated={async () => { const data = await fetchBoats().catch(() => []); setBoats(Array.isArray(data) ? data : []); }}
+                />
+              )}
+              {showRemarModal && (
+                <Remar
+                  isOpen={showRemarModal}
+                  onRequestClose={() => { setShowRemarModal(false); /* refresh locks after modal closes in case a usage was created */ loadActiveLocks(); setRemarBoatId(''); }}
+                  boatsList={boats}
+                  activeBoatLocks={activeBoatLocks}
+                  initialSelectedBoatId={remarBoatId}
+                  user={user}
                 />
               )}
           </ProtectedRoute>

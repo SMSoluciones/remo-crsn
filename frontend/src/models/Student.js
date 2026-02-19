@@ -20,6 +20,18 @@ export async function updateStudent(id, data) {
   return res.json();
 }
 
+export async function updateStudentByIdentifier(identifier, data) {
+  const res = await fetch(`${BASE}/by-identifier`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier, data }) });
+  if (!res.ok) throw new Error('Error updating student by identifier');
+  return res.json();
+}
+
+export async function updateMyProfile(data, identifier) {
+  const res = await fetch(`${BASE}/me`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-student-identifier': identifier }, body: JSON.stringify(data) });
+  if (!res.ok) throw new Error('Error updating my profile');
+  return res.json();
+}
+
 export async function deleteStudent(id) {
   const res = await fetch(`${BASE}/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Error deleting student');

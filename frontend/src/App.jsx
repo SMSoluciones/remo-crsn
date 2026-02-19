@@ -11,6 +11,7 @@ import Dashboard from "./components/Dashboard.jsx";
 import Boats from './components/Boats/Boats.jsx';
 import Students from './components/Students/Students.jsx';
 import TechnicalSheets from './components/Students/TechnicalSheets.jsx';
+import Settings from './components/Settings/Settings.jsx';
 import Topbar from './components/Topbar.jsx';
 import { ToastContainer, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -145,7 +146,7 @@ function MainApp() {
             {section === 'students' && <Students />}
             {section === 'sheets' && <TechnicalSheets />}
             {section === 'settings' && (
-              <div className="bg-white rounded-xl shadow p-8 text-gray-700">Configuración (próximamente)</div>
+              <Settings />
             )}
           </div>
 

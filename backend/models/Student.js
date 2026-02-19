@@ -17,6 +17,7 @@ const StudentSchema = new mongoose.Schema({
   federado: { type: Boolean, default: false },
   estado: { type: String, default: 'ACTIVO' },
   fechaIngreso: { type: Date, default: Date.now },
+  avatar: { type: String },
 });
 
 module.exports = mongoose.model('Student', StudentSchema);

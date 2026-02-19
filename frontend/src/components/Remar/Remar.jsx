@@ -1,12 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createBoatUsage, fetchBoatUsages } from '../../models/BoatUsage';
+import { BoatStatus } from '../../models/Boat';
 import { showError, showSuccess } from '../../utils/toast';
 
-export default function Remar({ isOpen, onRequestClose, boatsList = [], activeBoatLocks = {}, user, isRemarHistoryOpen, setRemarHistoryLoading, setRemarHistory }) {
+export default function Remar({ isOpen, onRequestClose, boatsList = [], activeBoatLocks = {}, initialSelectedBoatId, user, isRemarHistoryOpen, setRemarHistoryLoading, setRemarHistory }) {
   const [selectedBoatId, setSelectedBoatId] = useState('');
   const [zone, setZone] = useState('');
   const [durationHours, setDurationHours] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedBoatId('');
+      setZone('');
+      setDurationHours(1);
+      return;
+    }
+    if (initialSelectedBoatId) {
+      setSelectedBoatId(initialSelectedBoatId);
+    }
+  }, [isOpen, initialSelectedBoatId]);
 
   if (!isOpen) return null;
 
@@ -25,16 +38,18 @@ export default function Remar({ isOpen, onRequestClose, boatsList = [], activeBo
               const id = b._id || b.id;
               const lockIso = activeBoatLocks[String(id)];
               const locked = lockIso ? (new Date(lockIso) > new Date()) : false;
-              const label = `${b.nombre || b.name || id}${locked ? ` (En uso hasta ${new Date(lockIso).toLocaleString('es-ES')})` : ''}`;
+              const unavailable = b.estado === BoatStatus.MANTENIMIENTO || b.estado === BoatStatus.FUERA_SERVICIO;
+              const statusNote = unavailable ? (b.estado === BoatStatus.MANTENIMIENTO ? 'Mantenimiento' : 'Fuera de servicio') : '';
+              const label = `${b.nombre || b.name || id}${locked ? ` (En uso hasta ${new Date(lockIso).toLocaleString('es-ES')})` : ''}${statusNote ? ` (No disponible: ${statusNote})` : ''}`;
               return (
-                <option key={id} value={id} disabled={locked}>{label}</option>
+                <option key={id} value={id} disabled={locked || unavailable}>{label}</option>
               );
             })}
           </select>
 
           <label className="text-sm font-medium">Duración estimada</label>
           <div className="flex gap-2">
-            {[1,2,3,4,6].map((h) => (
+            {[1,2,3,4].map((h) => (
               <button key={h} onClick={() => setDurationHours(h)} type="button" className={`px-3 py-2 rounded ${durationHours===h? 'bg-blue-800 text-white':'bg-gray-100'}`}>
                 {h} {h===1? 'hora' : 'horas'}
               </button>

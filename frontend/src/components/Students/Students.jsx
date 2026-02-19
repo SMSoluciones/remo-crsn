@@ -24,6 +24,7 @@ export default function Students() {
   const [sheets, setSheets] = useState({}); // { studentId: [fichas...] }
   const [form, setForm] = useState({ fecha: '', entrenador: '', postura: 5, remada: 5, equilibrio: 5, coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
   const [showAddStudent, setShowAddStudent] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
   const [openingByEmail, setOpeningByEmail] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 2;
@@ -41,12 +42,32 @@ export default function Students() {
   const filtered = students.filter(s => {
     const matchesName = (`${s.nombre} ${s.apellido}`.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = !categoryFilter || s.categoria === categoryFilter;
-    const matchesEstado = !estadoFilter || (String(s.estado || '').toUpperCase() === String(estadoFilter).toUpperCase());
     const isInactive = String(s.estado || '').toUpperCase() === 'INACTIVO';
     // Ocultar alumnos inactivos a roles no autorizados
     if (isInactive && !canViewInactive) return false;
+    // Si se seleccionó un filtro de estado, exigir coincidencia exacta (evita ambigüedades en responsive)
+    let matchesEstado = true;
+    if (estadoFilter) {
+      const ef = String(estadoFilter).toUpperCase();
+      matchesEstado = String(s.estado || '').toUpperCase() === ef;
+    }
     return matchesName && matchesCategory && matchesEstado;
   });
+
+  useEffect(() => {
+    // Close open menus when clicking outside
+    const handleDocClick = (e) => {
+      try {
+        if (!openMenuFor) return;
+        const withinMenu = e.target.closest && (e.target.closest(`[data-menu-owner="${openMenuFor}"]`) || e.target.closest(`[data-menu-button="${openMenuFor}"]`));
+        if (!withinMenu) setOpenMenuFor(null);
+      } catch (err) {
+        console.warn('Error handling document click for menu closing:', err);
+      }
+    };
+    document.addEventListener('click', handleDocClick);
+    return () => document.removeEventListener('click', handleDocClick);
+  }, [openMenuFor]);
 
   useEffect(() => {
     let mounted = true;
@@ -316,11 +337,46 @@ export default function Students() {
                   </div>
                   {/* Botón "Nuevo Alumno" visible en móvil debajo de los filtros */}
                   <div className="w-full sm:hidden">
-                    {(role === 'admin' || role === 'entrenador') ? (
-                      <button onClick={() => setShowAddStudent(true)} className="w-full bg-black text-white rounded px-4 py-2">Nuevo alumno</button>
-                    ) : (
-                      <button className="w-full bg-gray-200 text-gray-500 rounded px-4 py-2 cursor-not-allowed" title="Solo administradores o entrenadores">Nuevo alumno</button>
-                    )}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-3 mb-2 sm:hidden">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEstadoFilter(prev => prev === 'ACTIVO' ? '' : 'ACTIVO'); }}
+                          title="Activos"
+                          className="flex items-center gap-2 focus:outline-none"
+                        >
+                          <div className={`relative w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 ${estadoFilter === 'ACTIVO' ? 'ring-2 ring-green-400' : ''}`}>
+                            <UserIcon className={`h-5 w-5 ${estadoFilter === 'ACTIVO' ? 'text-green-700' : 'text-gray-500'}`} />
+                            {activeCount > 0 && (
+                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 text-xs font-bold leading-none text-white bg-green-600 rounded-full">
+                                {activeCount}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm text-gray-700">Activos</span>
+                        </button>
+
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (!canViewInactive) { showError('No tienes permisos para ver alumnos inactivos'); return; } setEstadoFilter(prev => prev === 'INACTIVO' ? '' : 'INACTIVO'); }}
+                          title={canViewInactive ? 'Inactivos' : 'No autorizado'}
+                          className="flex items-center gap-2 focus:outline-none"
+                        >
+                          <div className={`relative w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 ${estadoFilter === 'INACTIVO' ? 'ring-2 ring-red-400' : ''} ${!canViewInactive ? 'opacity-40' : ''}`}>
+                            <UserIcon className={`h-5 w-5 ${estadoFilter === 'INACTIVO' ? 'text-red-700' : 'text-gray-500'}`} />
+                            {inactiveCount > 0 && (
+                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                                {inactiveCount}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm text-gray-700">Inactivos</span>
+                        </button>
+                      </div>
+                      {(role === 'admin' || role === 'entrenador') ? (
+                        <button onClick={() => setShowAddStudent(true)} className="w-full bg-black text-white rounded px-4 py-2">Nuevo alumno</button>
+                      ) : (
+                        <button className="w-full bg-gray-200 text-gray-500 rounded px-4 py-2 cursor-not-allowed" title="Solo administradores o entrenadores">Nuevo alumno</button>
+                      )}
+                    </div>
                   </div>
                 </div>
                 {loading ? (
@@ -330,7 +386,7 @@ export default function Students() {
                     {filtered.map(s => (
                         <div
                           key={s.id}
-                          className="relative rounded-xl shadow flex items-center gap-4 px-4 py-4 sm:px-6 sm:py-5 cursor-pointer transition-all bg-white hover:bg-blue-600 group"
+                          className={`relative rounded-xl shadow flex items-center gap-4 px-4 py-4 sm:px-6 sm:py-5 cursor-pointer transition-all bg-white hover:bg-blue-600 group ${openMenuFor === s.id ? 'z-20' : ''}`}
                           onClick={() => handleOpenProfile(s.id)}
                         >
                           <Avatar name={`${s.nombre} ${s.apellido}`} size={48} round={true} />
@@ -339,12 +395,17 @@ export default function Students() {
                             <div className="text-sm text-gray-500 group-hover:text-white">{s.categoria}</div>
                           </div>
                           <div className="absolute top-4 right-4">
-                            <button onClick={(e) => { e.stopPropagation(); setOpenMenuFor(openMenuFor === s.id ? null : s.id); }} className="p-1 rounded">
+                            <button data-menu-button={s.id} onClick={(e) => { e.stopPropagation(); setOpenMenuFor(openMenuFor === s.id ? null : s.id); }} className="p-1 rounded">
                               <EllipsisVerticalIcon className="h-5 w-5 text-gray-400 group-hover:text-white" />
                             </button>
                             {openMenuFor === s.id && (
-                              <div className="mt-2 w-40 bg-white border rounded shadow-lg text-sm right-0 absolute">
+                              <div data-menu-owner={s.id} className="mt-2 w-40 bg-white border rounded shadow-lg text-sm right-0 absolute z-50">
                                 <ul>
+                                  {role === 'admin' && (
+                                    <li>
+                                      <button onClick={(ev) => { ev.stopPropagation(); setEditingStudent(s); setShowAddStudent(true); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-gray-100">Editar</button>
+                                    </li>
+                                  )}
                                   {role === 'admin' && (
                                     <li>
                                       <button onClick={(ev) => { ev.stopPropagation(); if (!window.confirm('¿Seguro que desea eliminar este alumno?')) { setOpenMenuFor(null); return; } handleDeleteStudent(s.id); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600">Eliminar</button>
@@ -518,12 +579,24 @@ export default function Students() {
           )}
         </div>
       </div>
-      <AddStudentModal open={showAddStudent} onClose={() => setShowAddStudent(false)} onCreated={(created) => {
-            // Normalizar id y agregar al listado
-            const normalized = { ...created, id: created._id || created.id || created.dni };
-            setStudents(prev => [normalized, ...prev]);
-            setShowAddStudent(false);
-          }} />
+      <AddStudentModal
+        open={showAddStudent}
+        onClose={() => { setShowAddStudent(false); setEditingStudent(null); }}
+        initialData={editingStudent}
+        onCreated={(created) => {
+          // Normalizar id y agregar al listado
+          const normalized = { ...created, id: created._id || created.id || created.dni };
+          setStudents(prev => [normalized, ...prev]);
+          setShowAddStudent(false);
+        }}
+        onUpdated={(updated) => {
+          // replace the student in the list
+          const id = updated._id || updated.id || updated.dni;
+          setStudents(prev => prev.map(s => ((s._id || s.id || s.dni) === String(id) ? ({ ...s, ...updated, id: id }) : s)));
+          setShowAddStudent(false);
+          setEditingStudent(null);
+        }}
+      />
     </ProtectedRoute>
   );
 }
