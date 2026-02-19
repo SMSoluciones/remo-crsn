@@ -59,15 +59,25 @@ router.post('/', requireAdmin, async (req, res) => {
   }
 });
 
-// Actualizar usuario
-router.put('/:id', requireAdmin, async (req, res) => {
+// Actualizar usuario: permite al admin o al propietario autenticado
+router.put('/:id', requireAuth, async (req, res) => {
   try {
+    // Solo admin o el propio usuario puede actualizar
+    const requesterRole = (req.user && req.user.rol) || '';
+    const requesterId = (req.user && req.user.id) || '';
+    if (String(requesterRole).toLowerCase() !== 'admin' && String(requesterId) !== String(req.params.id)) {
+      return res.status(403).json({ error: 'Acceso restringido' });
+    }
+
     const updateData = { ...req.body };
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
     const user = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
-    res.json(user);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.json(userObj);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
