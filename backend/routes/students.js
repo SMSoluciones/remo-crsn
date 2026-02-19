@@ -108,11 +108,24 @@ router.put('/by-identifier', async (req, res) => {
   }
 });
 
-  // Authenticated-like endpoint for the current student (expects header 'x-student-identifier')
+  // Authenticated endpoint for the current student (expects Authorization: Bearer <token>)
   router.put('/me', async (req, res) => {
     try {
-      const identifier = req.headers['x-student-identifier'];
-      if (!identifier) return res.status(401).json({ error: 'Missing student identifier header' });
+      const auth = req.headers.authorization || '';
+      if (!auth) return res.status(401).json({ error: 'No autorizado' });
+      const parts = auth.split(' ');
+      if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ error: 'Formato de token inválido' });
+      const token = parts[1];
+      const jwt = require('jsonwebtoken');
+      const JWT_SECRET = process.env.JWT_SECRET || 'remocrsn_secret';
+      let payload;
+      try {
+        payload = jwt.verify(token, JWT_SECRET);
+      } catch (err) {
+        return res.status(401).json({ error: 'Token inválido' });
+      }
+      const identifier = payload.documento || payload.email;
+      if (!identifier) return res.status(401).json({ error: 'No se pudo identificar al usuario' });
       const data = req.body || {};
       // Reuse same avatar handling logic as above
       if (data && data.avatar && typeof data.avatar === 'string' && data.avatar.startsWith('data:')) {

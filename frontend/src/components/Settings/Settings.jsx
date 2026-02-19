@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { API_BASE_URL } from '../../utils/apiConfig';
 import { showSuccess, showError } from '../../utils/toast';
 import { useAuth } from '../../context/useAuth';
 import { updateStudentByIdentifier, updateMyProfile } from '../../models/Student';
@@ -101,9 +102,27 @@ export default function Settings() {
     }
     setChanging(true);
     try {
-      // TODO: integrar con endpoint backend para cambiar contraseña
-      // Ejemplo: await updatePassword({ current: currentPwd, newPassword: newPwd });
-      await new Promise(r => setTimeout(r, 600)); // simular llamada
+      // prefer JWT authorization instead of sending identifier
+      let token = null;
+      try { const raw = localStorage.getItem('auth_user'); if (raw) token = JSON.parse(raw).token; } catch (err) {
+        console.warn('Error reading auth token from localStorage', err);
+
+      }
+      if (!token) {
+        showError('No autorizado para cambiar contraseña');
+        setChanging(false);
+        return;
+      }
+      const res = await fetch(`${API_BASE_URL}/api/users/change-password`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd })
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        showError(payload.error || 'No se pudo cambiar la contraseña');
+        setChanging(false);
+        return;
+      }
       setChangePwdOpen(false);
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
       showSuccess('Contraseña cambiada correctamente');

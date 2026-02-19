@@ -26,8 +26,23 @@ export async function updateStudentByIdentifier(identifier, data) {
   return res.json();
 }
 
-export async function updateMyProfile(data, identifier) {
-  const res = await fetch(`${BASE}/me`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-student-identifier': identifier }, body: JSON.stringify(data) });
+export async function updateMyProfile(data, token) {
+  // token optional - if not provided, try to read from localStorage stored auth_user
+  let authToken = token;
+  if (!authToken) {
+    try {
+      const raw = localStorage.getItem('auth_user');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        authToken = parsed && parsed.token;
+      }
+    } catch (err){
+      console.warn('Error reading auth token from localStorage', err);
+    }
+  }
+  const headers = { 'Content-Type': 'application/json' };
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+  const res = await fetch(`${BASE}/me`, { method: 'PUT', headers, body: JSON.stringify(data) });
   if (!res.ok) throw new Error('Error updating my profile');
   return res.json();
 }
