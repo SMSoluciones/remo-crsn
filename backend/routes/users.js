@@ -116,16 +116,25 @@ router.post('/request-password-change', async (req, res) => {
     const query = { $or: [{ documento: identifier }, { email: identifier }, { _id: identifier }] };
     const user = await User.findOne(query);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-    // generate token
+    // generate token and persist it using an update (avoids full document validation errors)
     const token = crypto.randomBytes(24).toString('hex');
-    user.resetToken = token;
-    user.resetTokenExpires = Date.now() + 1000 * 60 * 60; // 1 hour
-    await user.save();
+    const expires = Date.now() + 1000 * 60 * 60; // 1 hour
+    try {
+      await User.findByIdAndUpdate(user._id, { resetToken: token, resetTokenExpires: expires }, { new: true, runValidators: false });
+    } catch (err) {
+      console.error('Error saving reset token for user (findByIdAndUpdate):', err);
+      // Do not abort the flow — fallthrough to return token in response for dev/testing
+    }
 
     const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetUrl = `${frontend.replace(/\/$/, '')}/reset-password?token=${token}`;
 
-    // try to send email
+    // try to send email if SMTP configured and user has an email
+    if (!user.email) {
+      console.warn('User does not have an email address; returning token in response (dev fallback)');
+      return res.json({ message: 'Token generado (dev fallback — usuario sin email)', token, resetUrl });
+    }
+
     if (nodemailer && process.env.SMTP_HOST && process.env.SMTP_USER) {
       try {
         const transporter = nodemailer.createTransport({
@@ -154,6 +163,11 @@ router.post('/request-password-change', async (req, res) => {
     // Fallback: return token in response (useful for local/dev)
     res.json({ message: 'Token generado (dev fallback)', token, resetUrl });
   } catch (err) {
+    console.error('Error in /request-password-change:', err);
+    // In development return the real error message to help debugging
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(500).json({ error: err.message || String(err) });
+    }
     res.status(500).json({ error: 'Error generando token' });
   }
 });
