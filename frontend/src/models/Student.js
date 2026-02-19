@@ -27,24 +27,11 @@ export async function updateStudentByIdentifier(identifier, data) {
 }
 
 export async function updateMyProfile(data, token) {
-  // token optional - if not provided, try to read from localStorage stored auth_user
-  let authToken = token;
-  if (!authToken) {
-    try {
-      const raw = localStorage.getItem('auth_user');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        authToken = parsed && parsed.token;
-      }
-    } catch (err){
-      console.warn('Error reading auth token from localStorage', err);
-    }
-  }
-  const headers = { 'Content-Type': 'application/json' };
-  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-  const res = await fetch(`${BASE}/me`, { method: 'PUT', headers, body: JSON.stringify(data) });
-  if (!res.ok) throw new Error('Error updating my profile');
-  return res.json();
+  // pre-JWT behavior: update by identifier via existing endpoint
+  // here `token` parameter is actually the identifier if provided
+  const identifier = token;
+  if (!identifier) throw new Error('Identifier required to update profile');
+  return updateStudentByIdentifier(identifier, data);
 }
 
 export async function deleteStudent(id) {

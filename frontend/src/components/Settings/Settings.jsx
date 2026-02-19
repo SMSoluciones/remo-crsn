@@ -102,20 +102,16 @@ export default function Settings() {
     }
     setChanging(true);
     try {
-      // prefer JWT authorization instead of sending identifier
-      let token = null;
-      try { const raw = localStorage.getItem('auth_user'); if (raw) token = JSON.parse(raw).token; } catch (err) {
-        console.warn('Error reading auth token from localStorage', err);
-
-      }
-      if (!token) {
-        showError('No autorizado para cambiar contraseña');
+      // send identifier-based change-password (pre-JWT flow)
+      const identifier = user?.documento || user?.dni || user?.email;
+      if (!identifier) {
+        showError('No se pudo identificar al usuario para cambiar la contraseña');
         setChanging(false);
         return;
       }
       const res = await fetch(`${API_BASE_URL}/api/users/change-password`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd })
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, currentPassword: currentPwd, newPassword: newPwd })
       });
       const payload = await res.json();
       if (!res.ok) {

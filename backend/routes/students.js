@@ -108,62 +108,7 @@ router.put('/by-identifier', async (req, res) => {
   }
 });
 
-  // Authenticated endpoint for the current student (expects Authorization: Bearer <token>)
-  router.put('/me', async (req, res) => {
-    try {
-      const auth = req.headers.authorization || '';
-      if (!auth) return res.status(401).json({ error: 'No autorizado' });
-      const parts = auth.split(' ');
-      if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ error: 'Formato de token inválido' });
-      const token = parts[1];
-      const jwt = require('jsonwebtoken');
-      const JWT_SECRET = process.env.JWT_SECRET || 'remocrsn_secret';
-      let payload;
-      try {
-        payload = jwt.verify(token, JWT_SECRET);
-      } catch (err) {
-        return res.status(401).json({ error: 'Token inválido' });
-      }
-      const identifier = payload.documento || payload.email;
-      if (!identifier) return res.status(401).json({ error: 'No se pudo identificar al usuario' });
-      const data = req.body || {};
-      // Reuse same avatar handling logic as above
-      if (data && data.avatar && typeof data.avatar === 'string' && data.avatar.startsWith('data:')) {
-        const matches = data.avatar.match(/^data:(image\/\w+);base64,(.+)$/);
-        if (matches) {
-          let buffer = Buffer.from(matches[2], 'base64');
-          try {
-            if (sharp) {
-              const processed = await sharp(buffer).resize({ width: 800 }).jpeg({ quality: 80 }).toBuffer();
-              buffer = processed;
-            }
-          } catch (err) {
-            console.warn('Sharp processing failed in /me route', err);
-          }
-          if (cloudinary) {
-            try {
-              const folder = `students/${identifier}`;
-              const public_id = `avatar_${identifier}`;
-              const dataUri = 'data:image/jpeg;base64,' + buffer.toString('base64');
-              const uploadRes = await cloudinary.uploader.upload(dataUri, { folder, public_id, overwrite: true, transformation: [{ width: 400, height: 400, crop: 'thumb', gravity: 'face' }] });
-              data.avatar = uploadRes.secure_url;
-            } catch (err) {
-              console.warn('Cloudinary upload failed in /me route', err);
-              data.avatar = 'data:image/jpeg;base64,' + buffer.toString('base64');
-            }
-          } else {
-            data.avatar = 'data:image/jpeg;base64,' + buffer.toString('base64');
-          }
-        }
-      }
-      const query = { $or: [{ dni: identifier }, { email: identifier }] };
-      const student = await Student.findOneAndUpdate(query, data, { new: true });
-      if (!student) return res.status(404).json({ error: 'Student not found' });
-      res.json(student);
-    } catch (err) {
-      res.status(400).json({ error: err.message });
-    }
-  });
+  
 
 router.delete('/:id', async (req, res) => {
   try {
