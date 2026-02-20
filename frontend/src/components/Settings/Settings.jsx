@@ -7,7 +7,7 @@ import { updateMyProfile as updateMyUserProfile } from '../../models/User';
 import ChangePasswordModal from '../Login/ChangePasswordModal';
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [profile, setProfile] = useState({ nombre: '', email: '', direccion: '', telefono: '' });
   const [changePwdOpen, setChangePwdOpen] = useState(false);
   const [photoPreview, setPhotoPreview] = useState('');
@@ -48,11 +48,15 @@ export default function Settings() {
             try {
               if (user) {
                 const updatedUser = await updateMyUserProfile(data, user).catch(() => null);
-                if (updatedUser && updatedUser.avatar) {
-                  setPhotoPreview(updatedUser.avatar);
-                  setProfile(p => ({ ...p, photo: updatedUser.avatar }));
-                  const payload2 = { profile: { ...profile, photo: updatedUser.avatar } };
-                  localStorage.setItem('student_contact', JSON.stringify(payload2));
+                if (updatedUser) {
+                  // update auth context so UI reflects new email/avatar immediately
+                  try { login(updatedUser); } catch (e) { /* ignore */ }
+                  if (updatedUser.avatar) {
+                    setPhotoPreview(updatedUser.avatar);
+                    setProfile(p => ({ ...p, photo: updatedUser.avatar }));
+                    const payload2 = { profile: { ...profile, photo: updatedUser.avatar } };
+                    localStorage.setItem('student_contact', JSON.stringify(payload2));
+                  }
                 }
               }
             } catch (err) {
