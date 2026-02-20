@@ -153,6 +153,14 @@ router.post('/request-password-change', async (req, res) => {
             pass: process.env.SMTP_PASS,
           },
         });
+
+        // helper: send mail with a timeout to avoid hanging if SMTP is blocked/unresponsive
+        const sendMailWithTimeout = (transporter, mailOpts, timeoutMs = 15000) => {
+          return Promise.race([
+            transporter.sendMail(mailOpts),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('sendMail timeout')), timeoutMs))
+          ]);
+        };
         const fromAddress = process.env.SMTP_FROM || 'no-reply@remocrsn.local';
         const userDisplayName = (user.nombre && user.apellido) ? `${user.nombre} ${user.apellido}` : (user.email || 'usuario');
         const expireMinutes = 60;
@@ -168,17 +176,22 @@ router.post('/request-password-change', async (req, res) => {
         }
         const htmlBody = `\n          <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.4;color:#111;">\n            <div style="max-width:600px;margin:0 auto;padding:20px;border:1px solid #e6e6e6;border-radius:8px;background:#ffffff;">\n              <h2 style="color:#0b6b3b;margin-top:0">Recuperación de contraseña — REMO CRSN</h2>\n              <p>Hola ${escapeHtml(userDisplayName)},</p>\n              <p>Hemos recibido una solicitud para cambiar la contraseña de tu cuenta. Haz clic en el botón de abajo para continuar. Este enlace expirará en ${expireMinutes} minutos.</p>\n              <p style="text-align:center;margin:24px 0;">\n                <a href="${resetUrl}" style="background:#0b6b3b;color:#fff;padding:12px 18px;border-radius:6px;text-decoration:none;display:inline-block">Cambiar mi contraseña</a>\n              </p>\n              <p style="font-size:14px;color:#555">Si el botón no funciona, copia y pega la siguiente URL en tu navegador:</p>\n              <p style="word-break:break-all;color:#0b6b3b">${resetUrl}</p>\n              <hr style="border:none;border-top:1px solid #eee;margin:18px 0" />\n              <p style="font-size:14px;color:#333"><strong>Token de verificación (opcional):</strong></p>\n              <pre style="background:#f6f8fa;padding:10px;border-radius:6px;border:1px solid #eaecef;color:#111">${token}</pre>\n              <p style="font-size:12px;color:#666;margin-top:12px">Si no solicitaste este cambio de contraseña, puedes ignorar este correo. Si crees que tu cuenta está comprometida, contacta con soporte.</p>\n              <p style="font-size:12px;color:#999;margin-top:18px">REMO CRSN — Servicio de gestión deportiva</p>\n            </div>\n          </div>\n        `;
         console.log('[request-password-change] sending email to', user.email, 'using host', process.env.SMTP_HOST);
-        await transporter.sendMail({
-          from: `${process.env.APP_NAME || 'REMO CRSN'} <${fromAddress}>`,
-          to: user.email,
-          subject: 'REMO CRSN — Recuperación de contraseña',
-          text: `Hola ${userDisplayName},\\n\\nPara cambiar tu contraseña, visita: ${resetUrl}\\n\\nSi no solicitaste esto, ignora este mensaje.\\n\\nToken: ${token}\\n\\nEste enlace expirará en ${expireMinutes} minutos.`,
-          html: htmlBody,
-        });
-        console.log('[request-password-change] email sent to', user.email);
-        return res.json({ message: 'Email de verificación enviado' });
+        try {
+          await sendMailWithTimeout(transporter, {
+            from: `${process.env.APP_NAME || 'REMO CRSN'} <${fromAddress}>`,
+            to: user.email,
+            subject: 'REMO CRSN — Recuperación de contraseña',
+            text: `Hola ${userDisplayName},\\n\\nPara cambiar tu contraseña, visita: ${resetUrl}\\n\\nSi no solicitaste esto, ignora este mensaje.\\n\\nToken: ${token}\\n\\nEste enlace expirará en ${expireMinutes} minutos.`,
+            html: htmlBody,
+          }, 15000);
+          console.log('[request-password-change] email sent to', user.email);
+          return res.json({ message: 'Email de verificación enviado' });
+        } catch (err) {
+          console.warn('Error sending email (or timeout):', err);
+          // fallthrough to return token in response as fallback
+        }
       } catch (err) {
-        console.warn('Error sending email:', err);
+        console.warn('Error creating transporter or sending email:', err);
         // fallthrough to return token in response as fallback (not ideal for production)
       }
     }
