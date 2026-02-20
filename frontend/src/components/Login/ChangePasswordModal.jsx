@@ -3,7 +3,6 @@ import { showSuccess } from '../../utils/toast';
 import { API_BASE_URL } from '../../utils/apiConfig';
 
 export default function ChangePasswordModal({ open, onClose, user }) {
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -22,7 +21,6 @@ export default function ChangePasswordModal({ open, onClose, user }) {
       else if (user?.email) headers['x-user-email'] = user.email;
 
       const body = { newPassword };
-      if (currentPassword) body.currentPassword = currentPassword;
 
       const res = await fetch(`${API_BASE_URL}/api/users/me/change-password`, {
         method: 'POST',
@@ -45,7 +43,6 @@ export default function ChangePasswordModal({ open, onClose, user }) {
       <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md mx-2">
         <h3 className="text-lg font-semibold mb-4">Cambiar contraseña</h3>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input type="password" placeholder="Contraseña actual (opcional)" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="px-3 py-2 border rounded w-full" />
           <input type="password" placeholder="Nueva contraseña" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="px-3 py-2 border rounded w-full" required />
           <input type="password" placeholder="Confirmar nueva contraseña" value={confirm} onChange={e => setConfirm(e.target.value)} className="px-3 py-2 border rounded w-full" required />
           {error && <p className="text-red-600 text-sm">{error}</p>}

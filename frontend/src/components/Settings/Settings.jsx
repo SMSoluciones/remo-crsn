@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../utils/apiConfig';
 import { showSuccess, showError } from '../../utils/toast';
 import { useAuth } from '../../context/useAuth';
@@ -44,14 +44,8 @@ export default function Settings() {
               if (user) {
                 const updatedUser = await updateMyUserProfile(data, user).catch(() => null);
                 if (updatedUser) {
-                  // update auth context so UI reflects new email/avatar immediately
+                  // update auth context so UI reflects new email immediately
                   try { login(updatedUser); } catch (e) { console.warn('Error updating auth context after profile update', e); }
-                  if (updatedUser.avatar) {
-                    setPhotoPreview(updatedUser.avatar);
-                    setProfile(p => ({ ...p, photo: updatedUser.avatar }));
-                    const payload2 = { profile: { ...profile, photo: updatedUser.avatar } };
-                    localStorage.setItem('student_contact', JSON.stringify(payload2));
-                  }
                 }
               }
             } catch (err) {
@@ -59,13 +53,7 @@ export default function Settings() {
             }
             // Also attempt to update student record for backward compatibility
             try {
-              const updated = await updateMyProfile(data, identifier);
-              if (updated && updated.avatar) {
-                setPhotoPreview(updated.avatar);
-                setProfile(p => ({ ...p, photo: updated.avatar }));
-                const payload2 = { profile: { ...profile, photo: updated.avatar } };
-                localStorage.setItem('student_contact', JSON.stringify(payload2));
-              }
+              await updateMyProfile(data, identifier);
             } catch (err) {
               console.warn('Error updating student profile by identifier:', err);
             }
