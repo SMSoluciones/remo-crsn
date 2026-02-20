@@ -63,11 +63,25 @@ export default function Settings() {
                 const res = await fetch(`${API_BASE_URL}/api/students`);
                 if (res.ok) {
                   const students = await res.json();
-                  const found = students.find(s => s.email === identifier || s.dni === identifier || s.documento === identifier);
-                  if (found && found._id) {
-                    await updateStudent(found._id, data);
+                  const idNorm = (identifier || '').toString().trim().toLowerCase();
+                  // diagnostic log
+                  console.debug('Workaround: buscando alumno por identificador', { identifier: idNorm, total: students.length });
+                  const found = students.find(s => {
+                    const email = (s.email || '').toString().trim().toLowerCase();
+                    const dni = (s.dni || '').toString().trim().toLowerCase();
+                    const doc = (s.documento || '').toString().trim().toLowerCase();
+                    return email === idNorm || dni === idNorm || doc === idNorm;
+                  });
+                  if (found && (found._id || found.id)) {
+                    const idToUse = found._id || found.id;
+                    console.debug('Workaround: alumno encontrado', { id: idToUse, email: found.email, dni: found.dni });
+                    await updateStudent(idToUse, data);
                   } else {
-                    console.warn('Alumno no encontrado en lista local al intentar workaround');
+                    console.warn('Alumno no encontrado en lista local al intentar workaround', { identifier: idNorm });
+                    // also list first few students emails for debugging
+                    try {
+                      console.debug('First 10 students (emails/dni):', students.slice(0, 10).map(s => ({ email: s.email, dni: s.dni })));
+                    } catch (e) { /* ignore */ }
                   }
                 } else {
                   console.warn('No se pudo obtener lista de alumnos para workaround');
