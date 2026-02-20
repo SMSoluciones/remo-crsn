@@ -71,6 +71,15 @@ router.put('/by-identifier', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(student);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
   
 
 router.delete('/:id', async (req, res) => {
