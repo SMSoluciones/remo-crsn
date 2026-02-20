@@ -10,6 +10,12 @@ try {
   nodemailer = null;
   console.warn('nodemailer not available. Install with `npm i nodemailer` to enable email sending.');
 }
+let sendGridMail;
+try {
+  sendGridMail = require('@sendgrid/mail');
+} catch (err) {
+  sendGridMail = null;
+}
 const router = express.Router();
 
 // JWT authentication removed; reverting to previous non-JWT behavior
@@ -144,7 +150,7 @@ router.post('/request-password-change', async (req, res) => {
 
     if (nodemailer && process.env.SMTP_HOST && process.env.SMTP_USER) {
       try {
-        const transporter = nodemailer.createTransport({
+      // try to send email if user has an email
           host: process.env.SMTP_HOST,
           port: Number(process.env.SMTP_PORT || 587),
           secure: String(process.env.SMTP_SECURE || 'false') === 'true',
