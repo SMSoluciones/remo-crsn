@@ -81,7 +81,7 @@ export default function Settings() {
                     // also list first few students emails for debugging
                     try {
                       console.debug('First 10 students (emails/dni):', students.slice(0, 10).map(s => ({ email: s.email, dni: s.dni })));
-                    } catch (e) { /* ignore */ }
+                    } catch (e) { console.warn('Error listando alumnos para debugging', e);}
                   }
                 } else {
                   console.warn('No se pudo obtener lista de alumnos para workaround');
