@@ -43,7 +43,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+// Only match Mongo ObjectId (24 hex chars) to avoid accidental matches like 'by-identifier'
+router.put('/:id([0-9a-fA-F]{24})', async (req, res) => {
   try {
     const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(student);
