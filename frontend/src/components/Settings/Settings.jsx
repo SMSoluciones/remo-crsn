@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../utils/apiConfig';
 import { showSuccess, showError } from '../../utils/toast';
 import { useAuth } from '../../context/useAuth';
-import { updateMyProfile } from '../../models/Student';
+import { updateMyProfile, updateStudent } from '../../models/Student';
 import { updateMyProfile as updateMyUserProfile } from '../../models/User';
 import ChangePasswordModal from '../Login/ChangePasswordModal';
 
@@ -53,9 +53,28 @@ export default function Settings() {
             }
             // Also attempt to update student record for backward compatibility
             try {
+              // Try the existing update by identifier endpoint first
               await updateMyProfile(data, identifier);
             } catch (err) {
               console.warn('Error updating student profile by identifier:', err);
+              // Workaround for environments where /by-identifier route is caught by /:id (deployed servers):
+              // fetch all students and update by _id when we find a matching email/dni.
+              try {
+                const res = await fetch(`${API_BASE_URL}/api/students`);
+                if (res.ok) {
+                  const students = await res.json();
+                  const found = students.find(s => s.email === identifier || s.dni === identifier || s.documento === identifier);
+                  if (found && found._id) {
+                    await updateStudent(found._id, data);
+                  } else {
+                    console.warn('Alumno no encontrado en lista local al intentar workaround');
+                  }
+                } else {
+                  console.warn('No se pudo obtener lista de alumnos para workaround');
+                }
+              } catch (err2) {
+                console.warn('Error en workaround para actualizar alumno por id:', err2);
+              }
             }
           }
         }
