@@ -43,10 +43,14 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Only match Mongo ObjectId (24 hex chars) to avoid accidental matches like 'by-identifier'
-router.put('/:id([0-9a-fA-F]{24})', async (req, res) => {
+const mongoose = require('mongoose');
+
+// Update by _id — validate ObjectId inside handler to avoid path parsing issues in some environments
+router.put('/:id', async (req, res) => {
   try {
-    const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid id' });
+    const student = await Student.findByIdAndUpdate(id, req.body, { new: true });
     res.json(student);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -72,14 +76,7 @@ router.put('/by-identifier', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
-  try {
-    const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(student);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+/* previously a duplicate route was here and was removed to avoid conflicts */
 
   
 
