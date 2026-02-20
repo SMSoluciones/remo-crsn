@@ -10,12 +10,6 @@ try {
   nodemailer = null;
   console.warn('nodemailer not available. Install with `npm i nodemailer` to enable email sending.');
 }
-let sendGridMail;
-try {
-  sendGridMail = require('@sendgrid/mail');
-} catch (err) {
-  sendGridMail = null;
-}
 const router = express.Router();
 
 // JWT authentication removed; reverting to previous non-JWT behavior
@@ -150,7 +144,7 @@ router.post('/request-password-change', async (req, res) => {
 
     if (nodemailer && process.env.SMTP_HOST && process.env.SMTP_USER) {
       try {
-      // try to send email if user has an email
+        const transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST,
           port: Number(process.env.SMTP_PORT || 587),
           secure: String(process.env.SMTP_SECURE || 'false') === 'true',
@@ -237,6 +231,63 @@ router.post('/dev-request-password-change', async (req, res) => {
   } catch (err) {
     console.error('Error in /dev-request-password-change:', err);
     return res.status(500).json({ error: err.message || 'Error generando token (dev)' });
+  }
+});
+
+// Test SMTP from the running environment. Protected by TEST_SMTP_SECRET header if set.
+router.post('/test-smtp', async (req, res) => {
+  try {
+    const secret = process.env.TEST_SMTP_SECRET;
+    if (secret) {
+      const provided = req.headers['x-test-secret'];
+      if (!provided || provided !== secret) return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { to } = req.body;
+    if (!to) return res.status(400).json({ error: 'to is required' });
+    if (!nodemailer) return res.status(500).json({ error: 'nodemailer not available' });
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: String(process.env.SMTP_SECURE || 'false') === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    // Verify transporter quickly
+    try {
+      await transporter.verify();
+    } catch (vErr) {
+      console.warn('[test-smtp] transporter.verify failed:', vErr);
+      // continue to attempt send
+    }
+
+    const mailOpts = {
+      from: process.env.SMTP_FROM || 'no-reply@remocrsn.local',
+      to,
+      subject: 'Prueba SMTP — REMO CRSN',
+      text: `Correo de prueba desde REMO CRSN. Hora: ${new Date().toISOString()}`,
+    };
+
+    const sendMailWithTimeout = (transporter, mailOpts, timeoutMs = 15000) => {
+      return Promise.race([
+        transporter.sendMail(mailOpts),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('sendMail timeout')), timeoutMs))
+      ]);
+    };
+
+    try {
+      const info = await sendMailWithTimeout(transporter, mailOpts, 15000);
+      return res.json({ message: 'sent', info });
+    } catch (err) {
+      console.warn('[test-smtp] send error:', err);
+      return res.status(500).json({ error: String(err) });
+    }
+  } catch (err) {
+    console.error('Error in /test-smtp:', err);
+    res.status(500).json({ error: 'server error' });
   }
 });
 
