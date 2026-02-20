@@ -172,7 +172,7 @@ router.post('/me/change-password', async (req, res) => {
   try {
     const userId = req.headers['x-user-id'];
     const userEmail = req.headers['x-user-email'];
-    const { currentPassword, newPassword } = req.body;
+    const { newPassword } = req.body;
     if (!newPassword) return res.status(400).json({ error: 'newPassword is required' });
     let user = null;
     if (userId && mongoose.Types.ObjectId.isValid(String(userId))) {
@@ -181,17 +181,41 @@ router.post('/me/change-password', async (req, res) => {
       user = await User.findOne({ email: String(userEmail).toLowerCase() });
     }
     if (!user) return res.status(404).json({ error: 'Usuario no autenticado' });
-    // If currentPassword provided, verify it. Otherwise allow change because user is authenticated by header.
-    if (currentPassword) {
-      const isMatch = await bcrypt.compare(currentPassword, user.password);
-      if (!isMatch) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
-    }
     if (String(newPassword).length < 6) return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
     res.json({ message: 'Contraseña actualizada' });
   } catch (err) {
     res.status(500).json({ error: 'Error actualizando la contraseña' });
+  }
+});
+
+// Update authenticated user's basic profile (email, telefono, direccion)
+router.put('/me/update-profile', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'];
+    const userEmail = req.headers['x-user-email'];
+    const { email, telefono, direccion, avatar } = req.body;
+    let user = null;
+    if (userId && mongoose.Types.ObjectId.isValid(String(userId))) {
+      user = await require('../models/User').findById(userId);
+    } else if (userEmail) {
+      user = await require('../models/User').findOne({ email: String(userEmail).toLowerCase() });
+    }
+    if (!user) return res.status(404).json({ error: 'Usuario no autenticado' });
+    const updates = {};
+    if (email) updates.email = String(email).toLowerCase();
+    if (telefono) updates.telefono = telefono;
+    if (direccion) updates.direccion = direccion;
+    if (avatar) updates.avatar = avatar;
+    Object.assign(user, updates);
+    await user.save();
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.json(userObj);
+  } catch (err) {
+    console.error('Error in /me/update-profile:', err);
+    res.status(500).json({ error: 'Error actualizando perfil' });
   }
 });
 

@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../../utils/apiConfig';
 import { showSuccess, showError } from '../../utils/toast';
 import { useAuth } from '../../context/useAuth';
 import { updateStudentByIdentifier, updateMyProfile } from '../../models/Student';
+import { updateMyProfile as updateMyUserProfile } from '../../models/User';
 import ChangePasswordModal from '../Login/ChangePasswordModal';
 
 export default function Settings() {
@@ -43,10 +44,23 @@ export default function Settings() {
           if (profile.direccion) data.domicilio = profile.direccion;
           if (profile.photo) data.avatar = profile.photo;
           if (Object.keys(data).length > 0) {
-            // prefer the authenticated-like endpoint
+            // First update the user model (authenticated)
+            try {
+              if (user) {
+                const updatedUser = await updateMyUserProfile(data, user).catch(() => null);
+                if (updatedUser && updatedUser.avatar) {
+                  setPhotoPreview(updatedUser.avatar);
+                  setProfile(p => ({ ...p, photo: updatedUser.avatar }));
+                  const payload2 = { profile: { ...profile, photo: updatedUser.avatar } };
+                  localStorage.setItem('student_contact', JSON.stringify(payload2));
+                }
+              }
+            } catch (err) {
+              console.warn('Error updating user profile (non-fatal):', err);
+            }
+            // Also attempt to update student record for backward compatibility
             try {
               const updated = await updateMyProfile(data, identifier);
-              // if backend returned an avatar URL, update preview and local storage
               if (updated && updated.avatar) {
                 setPhotoPreview(updated.avatar);
                 setProfile(p => ({ ...p, photo: updated.avatar }));
@@ -54,8 +68,7 @@ export default function Settings() {
                 localStorage.setItem('student_contact', JSON.stringify(payload2));
               }
             } catch (err) {
-              console.warn('Error updating profile with updateMyProfile, trying fallback updateStudentByIdentifier...', err);
-              updateStudentByIdentifier(identifier, data).catch(err2 => console.warn('No se pudo guardar en backend:', err2));
+              console.warn('Error updating student profile by identifier:', err);
             }
           }
         }

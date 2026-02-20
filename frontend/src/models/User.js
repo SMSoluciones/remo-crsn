@@ -41,6 +41,19 @@ export async function updateUser(id, data, auth) {
   return await res.json();
 }
 
+export async function updateMyProfile(data, user) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (user?._id) headers['x-user-id'] = user._id;
+  else if (user?.email) headers['x-user-email'] = user.email;
+  const res = await fetch(`${API_URL}/me/update-profile`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Error updating my profile');
+  return await res.json();
+}
+
 export async function deleteUser(id, auth) {
   const headers = { };
   if (auth?.rol) headers['x-user-role'] = auth.rol;
