@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '../../utils/apiConfig';
 import { showSuccess, showError } from '../../utils/toast';
 import { useAuth } from '../../context/useAuth';
-import { updateStudentByIdentifier, updateMyProfile } from '../../models/Student';
+import { updateMyProfile } from '../../models/Student';
 import { updateMyProfile as updateMyUserProfile } from '../../models/User';
 import ChangePasswordModal from '../Login/ChangePasswordModal';
 
@@ -36,7 +36,7 @@ export default function Settings() {
 
       // If the current user is a student, try to persist the contact info to backend
       try {
-        const identifier = user?.documento || user?.dni || user?.email;
+        const identifier = user?.documento || user?.dni || user?.email || profile.email;
         if (identifier) {
           const data = {};
           if (profile.email) data.email = profile.email;
@@ -50,7 +50,7 @@ export default function Settings() {
                 const updatedUser = await updateMyUserProfile(data, user).catch(() => null);
                 if (updatedUser) {
                   // update auth context so UI reflects new email/avatar immediately
-                  try { login(updatedUser); } catch (e) { /* ignore */ }
+                  try { login(updatedUser); } catch (e) { console.warn('Error updating auth context after profile update', e); }
                   if (updatedUser.avatar) {
                     setPhotoPreview(updatedUser.avatar);
                     setProfile(p => ({ ...p, photo: updatedUser.avatar }));
