@@ -10,22 +10,18 @@ export default function Settings() {
   const { user, login } = useAuth();
   const [profile, setProfile] = useState({ nombre: '', email: '', direccion: '', telefono: '' });
   const [changePwdOpen, setChangePwdOpen] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState('');
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     // cargar ajustes desde localStorage si existen
     try {
       const saved = JSON.parse(localStorage.getItem('student_contact') || '{}');
       if (saved.profile) setProfile(prev => ({ ...prev, ...saved.profile }));
-      if (saved.profile && saved.profile.photo) setPhotoPreview(saved.profile.photo);
     } catch (err) {
       console.error('Error loading settings from localStorage', err);
     }
     // precargar datos de perfil del usuario
     if (user) {
       setProfile(prev => ({ ...prev, nombre: `${user.nombre || ''} ${user.apellido || ''}`, email: user.email || '' }));
-      if (user.avatar) setPhotoPreview(user.avatar);
     }
   }, [user]);
 
@@ -42,7 +38,6 @@ export default function Settings() {
           if (profile.email) data.email = profile.email;
           if (profile.telefono) data.celular = profile.telefono;
           if (profile.direccion) data.domicilio = profile.direccion;
-          if (profile.photo) data.avatar = profile.photo;
           if (Object.keys(data).length > 0) {
             // First update the user model (authenticated)
             try {
@@ -88,21 +83,8 @@ export default function Settings() {
   };
 
   const handleReset = () => {
-    setProfile({ nombre: user ? `${user.nombre || ''} ${user.apellido || ''}` : '', email: user?.email || '', direccion: '', telefono: '', photo: user?.avatar || '' });
-    setPhotoPreview(user?.avatar || '');
+    setProfile({ nombre: user ? `${user.nombre || ''} ${user.apellido || ''}` : '', email: user?.email || '', direccion: '', telefono: '' });
     showSuccess('Información restaurada');
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      setProfile(p => ({ ...p, photo: dataUrl }));
-      setPhotoPreview(dataUrl);
-    };
-    reader.readAsDataURL(file);
   };
 
   // Password change handled by shared ChangePasswordModal
@@ -116,19 +98,11 @@ export default function Settings() {
         <h3 className="font-semibold mb-2">Perfil</h3>
         <div className="grid grid-cols-1 gap-4">
           <div className="flex items-center gap-4">
-            <div role="button" tabIndex={0} onClick={() => fileInputRef.current?.click()} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }} className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center cursor-pointer">
-              {photoPreview ? (
-                <img src={photoPreview} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-gray-600 font-bold">{(profile.nombre || '').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase() || '—'}</div>
-              )}
+            <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+              <div className="text-gray-600 font-bold">{(profile.nombre || '').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase() || '—'}</div>
             </div>
             <div className="flex flex-col">
               <input value={profile.nombre || ''} placeholder="Nombre" className="border rounded px-3 py-2 bg-gray-100 text-gray-700 w-72" disabled />
-              <label className="mt-2 text-sm text-gray-600">
-                <span className="inline-block mr-2">Cambiar foto</span>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-              </label>
             </div>
           </div>
         </div>

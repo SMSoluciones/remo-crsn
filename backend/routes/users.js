@@ -195,7 +195,7 @@ router.put('/me/update-profile', async (req, res) => {
   try {
     const userId = req.headers['x-user-id'];
     const userEmail = req.headers['x-user-email'];
-    const { email, telefono, direccion, avatar } = req.body;
+    const { email, telefono, direccion } = req.body;
     let user = null;
     if (userId && mongoose.Types.ObjectId.isValid(String(userId))) {
       user = await require('../models/User').findById(userId);
@@ -207,7 +207,7 @@ router.put('/me/update-profile', async (req, res) => {
     if (email) updates.email = String(email).toLowerCase();
     if (telefono) updates.telefono = telefono;
     if (direccion) updates.direccion = direccion;
-    if (avatar) updates.avatar = avatar;
+    // avatar not supported currently
     Object.assign(user, updates);
     await user.save();
     const userObj = user.toObject();

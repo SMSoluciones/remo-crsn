@@ -58,46 +58,9 @@ router.put('/by-identifier', async (req, res) => {
     const { identifier, data } = req.body;
     if (!identifier) return res.status(400).json({ error: 'Identifier required' });
     const query = { $or: [{ dni: identifier }, { email: identifier }] };
-    // If avatar is a data URL, optionally process it (sharp) then upload to Cloudinary
-    if (data && data.avatar && typeof data.avatar === 'string' && data.avatar.startsWith('data:')) {
-      // parse data URL
-      const matches = data.avatar.match(/^data:(image\/\w+);base64,(.+)$/);
-      if (matches) {
-        const mime = matches[1];
-        const b64 = matches[2];
-        let buffer = Buffer.from(b64, 'base64');
-        try {
-          if (sharp) {
-            // resize to max width 800 and convert to jpeg for smaller size
-            const processed = await sharp(buffer).resize({ width: 800 }).jpeg({ quality: 80 }).toBuffer();
-            buffer = processed;
-          }
-        } catch (err) {
-          console.warn('Image processing (sharp) failed, continuing with original buffer:', err);
-        }
-
-        if (cloudinary) {
-          try {
-            const folder = `students/${identifier}`;
-            const public_id = `avatar_${identifier}`;
-            const dataUri = 'data:image/jpeg;base64,' + buffer.toString('base64');
-            const uploadRes = await cloudinary.uploader.upload(dataUri, {
-              folder,
-              public_id,
-              overwrite: true,
-              transformation: [{ width: 400, height: 400, crop: 'thumb', gravity: 'face' }]
-            });
-            data.avatar = uploadRes.secure_url;
-          } catch (err) {
-            console.warn('Cloudinary upload failed:', err);
-            // fallback: keep base64 data (not ideal)
-            data.avatar = 'data:image/jpeg;base64,' + buffer.toString('base64');
-          }
-        } else {
-          console.warn('Cloudinary not configured - storing processed base64');
-          data.avatar = 'data:image/jpeg;base64,' + buffer.toString('base64');
-        }
-      }
+    // avatar handling disabled — ignore data.avatar if present
+    if (data && data.avatar) {
+      delete data.avatar;
     }
 
     const student = await Student.findOneAndUpdate(query, data, { new: true });
