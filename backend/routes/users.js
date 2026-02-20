@@ -137,7 +137,7 @@ router.post('/request-password-change', async (req, res) => {
     // try to send email if SMTP configured and user has an email
     if (!user.email) {
       console.warn('User does not have an email address; returning token in response (dev fallback)');
-      return res.json({ message: 'Token generado (dev fallback — usuario sin email)', token, resetUrl });
+        return res.json({ message: 'Token generado (dev fallback — usuario sin email)', token, resetUrl, dev: true });
     }
 
     if (nodemailer && process.env.SMTP_HOST && process.env.SMTP_USER) {
@@ -151,12 +151,26 @@ router.post('/request-password-change', async (req, res) => {
             pass: process.env.SMTP_PASS,
           },
         });
+        const fromAddress = process.env.SMTP_FROM || 'no-reply@remocrsn.local';
+        const userDisplayName = (user.nombre && user.apellido) ? `${user.nombre} ${user.apellido}` : (user.email || 'usuario');
+        const expireMinutes = 60;
+        // small helper to safely escape user-provided strings in HTML
+        function escapeHtml(str) {
+          if (!str) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
+        const htmlBody = `\n          <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.4;color:#111;">\n            <div style="max-width:600px;margin:0 auto;padding:20px;border:1px solid #e6e6e6;border-radius:8px;background:#ffffff;">\n              <h2 style="color:#0b6b3b;margin-top:0">Recuperación de contraseña — REMO CRSN</h2>\n              <p>Hola ${escapeHtml(userDisplayName)},</p>\n              <p>Hemos recibido una solicitud para cambiar la contraseña de tu cuenta. Haz clic en el botón de abajo para continuar. Este enlace expirará en ${expireMinutes} minutos.</p>\n              <p style="text-align:center;margin:24px 0;">\n                <a href="${resetUrl}" style="background:#0b6b3b;color:#fff;padding:12px 18px;border-radius:6px;text-decoration:none;display:inline-block">Cambiar mi contraseña</a>\n              </p>\n              <p style="font-size:14px;color:#555">Si el botón no funciona, copia y pega la siguiente URL en tu navegador:</p>\n              <p style="word-break:break-all;color:#0b6b3b">${resetUrl}</p>\n              <hr style="border:none;border-top:1px solid #eee;margin:18px 0" />\n              <p style="font-size:14px;color:#333"><strong>Token de verificación (opcional):</strong></p>\n              <pre style="background:#f6f8fa;padding:10px;border-radius:6px;border:1px solid #eaecef;color:#111">${token}</pre>\n              <p style="font-size:12px;color:#666;margin-top:12px">Si no solicitaste este cambio de contraseña, puedes ignorar este correo. Si crees que tu cuenta está comprometida, contacta con soporte.</p>\n              <p style="font-size:12px;color:#999;margin-top:18px">REMO CRSN — Servicio de gestión deportiva</p>\n            </div>\n          </div>\n        `;
         await transporter.sendMail({
-          from: process.env.SMTP_FROM || 'no-reply@remocrsn.local',
+          from: `${process.env.APP_NAME || 'REMO CRSN'} <${fromAddress}>`,
           to: user.email,
-          subject: 'Cambio de contraseña - REMO CRSN',
-          text: `Para cambiar tu contraseña, visita: ${resetUrl}\nSi no solicitaste esto, ignora este mensaje.`,
-          html: `<p>Para cambiar tu contraseña, haz click <a href="${resetUrl}">aquí</a>.</p><p>Si no solicitaste esto, ignora este mensaje.</p>`,
+          subject: 'REMO CRSN — Recuperación de contraseña',
+          text: `Hola ${userDisplayName},\\n\\nPara cambiar tu contraseña, visita: ${resetUrl}\\n\\nSi no solicitaste esto, ignora este mensaje.\\n\\nToken: ${token}\\n\\nEste enlace expirará en ${expireMinutes} minutos.`,
+          html: htmlBody,
         });
         return res.json({ message: 'Email de verificación enviado' });
       } catch (err) {
@@ -166,7 +180,7 @@ router.post('/request-password-change', async (req, res) => {
     }
 
     // Fallback: return token in response (useful for local/dev)
-    res.json({ message: 'Token generado (dev fallback)', token, resetUrl });
+      res.json({ message: 'Token generado (dev fallback)', token, resetUrl, dev: true });
   } catch (err) {
     console.error('Error in /request-password-change:', err);
     // In development return the real error message to help debugging

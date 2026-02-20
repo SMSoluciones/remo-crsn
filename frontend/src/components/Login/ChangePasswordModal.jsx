@@ -28,12 +28,24 @@ export default function ChangePasswordModal({ open, onClose, user }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error solicitando email');
-      // If backend returned token (dev fallback), show it
-      if (data.token) {
+      // If backend returned token (dev fallback) or we're running locally, show it
+      const isLocal = window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
+      const targetEmail = user?.email || identifier;
+      const maskEmail = (e) => {
+        if (!e || typeof e !== 'string') return e;
+        const parts = e.split('@');
+        if (parts.length !== 2) return e;
+        const name = parts[0];
+        const domain = parts[1];
+        const visible = name.length <= 2 ? name : name.slice(0, 2);
+        return `${visible}****@${domain}`;
+      };
+
+      if (data.token && (data.dev || isLocal)) {
         setToken(data.token);
         setInfo(`Token (dev): ${data.token}`);
       } else {
-        setInfo('Email enviado. Revisa tu casilla para continuar.');
+        setInfo(`Email enviado a ${maskEmail(targetEmail)}. Revisa tu casilla para continuar.`);
       }
       setStep('confirm');
     } catch (err) {
