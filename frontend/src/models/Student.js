@@ -24,7 +24,7 @@ export async function updateStudentByIdentifier(identifier, data) {
   const res = await fetch(`${BASE}/by-identifier`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier, data }) });
   const text = await res.text();
   let body;
-  try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
+  try { body = text ? JSON.parse(text) : null; } catch (e) { console.warn('Error parsing response body as JSON', e, 'Response text:', text); body = null; }
   if (!res.ok) {
     const err = new Error('Error updating student by identifier');
     err.status = res.status;
