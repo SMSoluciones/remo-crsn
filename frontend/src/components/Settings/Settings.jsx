@@ -56,7 +56,12 @@ export default function Settings() {
               // Try the existing update by identifier endpoint first
               await updateMyProfile(data, identifier);
             } catch (err) {
-              console.warn('Error updating student profile by identifier:', err);
+              // If the backend returns 400 for /by-identifier (older deploys), treat as expected
+              if (err && err.status === 400) {
+                console.debug('by-identifier update failed (may be older backend). Falling back to _id update.', err.body || err.message);
+              } else {
+                console.warn('Error updating student profile by identifier:', err);
+              }
               // Workaround for environments where /by-identifier route is caught by /:id (deployed servers):
               // fetch all students and update by _id when we find a matching email/dni.
               try {

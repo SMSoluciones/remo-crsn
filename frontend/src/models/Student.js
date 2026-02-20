@@ -22,8 +22,16 @@ export async function updateStudent(id, data) {
 
 export async function updateStudentByIdentifier(identifier, data) {
   const res = await fetch(`${BASE}/by-identifier`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier, data }) });
-  if (!res.ok) throw new Error('Error updating student by identifier');
-  return res.json();
+  const text = await res.text();
+  let body;
+  try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
+  if (!res.ok) {
+    const err = new Error('Error updating student by identifier');
+    err.status = res.status;
+    err.body = body;
+    throw err;
+  }
+  return body;
 }
 
 export async function updateMyProfile(data, token) {
