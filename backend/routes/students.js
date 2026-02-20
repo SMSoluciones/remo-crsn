@@ -45,18 +45,6 @@ router.post('/', async (req, res) => {
 
 const mongoose = require('mongoose');
 
-// Update by _id — validate ObjectId inside handler to avoid path parsing issues in some environments
-router.put('/:id', async (req, res) => {
-  try {
-    const id = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid id' });
-    const student = await Student.findByIdAndUpdate(id, req.body, { new: true });
-    res.json(student);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
 // Update student by identifier (dni or email)
 router.put('/by-identifier', async (req, res) => {
   try {
@@ -70,6 +58,18 @@ router.put('/by-identifier', async (req, res) => {
 
     const student = await Student.findOneAndUpdate(query, data, { new: true });
     if (!student) return res.status(404).json({ error: 'Student not found' });
+    res.json(student);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Update by _id — validate ObjectId inside handler to avoid path parsing issues in some environments
+router.put('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid id' });
+    const student = await Student.findByIdAndUpdate(id, req.body, { new: true });
     res.json(student);
   } catch (err) {
     res.status(400).json({ error: err.message });
