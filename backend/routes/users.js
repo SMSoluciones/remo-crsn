@@ -113,6 +113,7 @@ router.post('/login', async (req, res) => {
 router.post('/request-password-change', async (req, res) => {
   try {
     const { identifier } = req.body;
+    console.log('[request-password-change] received identifier:', identifier);
     if (!identifier) return res.status(400).json({ error: 'identifier is required' });
     // Build a safe $or query; only include _id clause if identifier is a valid ObjectId to avoid CastError
     const ors = [{ documento: identifier }, { email: identifier }];
@@ -126,6 +127,7 @@ router.post('/request-password-change', async (req, res) => {
     const expires = Date.now() + 1000 * 60 * 60; // 1 hour
     try {
       await User.findByIdAndUpdate(user._id, { resetToken: token, resetTokenExpires: expires }, { new: true, runValidators: false });
+      console.log('[request-password-change] reset token saved for user id:', String(user._id));
     } catch (err) {
       console.error('Error saving reset token for user (findByIdAndUpdate):', err);
       // Do not abort the flow — fallthrough to return token in response for dev/testing
@@ -136,8 +138,8 @@ router.post('/request-password-change', async (req, res) => {
 
     // try to send email if SMTP configured and user has an email
     if (!user.email) {
-      console.warn('User does not have an email address; returning token in response (dev fallback)');
-        return res.json({ message: 'Token generado (dev fallback — usuario sin email)', token, resetUrl, dev: true });
+      console.warn('[request-password-change] User does not have an email address; returning token in response (dev fallback)');
+      return res.json({ message: 'Token generado (dev fallback — usuario sin email)', token, resetUrl, dev: true });
     }
 
     if (nodemailer && process.env.SMTP_HOST && process.env.SMTP_USER) {
@@ -165,6 +167,7 @@ router.post('/request-password-change', async (req, res) => {
             .replace(/'/g, '&#39;');
         }
         const htmlBody = `\n          <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.4;color:#111;">\n            <div style="max-width:600px;margin:0 auto;padding:20px;border:1px solid #e6e6e6;border-radius:8px;background:#ffffff;">\n              <h2 style="color:#0b6b3b;margin-top:0">Recuperación de contraseña — REMO CRSN</h2>\n              <p>Hola ${escapeHtml(userDisplayName)},</p>\n              <p>Hemos recibido una solicitud para cambiar la contraseña de tu cuenta. Haz clic en el botón de abajo para continuar. Este enlace expirará en ${expireMinutes} minutos.</p>\n              <p style="text-align:center;margin:24px 0;">\n                <a href="${resetUrl}" style="background:#0b6b3b;color:#fff;padding:12px 18px;border-radius:6px;text-decoration:none;display:inline-block">Cambiar mi contraseña</a>\n              </p>\n              <p style="font-size:14px;color:#555">Si el botón no funciona, copia y pega la siguiente URL en tu navegador:</p>\n              <p style="word-break:break-all;color:#0b6b3b">${resetUrl}</p>\n              <hr style="border:none;border-top:1px solid #eee;margin:18px 0" />\n              <p style="font-size:14px;color:#333"><strong>Token de verificación (opcional):</strong></p>\n              <pre style="background:#f6f8fa;padding:10px;border-radius:6px;border:1px solid #eaecef;color:#111">${token}</pre>\n              <p style="font-size:12px;color:#666;margin-top:12px">Si no solicitaste este cambio de contraseña, puedes ignorar este correo. Si crees que tu cuenta está comprometida, contacta con soporte.</p>\n              <p style="font-size:12px;color:#999;margin-top:18px">REMO CRSN — Servicio de gestión deportiva</p>\n            </div>\n          </div>\n        `;
+        console.log('[request-password-change] sending email to', user.email, 'using host', process.env.SMTP_HOST);
         await transporter.sendMail({
           from: `${process.env.APP_NAME || 'REMO CRSN'} <${fromAddress}>`,
           to: user.email,
@@ -172,6 +175,7 @@ router.post('/request-password-change', async (req, res) => {
           text: `Hola ${userDisplayName},\\n\\nPara cambiar tu contraseña, visita: ${resetUrl}\\n\\nSi no solicitaste esto, ignora este mensaje.\\n\\nToken: ${token}\\n\\nEste enlace expirará en ${expireMinutes} minutos.`,
           html: htmlBody,
         });
+        console.log('[request-password-change] email sent to', user.email);
         return res.json({ message: 'Email de verificación enviado' });
       } catch (err) {
         console.warn('Error sending email:', err);
