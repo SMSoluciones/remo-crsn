@@ -26,7 +26,7 @@ export default function TechnicalSheets() {
   const [loading, setLoading] = useState(true);
   const [reloading, setReloading] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ studentId: '', entrenadorId: '', fecha: '', postura: 5, remada: 5, equilibrio: 5, observaciones: '' });
+  const [form, setForm] = useState({ studentId: '', entrenadorId: '', fecha: '', observaciones: '', prueba: '', peso: '', categoria: '', picoWatts: '', promedioFinalWatts: '', tiempoFinal: '', rpm: '', parcial500: '', parcial1000: '', parcial1500: '', parcial2000: '' });
   const [filter, setFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -42,7 +42,7 @@ export default function TechnicalSheets() {
       try {
         const shouldLoadSheets = !!(effectiveUser && ['admin', 'entrenador'].includes(role));
         const [studentsData, trainersData, sheetsDataOrNull] = await Promise.all([
-          fetchStudents().then(sd => (sd || []).map(s => ({ id: s._id || s.id || s.dni, nombre: s.nombre, apellido: s.apellido, dni: s.dni }))).catch(err => { console.error('Error cargando alumnos:', err); showError('No se pudieron cargar los alumnos.'); return []; }),
+          fetchStudents().then(sd => (sd || []).map(s => ({ _id: s._id, id: s._id, nombre: s.nombre, apellido: s.apellido, dni: s.dni }))).catch(err => { console.error('Error cargando alumnos:', err); showError('No se pudieron cargar los alumnos.'); return []; }),
           fetchTrainers().catch(err => { console.error('Error cargando entrenadores:', err); return []; }),
           shouldLoadSheets ? fetchAllSheets({ ...(effectiveUser || {}), rol: role }).catch(err => { console.error('Error cargando fichas:', err); return []; }) : Promise.resolve(null),
         ]);
@@ -56,7 +56,7 @@ export default function TechnicalSheets() {
           const studentFromSheet = s.studentId && (s.studentId.nombre || s.studentId.apellido) ? `${s.studentId.nombre || ''} ${s.studentId.apellido || ''}`.trim() : null;
           const trainerFromSheet = s.entrenadorId && (s.entrenadorId.nombre || s.entrenadorId.apellido) ? `${s.entrenadorId.nombre || ''} ${s.entrenadorId.apellido || ''}`.trim() : null;
           let studentResolved = studentFromSheet;
-          if (!studentResolved && s.studentId) {
+            if (!studentResolved && s.studentId) {
             const sId = s.studentId._id || s.studentId;
             const found = (studentsData || []).find(st => (st._id === sId) || (st.id === sId) || (st.dni === sId));
             if (found) studentResolved = `${found.nombre} ${found.apellido}`.trim();
@@ -92,8 +92,8 @@ export default function TechnicalSheets() {
     }
     
     try {
-      const [studentsData, trainersData, sheetsData] = await Promise.all([
-        fetchStudents().then(sd => (sd || []).map(s => ({ id: s._id || s.id || s.dni, nombre: s.nombre, apellido: s.apellido, dni: s.dni }))).catch(() => []),
+        const [studentsData, trainersData, sheetsData] = await Promise.all([
+        fetchStudents().then(sd => (sd || []).map(s => ({ _id: s._id, id: s._id, nombre: s.nombre, apellido: s.apellido, dni: s.dni }))).catch(() => []),
         fetchTrainers().catch(() => []),
         fetchAllSheets({ ...(effectiveUser || {}), rol: role }).catch(() => []),
       ]);
@@ -135,10 +135,34 @@ export default function TechnicalSheets() {
     if (!form.studentId) { showError('Seleccione un alumno'); return; }
     try {
       const payload = { ...form };
-  if (!payload.entrenadorId && user) payload.entrenadorId = user._id || user.id;
+      // parse numeric fields
+      if (payload.peso) payload.peso = Number(payload.peso);
+      if (payload.picoWatts) payload.picoWatts = Number(payload.picoWatts);
+      if (payload.promedioFinalWatts) payload.promedioFinalWatts = Number(payload.promedioFinalWatts);
+      if (payload.rpm) payload.rpm = Number(payload.rpm);
+      // include entrenador if missing
+      if (!payload.entrenadorId && user) payload.entrenadorId = user._id || user.id;
+      // build tests array according to selected prueba
+      const tests = [];
+      const p = String(payload.prueba || '').trim();
+      if (p === '100') {
+        if (payload.promedioFinalWatts) payload.promedioFinalWatts = Number(payload.promedioFinalWatts);
+        if (payload.picoWatts) payload.picoWatts = Number(payload.picoWatts);
+        tests.push({ distance: 100, tiempo: payload.tiempoFinal || '', promedioWatts: payload.promedioFinalWatts || undefined, picoWatts: payload.picoWatts || undefined });
+      } else if (p === '500') {
+        if (payload.promedioFinalWatts) payload.promedioFinalWatts = Number(payload.promedioFinalWatts);
+        if (payload.rpm) payload.rpm = Number(payload.rpm);
+        tests.push({ distance: 500, tiempo: payload.tiempoFinal || '', promedioWatts: payload.promedioFinalWatts || undefined, rpm: payload.rpm || undefined });
+      } else if (p === '2000') {
+        if (payload.promedioFinalWatts) payload.promedioFinalWatts = Number(payload.promedioFinalWatts);
+        if (payload.rpm) payload.rpm = Number(payload.rpm);
+        tests.push({ distance: 2000, tiempo: payload.tiempoFinal || '', promedioWatts: payload.promedioFinalWatts || undefined, rpm: payload.rpm || undefined, parcial500: payload.parcial500 || undefined, parcial1000: payload.parcial1000 || undefined, parcial1500: payload.parcial1500 || undefined, parcial2000: payload.parcial2000 || undefined });
+      }
+      if (tests.length) payload.tests = tests;
+
   const created = await createSheet(payload, user);
   setSheets(prev => [created, ...prev]);
-  setForm({ studentId: '', entrenadorId: '', fecha: '', postura: 5, remada: 5, equilibrio: 5, observaciones: '' });
+  setForm({ studentId: '', entrenadorId: '', fecha: '', observaciones: '', prueba: '', peso: '', categoria: '', picoWatts: '', promedioFinalWatts: '', tiempoFinal: '', rpm: '', parcial500: '', parcial1000: '', parcial1500: '', parcial2000: '' });
       setShowForm(false);
       showSuccess('Ficha técnica creada');
     } catch (err) {
@@ -191,6 +215,40 @@ export default function TechnicalSheets() {
   );
 
   const totalPages = Math.ceil(filteredSheets.length / itemsPerPage);
+
+  const parseTimeToSeconds = (t) => {
+    if (!t && t !== 0) return undefined;
+    try {
+      const s = String(t).trim();
+      if (!s) return undefined;
+      // formats: MM:SS.s, M:SS, SS.s
+      const parts = s.split(':').map(p => p.trim());
+      if (parts.length === 1) {
+        return Number(parts[0]) || undefined;
+      }
+      const minutes = Number(parts[0]) || 0;
+      const sec = Number(parts[1]) || 0;
+      return minutes * 60 + sec;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const secondsToTime = (sec) => {
+    if (sec === undefined || sec === null || Number.isNaN(sec)) return '';
+    const minutes = Math.floor(sec / 60);
+    const seconds = (sec - minutes * 60).toFixed(1);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  const chartData = (sheets || []).map(s => {
+    const base = { fecha: new Date(s.fecha).toLocaleDateString() };
+    (s.tests || []).forEach(t => {
+      const secs = parseTimeToSeconds(t.tiempo || t.tiempoFinal || '');
+      if (secs !== undefined) base[`t${t.distance}`] = secs;
+    });
+    return base;
+  });
 
   return (
     <div className="bg-gray-50 min-h-screen px-4 sm:px-8 py-6 sm:py-8 max-w-xs sm:max-w-6xl mx-auto">
@@ -247,36 +305,42 @@ export default function TechnicalSheets() {
             required
             className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
           />
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={form.postura}
-            onChange={e => setForm(f => ({ ...f, postura: Number(e.target.value) }))}
-            placeholder="Postura"
-            required
-            className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
-          />
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={form.remada}
-            onChange={e => setForm(f => ({ ...f, remada: Number(e.target.value) }))}
-            placeholder="Remada"
-            required
-            className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
-          />
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={form.equilibrio}
-            onChange={e => setForm(f => ({ ...f, equilibrio: Number(e.target.value) }))}
-            placeholder="Equilibrio"
-            required
-            className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
-          />
+          <select value={form.prueba} onChange={e => setForm(f => ({ ...f, prueba: e.target.value }))} className="border rounded px-3 py-2 w-full">
+            <option value="">Seleccione prueba</option>
+            <option value="100">100 metros</option>
+            <option value="500">500 metros</option>
+            <option value="2000">2000 metros</option>
+          </select>
+          <input value={form.peso} onChange={e => setForm(f => ({ ...f, peso: e.target.value }))} placeholder="Peso (kg)" className="border rounded px-3 py-2 w-full" />
+          <input value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))} placeholder="Categoría" className="border rounded px-3 py-2 w-full" />
+
+          {/* Campos condicionales según prueba */}
+          {form.prueba === '100' && (
+            <>
+              <input value={form.picoWatts} onChange={e => setForm(f => ({ ...f, picoWatts: e.target.value }))} placeholder="Pico Watts" className="border rounded px-3 py-2 w-full" />
+              <input value={form.promedioFinalWatts} onChange={e => setForm(f => ({ ...f, promedioFinalWatts: e.target.value }))} placeholder="Promedio final Watts" className="border rounded px-3 py-2 w-full" />
+              <input value={form.tiempoFinal} onChange={e => setForm(f => ({ ...f, tiempoFinal: e.target.value }))} placeholder="Tiempo final (MM:SS.s)" className="border rounded px-3 py-2 w-full" />
+            </>
+          )}
+          {form.prueba === '500' && (
+            <>
+              <input value={form.rpm} onChange={e => setForm(f => ({ ...f, rpm: e.target.value }))} placeholder="RPM" className="border rounded px-3 py-2 w-full" />
+              <input value={form.promedioFinalWatts} onChange={e => setForm(f => ({ ...f, promedioFinalWatts: e.target.value }))} placeholder="Promedio final Watts" className="border rounded px-3 py-2 w-full" />
+              <input value={form.tiempoFinal} onChange={e => setForm(f => ({ ...f, tiempoFinal: e.target.value }))} placeholder="Tiempo final (MM:SS.s)" className="border rounded px-3 py-2 w-full" />
+            </>
+          )}
+          {form.prueba === '2000' && (
+            <>
+              <input value={form.rpm} onChange={e => setForm(f => ({ ...f, rpm: e.target.value }))} placeholder="RPM" className="border rounded px-3 py-2 w-full" />
+              <input value={form.promedioFinalWatts} onChange={e => setForm(f => ({ ...f, promedioFinalWatts: e.target.value }))} placeholder="Promedio final Watts" className="border rounded px-3 py-2 w-full" />
+              <input value={form.tiempoFinal} onChange={e => setForm(f => ({ ...f, tiempoFinal: e.target.value }))} placeholder="Tiempo final (MM:SS.s)" className="border rounded px-3 py-2 w-full" />
+              <input value={form.parcial500} onChange={e => setForm(f => ({ ...f, parcial500: e.target.value }))} placeholder="Parcial 500 (MM:SS.s)" className="border rounded px-3 py-2 w-full" />
+              <input value={form.parcial1000} onChange={e => setForm(f => ({ ...f, parcial1000: e.target.value }))} placeholder="Parcial 1000 (MM:SS.s)" className="border rounded px-3 py-2 w-full" />
+              <input value={form.parcial1500} onChange={e => setForm(f => ({ ...f, parcial1500: e.target.value }))} placeholder="Parcial 1500 (MM:SS.s)" className="border rounded px-3 py-2 w-full" />
+              <input value={form.parcial2000} onChange={e => setForm(f => ({ ...f, parcial2000: e.target.value }))} placeholder="Parcial 2000 (MM:SS.s)" className="border rounded px-3 py-2 w-full" />
+            </>
+          )}
+          
           <textarea
             value={form.observaciones}
             onChange={e => setForm(f => ({ ...f, observaciones: e.target.value }))}
@@ -310,16 +374,24 @@ export default function TechnicalSheets() {
                   <div className="font-semibold text-base text-gray-800">{s.studentResolved || (s.studentId && (s.studentId.nombre ? `${s.studentId.nombre} ${s.studentId.apellido}` : s.studentId)) || s.student || ''}</div>
                   <div className="text-sm text-gray-600">{s.entrenadorResolved || s.entrenador || ''}</div>
                   <div className="text-sm text-gray-500 mt-2">{new Date(s.fecha).toLocaleDateString()}</div>
+                  {(s.tests || []).length ? (
+                    <div className="mt-2">
+                      {(s.tests || []).map((t, idx) => (
+                        <div key={idx} className="inline-block mr-2">
+                          <span className={
+                            `inline-block px-2 py-1 rounded text-sm ` +
+                            (t.distance === 100 ? 'bg-yellow-100 text-yellow-800' : t.distance === 500 ? 'bg-orange-100 text-orange-800' : t.distance === 2000 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')
+                          }>{t.distance}m: {t.tiempo || t.tiempoFinal || '-'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="text-right">
                   <button onClick={() => handleDeleteSheet(s._id || s.id)} className="text-red-600 text-sm">Eliminar</button>
                 </div>
               </div>
-              <div className="mt-3 flex gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded bg-green-50 text-green-700 text-sm">Postura: {s.postura}</span>
-                <span className="px-3 py-1 rounded bg-blue-50 text-blue-700 text-sm">Remada: {s.remada}</span>
-                <span className="px-3 py-1 rounded bg-teal-50 text-teal-700 text-sm">Equilibrio: {s.equilibrio}</span>
-              </div>
+              
               {s.observaciones && <div className="mt-3 text-sm text-gray-600">{s.observaciones}</div>}
             </div>
           ))}
@@ -333,9 +405,8 @@ export default function TechnicalSheets() {
                 <th className="py-2 px-4 text-left">Alumno</th>
                 <th className="py-2 px-4 text-left">Entrenador</th>
                 <th className="py-2 px-4 text-left">Fecha</th>
-                <th className="py-2 px-4 text-left">Postura</th>
-                <th className="py-2 px-4 text-left">Remada</th>
-                <th className="py-2 px-4 text-left">Equilibrio</th>
+                
+                <th className="py-2 px-4 text-left">Tiempo final</th>
                 <th className="py-2 px-4 text-left">Observaciones</th>
                 <th className="py-2 px-4 text-left">Acciones</th>
               </tr>
@@ -346,9 +417,19 @@ export default function TechnicalSheets() {
                   <td className="py-2 px-4">{s.studentResolved || (s.studentId && (s.studentId.nombre ? `${s.studentId.nombre} ${s.studentId.apellido}` : s.studentId)) || s.student || ''}</td>
                   <td className="py-2 px-4">{s.entrenadorResolved || s.entrenador || (s.entrenadorId && s.entrenadorId.nombre) || ''}</td>
                   <td className="py-2 px-4">{new Date(s.fecha).toLocaleDateString()}</td>
-                  <td className="py-2 px-4">{s.postura}</td>
-                  <td className="py-2 px-4">{s.remada}</td>
-                  <td className="py-2 px-4">{s.equilibrio}</td>
+                  <td className="py-2 px-4">
+                    {(s.tests || []).length ? (
+                      (s.tests || []).map((t, idx) => (
+                        <div key={idx} className="mb-1">
+                          <span className={
+                            `inline-block px-2 py-1 rounded text-sm ` +
+                            (t.distance === 100 ? 'bg-yellow-100 text-yellow-800' : t.distance === 500 ? 'bg-orange-100 text-orange-800' : t.distance === 2000 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')
+                          }>{t.distance}m: {t.tiempo || t.tiempoFinal || '-'}</span>
+                        </div>
+                      ))
+                    ) : '-'}
+                  </td>
+                  
                   <td className="py-2 px-4">{s.observaciones}</td>
                   <td className="py-2 px-4">
                     <button
@@ -387,15 +468,15 @@ export default function TechnicalSheets() {
       <div className="bg-white rounded-xl shadow p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4 text-gray-700">Evolución Técnica</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={sheets.map(s => ({ fecha: new Date(s.fecha).toLocaleDateString(), postura: s.postura, remada: s.remada, equilibrio: s.equilibrio }))}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="fecha" />
-            <YAxis domain={[0, 10]} />
-            <Tooltip />
+            <YAxis tickFormatter={(v) => secondsToTime(v)} />
+            <Tooltip formatter={(value, name) => [secondsToTime(value), name]} />
             <Legend />
-            <Line type="monotone" dataKey="postura" stroke="#8b5cf6" name="Postura" />
-            <Line type="monotone" dataKey="remada" stroke="#2563eb" name="Remada" />
-            <Line type="monotone" dataKey="equilibrio" stroke="#22c55e" name="Equilibrio" />
+            <Line type="monotone" dataKey="t100" name="100m" stroke="#FACC15" dot={{ r: 4 }} strokeWidth={2} />
+            <Line type="monotone" dataKey="t500" name="500m" stroke="#FB923C" dot={{ r: 4 }} strokeWidth={2} />
+            <Line type="monotone" dataKey="t2000" name="2000m" stroke="#10B981" dot={{ r: 4 }} strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </div>

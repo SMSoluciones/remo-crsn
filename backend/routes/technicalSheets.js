@@ -157,8 +157,20 @@ router.post('/', headerAuth, requireTrainerOrAdmin, async (req, res) => {
 
     
     const entrenadorId = req.user?.id || req.body.entrenadorId;
-    const payload = { ...req.body, entrenadorId, studentId: studentDoc._id };
-  const sheet = new TechnicalSheet(payload);
+    // Build payload: copy student identity fields (dni, nacimiento) but do not expect them from client
+    const payload = Object.assign({}, req.body, {
+      entrenadorId,
+      studentId: studentDoc._id,
+      studentDni: studentDoc.dni,
+      studentNacimiento: studentDoc.nacimiento || studentDoc.fechaNacimiento || null,
+    });
+
+    // Ensure tests array is normalized if provided as string
+    if (payload.tests && typeof payload.tests === 'string') {
+      try { payload.tests = JSON.parse(payload.tests); } catch (e) { payload.tests = []; }
+    }
+
+    const sheet = new TechnicalSheet(payload);
   await sheet.save();
   
   const populated = await TechnicalSheet.findById(sheet._id).populate('studentId', 'nombre apellido dni').populate('entrenadorId', 'nombre email');

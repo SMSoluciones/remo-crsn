@@ -22,7 +22,7 @@ export default function Students() {
   const [showProfile, setShowProfile] = useState(false);
   const [openMenuFor, setOpenMenuFor] = useState(null);
   const [sheets, setSheets] = useState({}); // { studentId: [fichas...] }
-  const [form, setForm] = useState({ fecha: '', entrenador: '', postura: 5, remada: 5, equilibrio: 5, coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
+  const [form, setForm] = useState({ fecha: '', entrenador: '', coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [openingByEmail, setOpeningByEmail] = useState(false);
@@ -242,7 +242,7 @@ export default function Students() {
   if (!payload.entrenadorId && user) payload.entrenadorId = user._id || user.id;
   const created = await createSheet(payload, user);
       setSheets(prev => ({ ...prev, [selected]: [...(prev[selected] || []), created] }));
-  setForm({ fecha: '', entrenador: '', postura: 5, remada: 5, equilibrio: 5, coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
+  setForm({ fecha: '', entrenador: '', coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
   showSuccess('Ficha técnica creada correctamente');
     } catch (err) {
       console.error('Error creando ficha:', err);
@@ -458,13 +458,10 @@ export default function Students() {
                     <h4 className="text-xl font-bold mb-4 text-gray-700">Evolución de Promedios</h4>
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={studentSheets.map((sheet) => {
-                        const puntajes = [sheet.postura, sheet.remada, sheet.equilibrio, sheet.coordinacion, sheet.resistencia, sheet.velocidad];
+                        const puntajes = [sheet.coordinacion, sheet.resistencia, sheet.velocidad];
                         return {
                           fecha: sheet.fecha,
                           promedio: (puntajes.reduce((a, b) => a + b, 0) / puntajes.length).toFixed(2),
-                          postura: sheet.postura,
-                          remada: sheet.remada,
-                          equilibrio: sheet.equilibrio,
                           coordinacion: sheet.coordinacion,
                           resistencia: sheet.resistencia,
                           velocidad: sheet.velocidad,
@@ -490,7 +487,7 @@ export default function Students() {
                     <div className="text-gray-500">No hay fichas técnicas registradas.</div>
                   ) : (
                     paginatedSheets.map((sheet, idx) => {
-                      const puntajes = [sheet.postura, sheet.remada, sheet.equilibrio, sheet.coordinacion, sheet.resistencia, sheet.velocidad].map(p => Number(p) || 0);
+                      const puntajes = [sheet.coordinacion, sheet.resistencia, sheet.velocidad].map(p => Number(p) || 0);
                       const promedio = (puntajes.reduce((a, b) => a + b, 0) / puntajes.length).toFixed(1);
                       const fechaFormateada = new Date(sheet.fecha).toLocaleDateString('es-ES');
                         return (
@@ -501,15 +498,7 @@ export default function Students() {
                             <span className={`ml-auto px-4 py-2 rounded-full text-white font-bold text-lg ${promedio >= 8 ? 'bg-green-600' : promedio >= 6 ? 'bg-yellow-500' : 'bg-red-500'}`}>Promedio: {promedio}</span>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                            <div className="flex items-center gap-3">
-                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.postura >= 8 ? 'bg-green-100 text-green-700' : sheet.postura >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Postura: {sheet.postura}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.remada >= 8 ? 'bg-green-100 text-green-700' : sheet.remada >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Remada: {sheet.remada}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.equilibrio >= 8 ? 'bg-green-100 text-green-700' : sheet.equilibrio >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Equilibrio: {sheet.equilibrio}</span>
-                            </div>
+                            {/* Postura / Remada / Equilibrio removidos */}
                             <div className="flex items-center gap-3">
                               <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.coordinacion >= 8 ? 'bg-green-100 text-green-700' : sheet.coordinacion >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Coordinación: {sheet.coordinacion}</span>
                             </div>
@@ -561,16 +550,7 @@ export default function Students() {
                       required
                       className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
                     />
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={form.postura}
-                      onChange={e => setForm(f => ({ ...f, postura: Number(e.target.value) }))}
-                      placeholder="Postura (1-10)"
-                      required
-                      className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
-                    />
+                    {/* Postura / Remada / Equilibrio removidos del formulario */}
                     <button type="submit" className="bg-green-700 text-white rounded px-4 py-2 hover:bg-green-800 transition col-span-1 md:col-span-3">Guardar ficha</button>
                   </form>
                 </div>

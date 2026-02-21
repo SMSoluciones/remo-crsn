@@ -3,14 +3,11 @@ import { API_BASE_URL } from '../utils/apiConfig';
 const BASE = `${API_BASE_URL}/api/technical-sheets`;
 
 export class TechnicalSheet {
-  constructor({ id, studentId, entrenadorId, fecha, postura, remada, equilibrio, observaciones }) {
+  constructor({ id, studentId, entrenadorId, fecha, observaciones }) {
     this.id = id;
     this.studentId = studentId;
     this.entrenadorId = entrenadorId;
     this.fecha = fecha;
-    this.postura = postura;
-    this.remada = remada;
-    this.equilibrio = equilibrio;
     this.observaciones = observaciones;
   }
 }
@@ -36,13 +33,11 @@ export async function createSheet(data, user) {
   // user: { id, rol }
   const res = await fetch(BASE, {
     method: 'POST',
-    headers: {
+    headers: Object.assign({
       'Content-Type': 'application/json',
       'x-user-id': user?.id || user?._id || '',
       'x-user-role': user?.rol || ''
-    },
-    // include documento if available
-    ...(user && user.documento ? { 'x-user-documento': user.documento } : {}),
+    }, (user && user.documento ? { 'x-user-documento': user.documento } : {})),
     body: JSON.stringify(data)
   });
   if (!res.ok) throw new Error('Error creating technical sheet');

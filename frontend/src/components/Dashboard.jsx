@@ -221,7 +221,7 @@ export default function Dashboard() {
         let sum = 0;
         let count = 0;
         for (const sh of rows) {
-          const nums = [sh.postura, sh.remada, sh.equilibrio, sh.coordinacion, sh.resistencia, sh.velocidad]
+          const nums = [sh.coordinacion, sh.resistencia, sh.velocidad]
             .map(n => Number(n) || 0);
           if (nums.every(v => v === 0)) continue;
           const avg = nums.reduce((a,b)=>a+b,0)/nums.length;
@@ -251,7 +251,7 @@ export default function Dashboard() {
             let sum = 0;
             let count = 0;
             for (const sh of rows) {
-              const nums = [sh.postura, sh.remada, sh.equilibrio, sh.coordinacion, sh.resistencia, sh.velocidad]
+              const nums = [sh.coordinacion, sh.resistencia, sh.velocidad]
                 .map(n => Number(n) || 0);
               if (nums.every(v => v === 0)) continue;
               const avg = nums.reduce((a,b)=>a+b,0)/nums.length;
