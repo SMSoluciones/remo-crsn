@@ -9,6 +9,12 @@ export default function Remar({ isOpen, onRequestClose, boatsList = [], activeBo
   const [durationHours, setDurationHours] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
+  const DURATION_OPTIONS = [
+    { value: 0.5, label: '30 min' },
+    { value: 1, label: '1 hora' },
+    { value: 2, label: '2 horas' },
+  ];
+
   useEffect(() => {
     if (!isOpen) {
       setSelectedBoatId('');
@@ -49,9 +55,9 @@ export default function Remar({ isOpen, onRequestClose, boatsList = [], activeBo
 
           <label className="text-sm font-medium">Duración estimada</label>
           <div className="flex gap-2">
-            {[1,2,3,4].map((h) => (
-              <button key={h} onClick={() => setDurationHours(h)} type="button" className={`px-3 py-2 rounded ${durationHours===h? 'bg-blue-800 text-white':'bg-gray-100'}`}>
-                {h} {h===1? 'hora' : 'horas'}
+            {DURATION_OPTIONS.map((opt) => (
+              <button key={String(opt.value)} onClick={() => setDurationHours(opt.value)} type="button" className={`px-3 py-2 rounded ${durationHours===opt.value? 'bg-blue-800 text-white':'bg-gray-100'}`}>
+                {opt.label}
               </button>
             ))}
           </div>

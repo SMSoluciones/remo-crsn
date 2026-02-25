@@ -61,3 +61,30 @@ export async function fetchBoatUsages() {
     throw new Error(err.message || 'Network error');
   }
 }
+
+export async function stopBoatUsage(id, user) {
+  if (!id) throw new Error('id required');
+  const url = `${API_BASE_URL}/api/boat-usages/${id}/stop`;
+  const headers = { 'Content-Type': 'application/json' };
+  const isLocalBackend = API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
+  if (isLocalBackend && user) {
+    if (user._id) headers['x-user-id'] = user._id;
+    if (user.email) headers['x-user-email'] = user.email;
+    const first = user.nombre || user.name || user.firstName || '';
+    const last = user.apellido || user.lastname || user.lastName || '';
+    const fullName = [first, last].filter(Boolean).join(' ').trim();
+    if (fullName) headers['x-user-name'] = fullName;
+  }
+  try {
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({}) });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const errMsg = body && (body.error || body.message) ? (body.error || body.message) : `HTTP ${res.status}`;
+      throw new Error(errMsg);
+    }
+    return res.json();
+  } catch (err) {
+    console.error('stopBoatUsage failed:', err);
+    throw new Error(err.message || 'Network error');
+  }
+}

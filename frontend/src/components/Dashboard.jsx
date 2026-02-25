@@ -5,11 +5,13 @@ import 'aos/dist/aos.css';
 import { fetchStudents } from '../models/Student';
 import { fetchBoats } from '../models/Boat';
 import { fetchBoatUsages } from '../models/BoatUsage';
+import { stopBoatUsage } from '../models/BoatUsage';
 import { API_BASE_URL } from '../utils/apiConfig';
 import { fetchAllSheets, fetchSheetsByStudent } from '../models/TechnicalSheet';
 import { useAuth } from '../context/useAuth';
 import { fetchEvents } from '../models/Event';
 import { fetchAnnouncements } from '../models/Announcement';
+import { showSuccess, showError } from '../utils/toast';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -61,6 +63,20 @@ export default function Dashboard() {
   const [isAnnouncementsListOpen, setIsAnnouncementsListOpen] = useState(false);
   const [isRemarOpen, setIsRemarOpen] = useState(false);
   const [activeBoatLocks, setActiveBoatLocks] = useState({});
+  const [userActiveUsage, setUserActiveUsage] = useState(null);
+  const [isStopModalOpen, setIsStopModalOpen] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [conflictUsage, setConflictUsage] = useState(null);
+
+  const handleOpenRemarAttempt = () => {
+    if (userActiveUsage) {
+      setConflictUsage(userActiveUsage);
+      setIsConflictModalOpen(true);
+      return;
+    }
+    setIsRemarOpen(true);
+  };
   
   const eventSliderSettings = {
     dots: true,
@@ -293,7 +309,8 @@ export default function Dashboard() {
         (list || []).forEach(item => {
           const bid = String(item.boatId || item.boat || '');
           const et = item.estimatedReturn ? new Date(item.estimatedReturn) : null;
-          if (et && et > now) locks[bid] = et.toISOString();
+          const actual = item.actualReturn ? new Date(item.actualReturn) : null;
+          if (!actual && et && et > now) locks[bid] = et.toISOString();
         });
         if (mounted) setActiveBoatLocks(locks);
       } catch (e) {
@@ -305,6 +322,45 @@ export default function Dashboard() {
     const timer = setInterval(fetchLocks, POLL_INTERVAL);
     return () => { mounted = false; clearInterval(timer); };
   }, [isRemarOpen]);
+
+  // Poll for current user's active usage (so we can show the floating Stop button)
+  useEffect(() => {
+    if (!user) return;
+    let mounted = true;
+    const POLL = 10000;
+    const load = async () => {
+      try {
+        const list = await fetchBoatUsages();
+        if (!mounted) return;
+        const uid = String(user._id || user.id || '').trim();
+        const email = (user.email || '').trim().toLowerCase();
+        const now = new Date();
+        const me = (list || []).find(u => {
+          if (u.actualReturn) return false;
+          // hide if estimated return already passed
+          try {
+            const est = u.estimatedReturn ? new Date(u.estimatedReturn) : null;
+            if (!est || est <= now) return false;
+          } catch (e) { return console.warn(e); }
+          try {
+            if (u.userId && uid && String(u.userId) === uid) return true;
+            if (u.userEmail && email && String(u.userEmail).toLowerCase() === email) return true;
+            if (u.userName && user) {
+              const first = user.nombre || user.name || user.fullName || '';
+              if (String(u.userName).trim() === String(first).trim()) return true;
+            }
+          } catch (e) { return console.warn(e); }
+          return false;
+        }) || null;
+        setUserActiveUsage(me);
+      } catch (e) {
+        console.error('Error polling user active usage', e);
+      }
+    };
+    load();
+    const ti = setInterval(load, POLL);
+    return () => { mounted = false; clearInterval(ti); };
+  }, [user]);
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col items-stretch sm:items-center py-6 px-2 sm:px-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full max-w-6xl mb-6 gap-4">
@@ -345,6 +401,121 @@ export default function Dashboard() {
 
         </div>
       </div>
+      {/* Responsive inline buttons for small screens: under action buttons and above Estadísticas */}
+      <div className="md:hidden w-full max-w-6xl mx-auto px-2 mt-4 mb-4 flex gap-4 items-center justify-center">
+        {userActiveUsage && (
+          <button onClick={() => setIsStopModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center">
+            <div className="bg-white w-6 h-6 rounded-md shadow-inner" aria-hidden="true" />
+          </button>
+        )}
+          <button
+            onClick={() => setIsStopModalOpen(true)}
+            aria-label="Detener remada"
+            className="hidden md:flex fixed bottom-32 right-6 z-50 bg-red-600 hover:bg-red-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
+          >
+            <div className="bg-white w-8 h-8 rounded-md shadow-inner" aria-hidden="true" />
+          </button>
+        <button onClick={() => setIsRemarOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
+            <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
+          </svg>
+        </button>
+      </div>
+      {/* Floating Stop button + Modal */}
+      {userActiveUsage && (
+        <>
+          <button
+            onClick={() => setIsStopModalOpen(true)}
+            aria-label="Detener remada"
+            className="hidden md:flex fixed bottom-32 right-6 z-50 bg-red-600 hover:bg-red-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
+          >
+            <div className="bg-white w-8 h-8 rounded-md shadow-inner" aria-hidden="true" />
+          </button>
+
+          {isStopModalOpen && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60" onClick={() => setIsStopModalOpen(false)}>
+              <div className="w-full max-w-md bg-white rounded-xl p-6 mx-4" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-lg font-semibold mb-2">Detener la remada actual</h3>
+                <p className="text-sm text-gray-700 mb-4">¿Detener la remada actual? Se registrará la hora de detención: <strong>{new Date().toLocaleString('es-ES')}</strong></p>
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => setIsStopModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+                  <button disabled={stopping} onClick={async () => {
+                    try {
+                      setStopping(true);
+                      const updated = await stopBoatUsage(userActiveUsage._id || userActiveUsage.id, user);
+                      setUserActiveUsage(updated);
+                      // remove lock for boat
+                      const bid = String(updated.boatId || updated.boat || '');
+                      setActiveBoatLocks(prev => {
+                        const copy = { ...(prev || {}) };
+                        delete copy[bid];
+                        return copy;
+                      });
+                      showSuccess('Remada detenida');
+                      setIsStopModalOpen(false);
+                    } catch (err) {
+                      console.error('Stop failed', err);
+                      showError(err.message || 'No se pudo detener la remada');
+                    } finally { setStopping(false); }
+                  }} className="px-4 py-2 bg-red-600 text-white rounded">{stopping ? 'Deteniendo...' : 'Detener'}</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Conflict modal: preventing starting a new Remar when one is active */}
+      {isConflictModalOpen && conflictUsage && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-70" onClick={() => setIsConflictModalOpen(false)}>
+          <div className="w-full max-w-md bg-white rounded-xl p-6 mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-2">No se pueden iniciar dos sesiones de Remo a la vez</h3>
+            <p className="text-sm text-gray-700 mb-4">¿Terminar sesión iniciada con el: "{conflictUsage.boatDisplay || (conflictUsage.boatId && (conflictUsage.boatId.nombre || conflictUsage.boatId.name)) || conflictUsage.boat || 'este bote'}"?</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={async () => {
+                try {
+                  setStopping(true);
+                  const updated = await stopBoatUsage(conflictUsage._id || conflictUsage.id, user);
+                  // remove lock
+                  const bid = String(updated.boatId || updated.boat || '');
+                  setActiveBoatLocks(prev => {
+                    const copy = { ...(prev || {}) };
+                    delete copy[bid];
+                    return copy;
+                  });
+                  setUserActiveUsage(null);
+                  setIsConflictModalOpen(false);
+                  setIsRemarOpen(true);
+                  showSuccess('Remada detenida');
+                } catch (err) {
+                  console.error('Stop failed', err);
+                  showError(err.message || 'No se pudo detener la remada');
+                } finally { setStopping(false); }
+              }} className="px-4 py-2 bg-red-600 text-white rounded mr-auto">{stopping ? 'Deteniendo...' : 'Terminar sesión'}</button>
+              <button onClick={() => setIsConflictModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Shortcut button to open Remar modal (orange, play icon) */}
+      <button
+        onClick={() => setIsRemarOpen(true)}
+        aria-label="Abrir Remar"
+        className="md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
+          <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
+        </svg>
+      </button>
+      <button
+        onClick={() => handleOpenRemarAttempt()}
+        aria-label="Abrir Remar"
+        className="hidden md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
+          <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
+        </svg>
+      </button>
       {/* REMAR History Modal (migrado a componente) */}
       <RemarHistoryModal isOpen={isRemarHistoryOpen} onClose={() => setIsRemarHistoryOpen(false)} user={user} boatsList={boatsList} />
       
@@ -432,7 +603,7 @@ export default function Dashboard() {
         >
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-2xl font-extrabold">REMAR</h2>
-            <button onClick={(e) => { e.stopPropagation(); setIsRemarOpen(true); }} aria-label="Abrir Remar" className="relative z-20 text-white bg-orange-500 rounded-full p-2 hover:bg-orange-600">
+            <button onClick={(e) => { e.stopPropagation(); handleOpenRemarAttempt(); }} aria-label="Abrir Remar" className="relative z-20 text-white bg-orange-500 rounded-full p-2 hover:bg-orange-600">
               <ArrowUpRightIcon className="w-6 h-6" />
             </button>
           </div>

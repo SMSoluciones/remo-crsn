@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchBoatUsages } from '../../models/BoatUsage';
+import { fetchBoatUsages, stopBoatUsage } from '../../models/BoatUsage';
+import { showSuccess, showError } from '../../utils/toast';
 import { API_BASE_URL } from '../../utils/apiConfig';
 
 export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [] }) {
@@ -7,6 +8,7 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [stoppingId, setStoppingId] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -128,6 +130,7 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
                   <th className="px-2 py-2">Bote</th>
                   <th className="px-2 py-2">Salida</th>
                   <th className="px-2 py-2">Regreso estimado</th>
+                  <th className="px-2 py-2">Regreso real</th>
                   <th className="px-2 py-2">Horas</th>
                   <th className="px-2 py-2">Zona</th>
                   <th className="px-2 py-2">Acciones</th>
@@ -140,6 +143,7 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
                     <td className="px-2 py-2 align-top">{getBoatDisplay(u)}</td>
                     <td className="px-2 py-2 align-top">{fmtDate(u.requestedAt || u.salida || u.createdAt)}</td>
                     <td className="px-2 py-2 align-top">{fmtDate(u.estimatedReturn)}</td>
+                    <td className="px-2 py-2 align-top">{fmtDate(u.actualReturn)}</td>
                     <td className="px-2 py-2 align-top">{u.durationHours ?? u.hours ?? '—'}</td>
                     <td className="px-2 py-2 align-top">{u.zone || u.zona || '—'}</td>
                     <td className="px-2 py-2 align-top flex items-center gap-2">
@@ -158,7 +162,46 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
                           </button>
                         </>
                       ) : (
-                        <span className="text-xs text-gray-500">Sin permisos</span>
+                        <div className="flex items-center gap-2">
+                          {(!u.actualReturn) ? (() => {
+                            const uid = String(user?._id || user?.id || '').trim();
+                            const email = (user?.email || '').trim().toLowerCase();
+                            const isOwner = (() => {
+                              try {
+                                if (u.userId && uid && String(u.userId) === uid) return true;
+                                if (u.userEmail && email && String(u.userEmail).toLowerCase() === email) return true;
+                                if (u.userName && user) {
+                                  const first = user.nombre || user.name || user.fullName || '';
+                                  if (String(u.userName).trim() === String(first).trim()) return true;
+                                }
+                              } catch (e) { /* ignore */ }
+                              return false;
+                            })();
+                            if (isOwner) {
+                              return (
+                                <button
+                                  disabled={stoppingId === (u._id||u.id)}
+                                  onClick={async () => {
+                                    if (!window.confirm('¿Detener la remada y registrar hora de regreso exacta?')) return;
+                                    try {
+                                      setStoppingId(u._id||u.id);
+                                      const updated = await stopBoatUsage(u._id||u.id, user);
+                                      setList(prev => prev.map(it => (String(it._id||it.id) === String(u._id||u.id) ? updated : it)));
+                                      showSuccess('Remada detenida');
+                                    } catch (err) {
+                                      console.error('Stop failed', err);
+                                      showError(err.message || 'No se pudo detener la remada');
+                                    } finally { setStoppingId(null); }
+                                  }}
+                                  className="px-2 py-1 bg-blue-500 text-white rounded"
+                                >{stoppingId === (u._id||u.id) ? 'Deteniendo...' : 'Detener'}</button>
+                              );
+                            }
+                            return <span className="text-xs text-gray-500">Sin permisos</span>;
+                          })() : (
+                            <span className="text-xs text-gray-500">Detenido</span>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>

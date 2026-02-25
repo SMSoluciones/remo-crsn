@@ -9,6 +9,7 @@ const BoatUsageSchema = new mongoose.Schema({
   requestedAt: { type: Date, default: Date.now },
   durationHours: { type: Number, required: true },
   estimatedReturn: { type: Date, required: true },
+  actualReturn: { type: Date },
   createdAt: { type: Date, default: Date.now },
   note: { type: String },
   zone: { type: String, maxlength: 20 },

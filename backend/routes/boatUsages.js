@@ -96,6 +96,35 @@ router.get('/', async (req, res) => {
   }
 });
 
+// POST /api/boat-usages/:id/stop - allow the user who created the usage to stop it
+router.post('/:id/stop', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const usage = await BoatUsage.findById(id);
+    if (!usage) return res.status(404).json({ error: 'Registro no encontrado' });
+
+    const userId = req.header('x-user-id') || req.body.userId || null;
+    const userEmail = req.header('x-user-email') || req.body.userEmail || '';
+    const userName = req.header('x-user-name') || req.body.userName || '';
+
+    let owner = false;
+    if (usage.userId && userId && String(usage.userId) === String(userId)) owner = true;
+    else if (usage.userEmail && userEmail && String(usage.userEmail).toLowerCase() === String(userEmail).toLowerCase()) owner = true;
+    else if (usage.userName && userName && String(usage.userName).trim() === String(userName).trim()) owner = true;
+
+    if (!owner) return res.status(403).json({ error: 'Solo el usuario que creó la remada puede detenerla' });
+    if (usage.actualReturn) return res.status(400).json({ error: 'Remada ya detenida' });
+
+    usage.actualReturn = new Date();
+    await usage.save();
+    console.log('Stopped BoatUsage', id, 'at', usage.actualReturn);
+    return res.json(usage);
+  } catch (err) {
+    console.error('Error stopping boat usage:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // DELETE /api/boat-usages/:id - only admin can delete
 router.delete('/:id', async (req, res) => {
   try {
