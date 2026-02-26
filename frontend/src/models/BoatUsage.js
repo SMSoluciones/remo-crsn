@@ -76,7 +76,15 @@ export async function stopBoatUsage(id, user) {
     if (fullName) headers['x-user-name'] = fullName;
   }
   try {
-    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({}) });
+    // include user identifying info in body as a fallback when headers are not accepted
+    const first2 = user?.nombre || user?.name || user?.firstName || '';
+    const last2 = user?.apellido || user?.lastname || user?.lastName || '';
+    const fullName2 = [first2, last2].filter(Boolean).join(' ').trim() || undefined;
+    const bodyObj = {};
+    if (user?._id) bodyObj.userId = user._id;
+    if (user?.email) bodyObj.userEmail = user.email;
+    if (fullName2) bodyObj.userName = fullName2;
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(bodyObj) });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       const errMsg = body && (body.error || body.message) ? (body.error || body.message) : `HTTP ${res.status}`;

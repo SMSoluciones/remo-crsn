@@ -29,11 +29,16 @@ router.post('/', async (req, res) => {
     const requestedAt = new Date();
     const estimatedReturn = new Date(requestedAt.getTime() + hours * 60 * 60 * 1000);
     // Check for overlapping usages for the same boat
+    // Only consider usages that have NOT been stopped yet (no actualReturn)
     const overlapping = await BoatUsage.findOne({
       boatId,
       $or: [
         { requestedAt: { $lte: estimatedReturn }, estimatedReturn: { $gte: requestedAt } },
       ],
+      $or: [
+        { actualReturn: { $exists: false } },
+        { actualReturn: null }
+      ]
     }).lean();
     if (overlapping) {
       return res.status(409).json({ error: 'Boat already in use during the requested time' });
