@@ -28,13 +28,33 @@ router.post('/', async (req, res) => {
 
     const requestedAt = new Date();
     const estimatedReturn = new Date(requestedAt.getTime() + hours * 60 * 60 * 1000);
+    // Prevent abuse: if the same user started+stopped this same boat > 3 times in the last hour,
+    // block creating a new usage for 1 hour.
+    try {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const userConditions = [];
+      if (userId) userConditions.push({ userId: String(userId) });
+      if (userEmail) userConditions.push({ userEmail: new RegExp(`^${userEmail}$`, 'i') });
+      if (userName) userConditions.push({ userName: userName });
+      if (userConditions.length > 0) {
+        const recentStops = await BoatUsage.countDocuments({
+          boatId,
+          actualReturn: { $gte: oneHourAgo },
+          $or: userConditions,
+        });
+        if (recentStops >= 3) {
+          return res.status(429).json({ error: 'Has detenido este bote más de 3 veces en la última hora. Intenta de nuevo en 1 hora.' });
+        }
+      }
+    } catch (err) {
+      console.warn('could not evaluate recent stop count', err);
+    }
     // Check for overlapping usages for the same boat
     // Only consider usages that have NOT been stopped yet (no actualReturn)
     const overlapping = await BoatUsage.findOne({
       boatId,
-      $or: [
-        { requestedAt: { $lte: estimatedReturn }, estimatedReturn: { $gte: requestedAt } },
-      ],
+      requestedAt: { $lte: estimatedReturn },
+      estimatedReturn: { $gte: requestedAt },
       $or: [
         { actualReturn: { $exists: false } },
         { actualReturn: null }

@@ -25,6 +25,7 @@ export async function createBoatUsage({ boatId, durationHours, note, zone }, use
     const fullName = [first, last].filter(Boolean).join(' ').trim() || undefined;
     console.debug('createBoatUsage -> POST', url, { body: { boatId, durationHours, note, zone, userName: fullName }, headers });
     const body = { boatId, durationHours, note };
+    if (user?._id) body.userId = user._id;
     if (fullName) body.userName = fullName;
     if (user?.email) body.userEmail = user.email;
     if (user?.documento) body.userDocumento = user.documento;
