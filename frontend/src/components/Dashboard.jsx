@@ -408,13 +408,7 @@ export default function Dashboard() {
             <div className="bg-white w-6 h-6 rounded-md shadow-inner" aria-hidden="true" />
           </button>
         )}
-          <button
-            onClick={() => setIsStopModalOpen(true)}
-            aria-label="Detener remada"
-            className="hidden md:flex fixed bottom-32 right-6 z-50 bg-red-600 hover:bg-red-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
-          >
-            <div className="bg-white w-8 h-8 rounded-md shadow-inner" aria-hidden="true" />
-          </button>
+        {/* Mobile Play button (visible only on small screens) */}
         <button onClick={() => handleOpenRemarAttempt()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
@@ -501,21 +495,13 @@ export default function Dashboard() {
       <button
         onClick={() => handleOpenRemarAttempt()}
         aria-label="Abrir Remar"
-        className="md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
-          <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
-        </svg>
-      </button>
-      <button
-        onClick={() => handleOpenRemarAttempt()}
-        aria-label="Abrir Remar"
         className="hidden md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
           <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
         </svg>
       </button>
+      {/* duplicate button removed to avoid duplicate rendering */}
       {/* REMAR History Modal (migrado a componente) */}
       <RemarHistoryModal isOpen={isRemarHistoryOpen} onClose={() => setIsRemarHistoryOpen(false)} user={user} boatsList={boatsList} />
       
