@@ -47,6 +47,7 @@ export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [],
       if (user) {
         fd.append('reporterId', user.id || user._id || '');
         fd.append('reporterName', user.nombre || user.name || user.email || '');
+        if (user.email) fd.append('reporterEmail', user.email);
       }
       // Debug: log FormData entries to help diagnose missing fields from the client
       try {

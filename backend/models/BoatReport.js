@@ -8,10 +8,13 @@ const BoatReportSchema = new mongoose.Schema({
   // Quién creó el reporte (usuario que lo cargó)
   reporterId: { type: String },
   reporterName: { type: String },
+  reporterEmail: { type: String },
   // Quién detectó la falla realmente (puede ser otra persona)
   detectedById: { type: String },
   detectedByName: { type: String },
   status: { type: String, enum: ['abierto', 'en_reparacion', 'cerrado'], default: 'abierto' },
+  enReparacionAt: { type: Date },
+  cerradoAt: { type: Date },
 });
 
 module.exports = mongoose.model('BoatReport', BoatReportSchema);

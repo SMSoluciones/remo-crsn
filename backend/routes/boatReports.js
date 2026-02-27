@@ -54,6 +54,7 @@ router.post('/', upload.single('foto'), async (req, res) => {
     payload.detectedByName = pick(payload, ['detectedByName', 'detected_by', 'detectedBy', 'detector']);
     payload.reporterId = pick(payload, ['reporterId', 'reporter_id', 'userId']);
     payload.reporterName = pick(payload, ['reporterName', 'reporter_name', 'reporter']);
+    payload.reporterEmail = pick(payload, ['reporterEmail', 'reporter_email', 'email', 'userEmail']);
     // If file provided, upload to Cloudinary
     if (req.file && req.file.buffer) {
       const streamUpload = (buffer) => new Promise((resolve, reject) => {
@@ -90,7 +91,22 @@ router.post('/', upload.single('foto'), async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const report = await BoatReport.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // Load existing to detect status transitions
+    const existing = await BoatReport.findById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Reporte no encontrado' });
+    const updates = { ...(req.body || {}) };
+    const newStatus = (updates.status || existing.status || '').toString();
+    // If transitioning to en_reparacion and no timestamp yet, set enReparacionAt
+    if (newStatus === 'en_reparacion' && !existing.enReparacionAt) {
+      updates.enReparacionAt = new Date();
+    }
+    // If transitioning to cerrado and no cerradoAt, set cerradoAt
+    if (newStatus === 'cerrado' && !existing.cerradoAt) {
+      updates.cerradoAt = new Date();
+      // If closing directly from abierto and enReparacionAt missing, set enReparacionAt as now as well
+      if (!existing.enReparacionAt) updates.enReparacionAt = updates.enReparacionAt || new Date();
+    }
+    const report = await BoatReport.findByIdAndUpdate(req.params.id, updates, { new: true });
     res.json(report);
   } catch (err) {
     res.status(400).json({ error: err.message });

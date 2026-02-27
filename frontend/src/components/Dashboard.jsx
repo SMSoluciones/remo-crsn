@@ -415,7 +415,7 @@ export default function Dashboard() {
           >
             <div className="bg-white w-8 h-8 rounded-md shadow-inner" aria-hidden="true" />
           </button>
-        <button onClick={() => setIsRemarOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center">
+        <button onClick={() => handleOpenRemarAttempt()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
           </svg>
@@ -499,7 +499,7 @@ export default function Dashboard() {
       )}
       {/* Shortcut button to open Remar modal (orange, play icon) */}
       <button
-        onClick={() => setIsRemarOpen(true)}
+        onClick={() => handleOpenRemarAttempt()}
         aria-label="Abrir Remar"
         className="md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
       >
@@ -597,8 +597,8 @@ export default function Dashboard() {
           data-aos-delay="480"
           role="button"
           tabIndex={0}
-          onClick={() => setIsRemarOpen(true)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsRemarOpen(true); } }}
+          onClick={() => handleOpenRemarAttempt()}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenRemarAttempt(); } }}
           className="bg-blue-600 text-white rounded-2xl p-4 shadow-lg h-auto md:h-56 transition-transform duration-300 hover:scale-105 transform relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border cursor-pointer"
         >
           <div className="flex justify-between items-center mb-2">

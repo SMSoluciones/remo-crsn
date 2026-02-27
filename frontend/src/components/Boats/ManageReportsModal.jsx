@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import BeatLoader from 'react-spinners/BeatLoader';
 import { fetchBoatReports, deleteBoatReport, updateBoatReport } from '../../models/BoatReport';
@@ -11,13 +11,20 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
   const [reports, setReports] = useState([]);
   const [fullImage, setFullImage] = useState(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fetchBoatReports().catch(() => []);
-      // Keep only 'abierto' reports
-      const open = Array.isArray(data) ? data.filter(r => r.status === 'abierto') : [];
-      setReports(open);
+      // Determine visibility of closed reports based on user role
+      const all = Array.isArray(data) ? data : [];
+      const role = (user && (user.rol || user.role)) ? String(user.rol || user.role).toLowerCase() : '';
+      const allowed = ['admin', 'subcomision', 'mantenimiento', 'entrenador', 'profesor'];
+      let visible = all;
+      if (!allowed.includes(role)) {
+        // hide closed reports for non-privileged users
+        visible = all.filter(r => String(r.status || '').toLowerCase() !== 'cerrado');
+      }
+      setReports(visible);
     } catch {
       console.error('Error cargando reportes:');
       showError('Error cargando reportes');
@@ -25,11 +32,11 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     if (isOpen) load();
-  }, [isOpen]);
+  }, [isOpen, load]);
 
   const getBoatName = (boatRef) => {
     if (!boatRef) return 'Bote';
@@ -69,17 +76,33 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onRequestClose}>
       <div className="w-full max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6 outline-none transform transition-all duration-300" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Administrar reportes abiertos</h3>
+          <div>
+            <h3 className="text-lg font-semibold">Administrar reportes</h3>
+            <p className="text-xs text-gray-500 mt-1">Nota: los reportes con estado 'cerrado' solo son visibles para los roles: Admin, Subcomisión, Mantenimiento, Entrenador y Profesor.</p>
+          </div>
           <button onClick={onRequestClose} className="text-gray-600 hover:text-gray-800"><XMarkIcon className="w-6 h-6"/></button>
         </div>
         <div data-aos="zoom-in" data-aos-duration="300">
       {loading ? (
         <div className="flex justify-center py-6"><BeatLoader size={8} /></div>
       ) : reports.length === 0 ? (
-        <div className="text-sm text-gray-500">No hay reportes abiertos</div>
+        <div className="text-sm text-gray-500">No hay reportes</div>
       ) : (
         <ul className="space-y-3 max-h-80 overflow-auto">
-          {reports.map(r => {
+          {reports
+            .slice()
+            .sort((a,b) => {
+              // prefer abiertos first, then en_reparacion, then cerrados
+              const order = { abierto: 0, en_reparacion: 1, cerrado: 2 };
+              const oa = order[a.status] ?? 3;
+              const ob = order[b.status] ?? 3;
+              if (oa !== ob) return oa - ob;
+              // fall back to fechaReporte desc
+              const ta = a.fechaReporte ? new Date(a.fechaReporte).getTime() : 0;
+              const tb = b.fechaReporte ? new Date(b.fechaReporte).getTime() : 0;
+              return tb - ta;
+            })
+            .map(r => {
             const id = r._id || r.id;
             const boatName = getBoatName(r.boatId);
             return (
@@ -94,8 +117,21 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
                 <div className="flex-1">
                   <div className="font-medium">{boatName}</div>
                   <div className="text-sm text-gray-600">{r.descripcion}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {r.reporterName ? (<div>Reportado por: <strong>{r.reporterName}</strong></div>) : null}
+                    {r.reporterEmail ? (<div>Email: <strong>{r.reporterEmail}</strong></div>) : null}
+                    {r.reporterId ? (<div>ID: {r.reporterId}</div>) : null}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Fecha reporte: {r.fechaReporte ? new Date(r.fechaReporte).toLocaleString('es-ES') : '—'}</div>
+                  {r.enReparacionAt && (
+                    <div className="text-xs text-yellow-700 mt-1">En reparación desde: {new Date(r.enReparacionAt).toLocaleString('es-ES')}</div>
+                  )}
+                  {r.cerradoAt && (
+                    <div className="text-xs text-green-700 mt-1">Cerrado el: {new Date(r.cerradoAt).toLocaleString('es-ES')}</div>
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-2">
+                  <div className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">{r.status}</div>
                   <select value={r.status} onChange={(e) => handleChangeStatus(id, e.target.value)} className="border rounded px-2 py-1 text-sm">
                     <option value="abierto">abierto</option>
                     <option value="en_reparacion">en_reparacion</option>
