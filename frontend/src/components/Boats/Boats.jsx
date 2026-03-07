@@ -148,6 +148,14 @@ export default function Boats() {
     (!filterTipo || b.tipo === filterTipo) && (!filterEstado || b.estado === filterEstado)
   );
 
+  // calcular los 5 reportes más recientes (por fechaReporte / createdAt / fecha)
+  const toTime = (r) => {
+    const d = r?.fechaReporte || r?.createdAt || r?.fecha || r?.created_at || null;
+    const t = d ? new Date(d).getTime() : 0;
+    return Number.isFinite(t) ? t : 0;
+  };
+  const latestReports = Array.isArray(reports) ? [...reports].sort((a, b) => toTime(b) - toTime(a)).slice(0, 5) : [];
+
   // panel de reportes cargados desde backend
 
         return (
@@ -248,7 +256,7 @@ export default function Boats() {
                         </th>
                         <th className="py-2 px-4 text-left">Fecha Ingreso</th>
                         <th className="py-2 px-4 text-left">Remos</th>
-                        <th className="py-2 px-4 text-left">Remo</th>
+                        {/* Columna 'Remar' eliminada para dar más espacio al panel derecho */}
                       </tr>
                     </thead>
                     <tbody>
@@ -264,43 +272,24 @@ export default function Boats() {
                           </td>
                           <td className="py-2 px-4">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</td>
                           <td className="py-2 px-4">{(b.row !== undefined && b.row !== null) ? b.row : '—'}</td>
-                          <td className="px-4 py-2 border">
-                            {(() => {
-                                const unavailable = b.estado === BoatStatus.MANTENIMIENTO || b.estado === BoatStatus.FUERA_SERVICIO;
-                                const lockIso = activeBoatLocks[String(b._id || b.id)];
-                                const locked = lockIso ? (new Date(lockIso) > new Date()) : false;
-                                const disabled = unavailable || locked;
-                                return (
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      disabled={disabled}
-                                      onClick={() => { setRemarBoatId(b._id || b.id); setShowRemarModal(true); }}
-                                      className={`px-3 py-1 rounded text-sm ${disabled ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
-                                    >
-                                      Remar
-                                    </button>
-                                    {disabled && <span className="text-xs text-red-600">No disponible</span>}
-                                  </div>
-                                );
-                              })()}
-                          </td>
+                          {/* Columna 'Remar' eliminada */}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-              <div className="w-full md:w-80 flex flex-col gap-8">
+              <div className="w-full md:w-96 flex flex-col gap-8">
                 {/* Mobile: cada reporte como tarjeta individual */}
                 <div className="sm:hidden space-y-3">
                   <h3 className="text-lg font-semibold mb-2 text-gray-700">Últimos reportes</h3>
                   {reportsLoading ? (
                     <div className="text-sm text-gray-500">Cargando...</div>
-                  ) : reports.length === 0 ? (
+                  ) : latestReports.length === 0 ? (
                     <div className="text-sm text-gray-500">No hay reportes</div>
                   ) : (
                     <>
-                      {reports.map(r => {
+                      {latestReports.map(r => {
                       const id = r._id || r.id;
                       const boatName = getBoatName(r.boatId);
                       const fecha = r.fechaReporte ? new Date(r.fechaReporte).toLocaleDateString() : '';
@@ -332,10 +321,10 @@ export default function Boats() {
                   <ul className="space-y-3">
                     {reportsLoading ? (
                       <li className="text-sm text-gray-500">Cargando...</li>
-                    ) : reports.length === 0 ? (
+                    ) : latestReports.length === 0 ? (
                       <li className="text-sm text-gray-500">No hay reportes</li>
                     ) : (
-                      reports.map(r => {
+                      latestReports.map(r => {
                         const id = r._id || r.id;
                         const boatName = getBoatName(r.boatId);
                         const fecha = r.fechaReporte ? new Date(r.fechaReporte).toLocaleDateString() : '';

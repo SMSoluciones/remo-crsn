@@ -294,7 +294,15 @@ export default function Dashboard() {
   // Refresh AOS when dashboard data changes so animations run on mount/update
   useEffect(() => {
     try { AOS.refresh(); } catch (err) { console.warn('AOS refresh failed', err); }
-  }, [totalBoats, activeBoats, repairBoats, studentsCount, announcements.length, events.length, recentArr.length]);
+    // Force immediate AOS animations for elements marked with data-aos-immediate
+    try {
+      const nodes = Array.from(document.querySelectorAll('[data-aos-immediate]'));
+      nodes.forEach((el) => {
+        el.classList.add('aos-init');
+        el.classList.add('aos-animate');
+      });
+    } catch { /* ignore */ }
+  }, [totalBoats, activeBoats, repairBoats, studentsCount, announcements.length, events.length, recentArr.length, userActiveUsage, isRemarOpen]);
 
   // When opening the Remar modal, compute which boats are currently in use and poll periodically
   useEffect(() => {
@@ -403,13 +411,28 @@ export default function Dashboard() {
       </div>
       {/* Responsive inline buttons for small screens: under action buttons and above Estadísticas */}
       <div className="md:hidden w-full max-w-6xl mx-auto px-2 mt-4 mb-4 flex gap-4 items-center justify-center">
-        {userActiveUsage && (
-          <button onClick={() => setIsStopModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center">
-            <div className="bg-white w-6 h-6 rounded-md shadow-inner" aria-hidden="true" />
-          </button>
-        )}
+        <button
+          data-aos="zoom-in"
+          data-aos-duration="400"
+          data-aos-delay="80"
+          data-aos-immediate="true"
+          onClick={() => userActiveUsage && setIsStopModalOpen(true)}
+          aria-label="Detener remada"
+          className={`transform transition-all duration-300 ${userActiveUsage ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'} bg-red-600 hover:bg-red-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center`}
+        >
+          <div className="bg-white w-6 h-6 rounded-md shadow-inner" aria-hidden="true" />
+        </button>
         {/* Mobile Play button (visible only on small screens) */}
-        <button onClick={() => handleOpenRemarAttempt()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center">
+        <button
+          data-aos="zoom-in"
+          data-aos-duration="400"
+          data-aos-delay="140"
+          data-aos-immediate="true"
+          onClick={() => handleOpenRemarAttempt()}
+          disabled={!!userActiveUsage}
+          aria-disabled={!!userActiveUsage}
+          className={`${userActiveUsage ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'} rounded-full w-16 h-16 shadow flex items-center justify-center`}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
           </svg>
@@ -419,9 +442,13 @@ export default function Dashboard() {
       {userActiveUsage && (
         <>
           <button
-            onClick={() => setIsStopModalOpen(true)}
+            data-aos="zoom-in"
+            data-aos-duration="450"
+            data-aos-delay="60"
+            data-aos-immediate="true"
+            onClick={() => userActiveUsage && setIsStopModalOpen(true)}
             aria-label="Detener remada"
-            className="hidden md:flex fixed bottom-32 right-6 z-50 bg-red-600 hover:bg-red-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
+            className={`hidden md:flex fixed bottom-32 right-6 z-50 rounded-full w-20 h-20 shadow-lg items-center justify-center transform transition-all duration-300 ${userActiveUsage ? 'scale-100 opacity-100 bg-red-600 hover:bg-red-700 text-white' : 'scale-0 opacity-0 pointer-events-none bg-red-600 text-white'}`}
           >
             <div className="bg-white w-8 h-8 rounded-md shadow-inner" aria-hidden="true" />
           </button>
@@ -493,9 +520,15 @@ export default function Dashboard() {
       )}
       {/* Shortcut button to open Remar modal (orange, play icon) */}
       <button
+        data-aos="zoom-in"
+        data-aos-duration="450"
+        data-aos-delay="120"
+        data-aos-immediate="true"
         onClick={() => handleOpenRemarAttempt()}
         aria-label="Abrir Remar"
-        className="hidden md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-20 h-20 shadow-lg items-center justify-center"
+        disabled={!!userActiveUsage}
+        aria-disabled={!!userActiveUsage}
+        className={`${userActiveUsage ? 'hidden md:flex fixed bottom-6 right-6 z-50 bg-gray-300 text-gray-500 cursor-not-allowed' : 'hidden md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white'} rounded-full w-20 h-20 shadow-lg items-center justify-center`}
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
           <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
@@ -578,18 +611,26 @@ export default function Dashboard() {
           {/* Casillero principal */}
         {/* REMAR (same size as Eventos) */}
         <div
-          data-aos="fade-up"
+          data-aos="zoom-in"
           data-aos-duration="700"
           data-aos-delay="480"
+          data-aos-immediate="true"
           role="button"
-          tabIndex={0}
-          onClick={() => handleOpenRemarAttempt()}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenRemarAttempt(); } }}
-          className="bg-blue-600 text-white rounded-2xl p-4 shadow-lg h-auto md:h-56 transition-transform duration-300 hover:scale-105 transform relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border cursor-pointer"
+          tabIndex={userActiveUsage ? -1 : 0}
+          onClick={() => { if (!userActiveUsage) handleOpenRemarAttempt(); }}
+          onKeyDown={(e) => { if (!userActiveUsage && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleOpenRemarAttempt(); } }}
+          aria-disabled={!!userActiveUsage}
+          className={`${userActiveUsage ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white'} rounded-2xl p-4 shadow-lg h-auto md:h-56 transition-transform duration-300 hover:scale-105 transform relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border`}
         >
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-2xl font-extrabold">REMAR</h2>
-            <button onClick={(e) => { e.stopPropagation(); handleOpenRemarAttempt(); }} aria-label="Abrir Remar" className="relative z-20 text-white bg-orange-500 rounded-full p-2 hover:bg-orange-600">
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!userActiveUsage) handleOpenRemarAttempt(); }}
+              aria-label="Abrir Remar"
+              disabled={!!userActiveUsage}
+              aria-disabled={!!userActiveUsage}
+              className={`${userActiveUsage ? 'relative z-20 bg-gray-400 text-gray-600 rounded-full p-2 cursor-not-allowed' : 'relative z-20 text-white bg-orange-500 rounded-full p-2 hover:bg-orange-600'}`}
+            >
               <ArrowUpRightIcon className="w-6 h-6" />
             </button>
           </div>
