@@ -184,9 +184,12 @@ export default function Boats() {
                     </div>
                   </div>
                   {user && (user.rol === 'admin' || user.rol === 'profesor') && (
-                    <div className="w-full sm:w-auto sm:ml-auto">
+                    <div className="w-full sm:w-auto sm:ml-auto flex flex-col sm:flex-row gap-2">
                       <button onClick={() => setShowAddBoatModal(true)} className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition">
                         <PlusIcon className="h-5 w-5" /> Nuevo Bote
+                      </button>
+                      <button onClick={() => setShowAddReportModal(true)} className="w-full sm:hidden flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                        <WrenchScrewdriverIcon className="h-5 w-5" /> Reportar Falla
                       </button>
                     </div>
                   )}
@@ -231,7 +234,10 @@ export default function Boats() {
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="font-semibold text-lg">{b.nombre}</div>
-                              <div className="text-sm text-gray-600">{b.tipo}</div>
+                              <div className="text-sm text-gray-600 flex items-center gap-2">
+                                <span>{b.tipo}</span>
+                                <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800`}>{b.row !== undefined && b.row !== null ? `Remo ${b.row}` : 'Remo —'}</span>
+                              </div>
                             </div>
                             <div className="text-right">
                               <div className={`inline-block px-2 py-1 rounded text-xs font-bold ${b.estado === 'mantenimiento' ? 'bg-yellow-200 text-yellow-800' : b.estado === 'fuera_servicio' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>{b.estado}</div>

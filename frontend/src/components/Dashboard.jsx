@@ -411,17 +411,19 @@ export default function Dashboard() {
       </div>
       {/* Responsive inline buttons for small screens: under action buttons and above Estadísticas */}
       <div className="md:hidden w-full max-w-6xl mx-auto px-2 mt-4 mb-4 flex gap-4 items-center justify-center">
-        <button
-          data-aos="zoom-in"
-          data-aos-duration="400"
-          data-aos-delay="80"
-          data-aos-immediate="true"
-          onClick={() => userActiveUsage && setIsStopModalOpen(true)}
-          aria-label="Detener remada"
-          className={`transform transition-all duration-300 ${userActiveUsage ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'} bg-red-600 hover:bg-red-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center`}
-        >
-          <div className="bg-white w-6 h-6 rounded-md shadow-inner" aria-hidden="true" />
-        </button>
+        {userActiveUsage && (
+          <button
+            data-aos="zoom-in"
+            data-aos-duration="400"
+            data-aos-delay="80"
+            data-aos-immediate="true"
+            onClick={() => userActiveUsage && setIsStopModalOpen(true)}
+            aria-label="Detener remada"
+            className={`transform transition-all duration-300 scale-100 opacity-100 bg-red-600 hover:bg-red-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center`}
+          >
+            <div className="bg-white w-6 h-6 rounded-md shadow-inner" aria-hidden="true" />
+          </button>
+        )}
         {/* Mobile Play button (visible only on small screens) */}
         <button
           data-aos="zoom-in"
