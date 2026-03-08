@@ -17,6 +17,7 @@ const StudentSchema = new mongoose.Schema({
   federado: { type: Boolean, default: false },
   estado: { type: String, default: 'ACTIVO' },
   fechaIngreso: { type: Date, default: Date.now },
+  botesHabilitados: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Boat' }],
   // reference to authentication User (optional)
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   // avatar removed — not handled for now

@@ -7,7 +7,6 @@ import { fetchBoats } from '../models/Boat';
 import { fetchBoatUsages } from '../models/BoatUsage';
 import { stopBoatUsage } from '../models/BoatUsage';
 import { API_BASE_URL } from '../utils/apiConfig';
-import { fetchAllSheets, fetchSheetsByStudent } from '../models/TechnicalSheet';
 import { useAuth } from '../context/useAuth';
 import { fetchEvents } from '../models/Event';
 import { fetchAnnouncements } from '../models/Announcement';
@@ -29,7 +28,6 @@ import {
   LifebuoyIcon,
   WrenchScrewdriverIcon,
   UserGroupIcon,
-  ChartBarIcon,
   ArrowUpRightIcon,
 } from '@heroicons/react/24/outline';
 
@@ -43,8 +41,7 @@ export default function Dashboard() {
   const [activeBoats, setActiveBoats] = useState(null);
   const [repairBoats, setRepairBoats] = useState(null);
   const [boatsError, setBoatsError] = useState(null);
-  const [globalAvg, setGlobalAvg] = useState(null);
-  const [avgError, setAvgError] = useState(null);
+  const [enabledBoatsCount, setEnabledBoatsCount] = useState(0);
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -152,6 +149,40 @@ export default function Dashboard() {
     return () => { mounted = false };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    const isAlumno = role === 'alumno' || role === 'alumnos';
+    if (!isAlumno) {
+      setEnabledBoatsCount(0);
+      return () => { mounted = false; };
+    }
+
+    setEnabledBoatsCount(null);
+    fetchStudents()
+      .then((list) => {
+        if (!mounted) return;
+        const students = Array.isArray(list) ? list : [];
+        const userEmail = String(user?.email || '').trim().toLowerCase();
+        const userDoc = String(user?.documento || '').trim();
+        const found = students.find((student) => {
+          const studentEmail = String(student?.email || '').trim().toLowerCase();
+          const studentDoc = String(student?.documento || student?.dni || '').trim();
+          if (userEmail && studentEmail && studentEmail === userEmail) return true;
+          if (userDoc && studentDoc && studentDoc === userDoc) return true;
+          return false;
+        });
+
+        const enabled = Array.isArray(found?.botesHabilitados) ? found.botesHabilitados.length : 0;
+        setEnabledBoatsCount(enabled);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setEnabledBoatsCount(0);
+      });
+
+    return () => { mounted = false; };
+  }, [role, user]);
+
   // Init AOS for dashboard animations
   useEffect(() => {
     try {
@@ -226,72 +257,6 @@ export default function Dashboard() {
       });
     return () => { mounted = false };
   }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    // Mostrar el promedio técnico a TODOS los roles: intentamos obtener las fichas
-    const effectiveUser = user || {};
-    const effectiveRole = String(effectiveUser?.rol || '').trim().toLowerCase();
-    fetchAllSheets(effectiveUser)
-      .then(sheets => {
-        if (!mounted) return;
-        const rows = Array.isArray(sheets) ? sheets : [];
-        let sum = 0;
-        let count = 0;
-        for (const sh of rows) {
-          const nums = [sh.coordinacion, sh.resistencia, sh.velocidad]
-            .map(n => Number(n) || 0);
-          if (nums.every(v => v === 0)) continue;
-          const avg = nums.reduce((a,b)=>a+b,0)/nums.length;
-          sum += avg;
-          count += 1;
-        }
-        const finalAvg = count === 0 ? 0 : (sum / count);
-        setGlobalAvg(finalAvg);
-        setAvgError(null);
-      })
-      .catch(async () => {
-        // Fallback: si el usuario es alumno, intentamos obtener sus propias fichas
-        if (effectiveRole === 'alumno' || effectiveRole === 'alumnos') {
-          try {
-            const allStudents = await fetchStudents();
-            const arr = Array.isArray(allStudents) ? allStudents : [];
-            const email = (effectiveUser?.email || '').toString().trim().toLowerCase();
-            const found = arr.find(s => s.email && String(s.email).trim().toLowerCase() === email);
-            if (!found) {
-              setAvgError('No se pudo cargar');
-              setGlobalAvg(0);
-              return;
-            }
-            const sid = found._id || found.id || found.dni;
-            const sheetsForStudent = await fetchSheetsByStudent(sid, effectiveUser).catch(() => []);
-            const rows = Array.isArray(sheetsForStudent) ? sheetsForStudent : [];
-            let sum = 0;
-            let count = 0;
-            for (const sh of rows) {
-              const nums = [sh.coordinacion, sh.resistencia, sh.velocidad]
-                .map(n => Number(n) || 0);
-              if (nums.every(v => v === 0)) continue;
-              const avg = nums.reduce((a,b)=>a+b,0)/nums.length;
-              sum += avg;
-              count += 1;
-            }
-            const finalAvg = count === 0 ? 0 : (sum / count);
-            setGlobalAvg(finalAvg);
-            setAvgError(null);
-            return;
-          } catch (er) {
-            console.error('Fallback alumno error:', er);
-            setAvgError('No se pudo cargar');
-            setGlobalAvg(0);
-            return;
-          }
-        }
-        setAvgError('No se pudo cargar');
-        setGlobalAvg(0);
-      });
-    return () => { mounted = false };
-  }, [user]);
 
   // Refresh AOS when dashboard data changes so animations run on mount/update
   useEffect(() => {
@@ -554,6 +519,13 @@ export default function Dashboard() {
       <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 transition-transform duration-300 relative overflow-hidden box-border">
         <h2 className="text-lg font-bold mb-4">Estadísticas</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div data-aos="fade-up" data-aos-duration="600" data-aos-delay="100" className="bg-purple-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-8 h-8 sm:w-10 sm:h-10 mb-2" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
+            </svg>
+            <h3 className="text-lg font-bold">Botes habilitados</h3>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{enabledBoatsCount === null ? '...' : enabledBoatsCount}</p>
+          </div>
           <div data-aos="fade-up" data-aos-duration="600" data-aos-delay="100" className="bg-green-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
             <LifebuoyIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
             <h3 className="text-lg font-bold">Total de Botes</h3>
@@ -572,12 +544,6 @@ export default function Dashboard() {
             <h3 className="text-lg font-bold">Alumnos activos</h3>
             <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{studentsCount === null ? '...' : studentsCount}</p>
             {studentsError && <span className="text-xs mt-1 opacity-80">{studentsError}</span>}
-          </div>
-          <div data-aos="fade-up" data-aos-duration="600" data-aos-delay="400" className="bg-purple-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
-            <ChartBarIcon className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
-            <h3 className="text-lg font-bold">Promedio técnico</h3>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{globalAvg === null ? '...' : (typeof globalAvg === 'number' ? globalAvg.toFixed(1) : globalAvg)}</p>
-            {avgError && <span className="text-xs mt-1 opacity-80">{avgError}</span>}
           </div>
         </div>
       </div>

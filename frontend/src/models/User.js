@@ -25,7 +25,11 @@ export async function createUser(data, auth) {
     headers,
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Error creating user');
+  if (!res.ok) {
+    let body = null;
+    try { body = await res.json(); } catch { body = null; }
+    throw new Error(body?.error || 'Error creating user');
+  }
   return await res.json();
 }
 
@@ -37,7 +41,11 @@ export async function updateUser(id, data, auth) {
     headers,
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Error updating user');
+  if (!res.ok) {
+    let body = null;
+    try { body = await res.json(); } catch { body = null; }
+    throw new Error(body?.error || 'Error updating user');
+  }
   return await res.json();
 }
 

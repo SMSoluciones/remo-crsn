@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import ProtectedRoute from '../ProtectedRoute';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
-import { fetchStudents, deleteStudent } from '../../models/Student';
+import { fetchStudents, deleteStudent, updateStudent } from '../../models/Student';
+import { fetchBoats } from '../../models/Boat';
 import { fetchSheetsByStudent } from '../../models/TechnicalSheet';
 import Avatar from 'react-avatar';
 import BeatLoader from 'react-spinners/BeatLoader';
@@ -27,6 +28,10 @@ export default function Students() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [openingByEmail, setOpeningByEmail] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [estadoSavingById, setEstadoSavingById] = useState({});
+  const [boatsCatalog, setBoatsCatalog] = useState([]);
+  const [selectedBoatToAdd, setSelectedBoatToAdd] = useState('');
+  const [savingAllowedBoats, setSavingAllowedBoats] = useState(false);
   const itemsPerPage = 2;
 
   // Lista de categorías disponibles (únicas)
@@ -89,6 +94,22 @@ export default function Students() {
     return () => { mounted = false };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    fetchBoats()
+      .then((list) => {
+        if (!mounted) return;
+        const normalized = Array.isArray(list)
+          ? list.map((boat) => ({ ...boat, id: boat._id || boat.id }))
+          : [];
+        setBoatsCatalog(normalized);
+      })
+      .catch((err) => {
+        console.error('Error cargando botes:', err);
+      });
+    return () => { mounted = false; };
+  }, []);
+
   // Si se solicitó abrir un perfil (desde el botón Mi Perfil), marcar state para ocultar la lista
   useEffect(() => {
     try {
@@ -101,6 +122,20 @@ export default function Students() {
   }, []);
 
   const selectedStudent = students.find(s => s.id === selected);
+  const selectedStudentBoatIds = Array.isArray(selectedStudent?.botesHabilitados)
+    ? selectedStudent.botesHabilitados.map((boatId) => String(boatId))
+    : [];
+  const selectedStudentBoatIdSet = new Set(selectedStudentBoatIds);
+  const selectedStudentBoats = selectedStudentBoatIds.map((boatId) => {
+    const found = boatsCatalog.find((boat) => String(boat.id || boat._id) === boatId);
+    return found || { id: boatId, nombre: `Bote ${boatId.slice(-5)}`, estado: 'desconocido' };
+  });
+  const availableBoatsToAdd = boatsCatalog.filter((boat) => {
+    const boatId = String(boat.id || boat._id);
+    const isAlreadyAdded = selectedStudentBoatIdSet.has(boatId);
+    const isActive = String(boat.estado || '').toLowerCase() === 'activo';
+    return !isAlreadyAdded && isActive;
+  });
   const studentSheets = sheets[selected] || [];
   const paginatedSheets = studentSheets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -225,6 +260,97 @@ export default function Students() {
     } catch (err) {
       console.error('Error eliminando alumno:', err);
       showError('No se pudo eliminar el alumno');
+    }
+  };
+
+  const canChangeEstado = role === 'admin' || role === 'subcomision' || role === 'entrenador';
+  const canManageAllowedBoats = role === 'admin' || role === 'entrenador';
+
+  useEffect(() => {
+    setSelectedBoatToAdd('');
+  }, [selected]);
+
+  const saveAllowedBoats = async (student, nextBoatIds) => {
+    const studentId = student?.id || student?._id;
+    if (!studentId) return;
+
+    try {
+      setSavingAllowedBoats(true);
+      const updated = await updateStudent(studentId, { botesHabilitados: nextBoatIds });
+      const normalizedUpdated = {
+        ...student,
+        ...updated,
+        id: updated?._id || updated?.id || studentId,
+        botesHabilitados: Array.isArray(updated?.botesHabilitados) ? updated.botesHabilitados : nextBoatIds,
+      };
+      setStudents((prev) => prev.map((s) => ((s.id || s._id) === studentId ? normalizedUpdated : s)));
+      return true;
+    } catch (err) {
+      console.error('Error guardando botes habilitados:', err);
+      showError('No se pudo actualizar la lista de botes habilitados.');
+      return false;
+    } finally {
+      setSavingAllowedBoats(false);
+    }
+  };
+
+  const handleAddAllowedBoat = async () => {
+    if (!selectedStudent || !selectedBoatToAdd) return;
+    if (!canManageAllowedBoats) {
+      showError('No tienes permisos para modificar botes habilitados.');
+      return;
+    }
+    const currentIds = Array.isArray(selectedStudent.botesHabilitados)
+      ? selectedStudent.botesHabilitados.map((boatId) => String(boatId))
+      : [];
+    if (currentIds.includes(String(selectedBoatToAdd))) return;
+
+    const nextIds = [...currentIds, String(selectedBoatToAdd)];
+    const ok = await saveAllowedBoats(selectedStudent, nextIds);
+    if (ok) {
+      setSelectedBoatToAdd('');
+      showSuccess('Bote habilitado correctamente.');
+    }
+  };
+
+  const handleRemoveAllowedBoat = async (boatId) => {
+    if (!selectedStudent) return;
+    if (!canManageAllowedBoats) {
+      showError('No tienes permisos para modificar botes habilitados.');
+      return;
+    }
+    const currentIds = Array.isArray(selectedStudent.botesHabilitados)
+      ? selectedStudent.botesHabilitados.map((item) => String(item))
+      : [];
+    const nextIds = currentIds.filter((item) => item !== String(boatId));
+    const ok = await saveAllowedBoats(selectedStudent, nextIds);
+    if (ok) showSuccess('Bote removido de habilitados.');
+  };
+
+  const handleEstadoChange = async (student, newEstado) => {
+    if (!canChangeEstado) {
+      showError('No tienes permisos para cambiar el estado.');
+      return;
+    }
+
+    const normalizedEstado = String(newEstado || '').toUpperCase();
+    if (normalizedEstado !== 'ACTIVO' && normalizedEstado !== 'INACTIVO') return;
+
+    const studentId = student?.id || student?._id;
+    if (!studentId) return;
+
+    try {
+      setEstadoSavingById(prev => ({ ...prev, [studentId]: true }));
+      const updated = await updateStudent(studentId, { estado: normalizedEstado });
+      const merged = { ...student, ...updated, id: updated?._id || updated?.id || studentId, estado: normalizedEstado };
+
+      setStudents(prev => prev.map(s => ((s.id || s._id) === studentId ? merged : s)));
+      showSuccess(`Estado actualizado a ${normalizedEstado}.`);
+    } catch (err) {
+      console.error('Error actualizando estado del alumno:', err);
+      showError('No se pudo actualizar el estado del alumno.');
+    } finally {
+      setEstadoSavingById(prev => ({ ...prev, [studentId]: false }));
     }
   };
 
@@ -440,14 +566,99 @@ export default function Students() {
                     <div className="text-gray-700 mb-2">Nacimiento: {selectedStudent.nacimiento ? (new Date(selectedStudent.nacimiento)).toLocaleDateString() : '—'}</div>
                     <div className="text-gray-700 mb-2">Categoría: {selectedStudent.categoria}</div>
                     <div className="text-gray-700 mb-2">Ciudad: {selectedStudent.ciudad || '—'}</div>
-                    <div className="text-gray-700 mb-2">Estado: {selectedStudent.estado || '—'}</div>
                     <div className="text-gray-700 mb-2">Email: {selectedStudent.email}</div>
                     <div className="text-gray-700 mb-2">Domicilio: {selectedStudent.domicilio}</div>
                     <div className="text-gray-700 mb-2">Celular: {selectedStudent.celular}</div>
                     <div className="text-gray-700 mb-2">Beca: {selectedStudent.beca ? 'SI' : 'NO'}</div>
                     <div className="text-gray-700 mb-2">Competitivo: {selectedStudent.competitivo ? 'SI' : 'NO'}</div>
                     <div className="text-gray-700 mb-2">Federado: {selectedStudent.federado ? 'SI' : 'NO'}</div>
+                    <div className="text-gray-700 mb-2 flex items-center justify-center gap-2">
+                      <span>Estado:</span>
+                      {canChangeEstado ? (
+                        <select
+                          value={String(selectedStudent.estado || 'ACTIVO').toUpperCase()}
+                          onChange={(e) => handleEstadoChange(selectedStudent, e.target.value)}
+                          disabled={!!estadoSavingById[selectedStudent.id]}
+                          className="border rounded px-2 py-1 bg-white disabled:bg-gray-100 disabled:text-gray-500"
+                        >
+                          <option value="ACTIVO">ACTIVO</option>
+                          <option value="INACTIVO">INACTIVO</option>
+                        </select>
+                      ) : (
+                        <span>{selectedStudent.estado || '—'}</span>
+                      )}
+                      {String(selectedStudent.estado || 'ACTIVO').toUpperCase() === 'INACTIVO' ? (
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white" aria-label="Inactivo">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white" aria-label="Activo">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
                   </div>
+                </div>
+              )}
+              {selectedStudent && (
+                <div className="bg-white rounded-xl shadow p-6 mb-8">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                    <h3 className="text-xl font-semibold text-gray-800">Botes habilitados para este alumno</h3>
+                    {canManageAllowedBoats && (
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedBoatToAdd}
+                          onChange={(e) => setSelectedBoatToAdd(e.target.value)}
+                          disabled={savingAllowedBoats}
+                          className="border rounded px-3 py-2 bg-white disabled:bg-gray-100 min-w-[220px]"
+                        >
+                          <option value="">Seleccionar bote activo</option>
+                          {availableBoatsToAdd.map((boat) => (
+                            <option key={boat.id || boat._id} value={boat.id || boat._id}>
+                              {boat.nombre} ({boat.tipo})
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleAddAllowedBoat}
+                          disabled={!selectedBoatToAdd || savingAllowedBoats}
+                          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500"
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedStudentBoats.length === 0 ? (
+                    <p className="text-sm text-gray-500">No hay botes habilitados para este alumno.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {selectedStudentBoats.map((boat) => (
+                        <li key={boat.id || boat._id} className="flex items-center justify-between border rounded px-3 py-2 bg-gray-50">
+                          <div className="text-sm text-gray-800">
+                            <span className="font-semibold">{boat.nombre || 'Bote'}</span>
+                            <span className="ml-2 text-gray-500 uppercase text-xs">{boat.tipo || '—'}</span>
+                          </div>
+                          {canManageAllowedBoats && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAllowedBoat(boat.id || boat._id)}
+                              disabled={savingAllowedBoats}
+                              className="text-sm px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 disabled:bg-gray-200 disabled:text-gray-500"
+                            >
+                              Quitar
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
               <div className="mb-8">

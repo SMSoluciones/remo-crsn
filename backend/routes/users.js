@@ -5,6 +5,21 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 const router = express.Router();
+const LOGIN_RETENTION_DAYS = 7;
+
+function getLoginCutoffDate() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - LOGIN_RETENTION_DAYS);
+  return cutoff;
+}
+
+async function cleanupOldLoginHistory() {
+  const cutoff = getLoginCutoffDate();
+  await User.updateMany(
+    { lastLoginAt: { $lt: cutoff } },
+    { $unset: { lastLoginAt: 1 } }
+  );
+}
 
 // Middleware simple de autorización por rol via header
 function requireAdmin(req, res, next) {
@@ -29,7 +44,9 @@ router.get('/trainers', async (req, res) => {
 
 router.get('/session/logged', requireAdmin, async (req, res) => {
   try {
-    const users = await User.find({ lastLoginAt: { $exists: true, $ne: null } })
+    await cleanupOldLoginHistory();
+    const cutoff = getLoginCutoffDate();
+    const users = await User.find({ lastLoginAt: { $exists: true, $ne: null, $gte: cutoff } })
       .select('nombre apellido email rol documento lastLoginAt')
       .sort({ lastLoginAt: -1 });
     return res.json(users);
@@ -59,15 +76,42 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const updateData = { ...req.body };
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
+    const updateOps = { ...updateData };
+
+    if (typeof updateOps.email === 'string') {
+      updateOps.email = updateOps.email.trim().toLowerCase();
     }
-    const user = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (typeof updateOps.rol === 'string') {
+      updateOps.rol = updateOps.rol.trim().toLowerCase();
+    }
+    if (typeof updateOps.documento === 'string') {
+      const doc = updateOps.documento.trim();
+      if (!doc) {
+        delete updateOps.documento;
+        updateOps.$unset = { ...(updateOps.$unset || {}), documento: 1 };
+      } else {
+        updateOps.documento = doc;
+      }
+    }
+
+    if (updateOps.password) {
+      updateOps.password = await bcrypt.hash(updateOps.password, 10);
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.id, updateOps, {
+      new: true,
+      runValidators: true,
+      context: 'query',
+    });
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
     const userObj = user.toObject();
     delete userObj.password;
     res.json(userObj);
   } catch (err) {
+    if (err && err.code === 11000) {
+      const duplicatedField = Object.keys(err.keyPattern || {})[0] || 'campo';
+      return res.status(400).json({ error: `El ${duplicatedField} ya está en uso.` });
+    }
     res.status(400).json({ error: err.message });
   }
 });
@@ -102,6 +146,7 @@ router.post('/login', async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ error: 'Contraseña incorrecta' });
     }
+    await cleanupOldLoginHistory();
     user.lastLoginAt = new Date();
     await user.save();
     const { password: _, ...userData } = user.toObject();

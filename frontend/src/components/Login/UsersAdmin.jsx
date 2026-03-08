@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchUsers, createUser, updateUser, deleteUser, UserRoles } from '../../models/User';
 import ChangePasswordModal from './ChangePasswordModal.jsx';
 import { useAuth } from '../../context/useAuth';
+import { showError, showSuccess } from '../../utils/toast';
 
 export default function UsersAdmin() {
   const { user } = useAuth();
@@ -10,6 +11,7 @@ export default function UsersAdmin() {
   const [alumnosQuery, setAlumnosQuery] = useState('');
   const [form, setForm] = useState({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
   const [editId, setEditId] = useState(null);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(null);
   const [changeUser, setChangeUser] = useState(null);
   const [showChangeModal, setShowChangeModal] = useState(false);
@@ -32,24 +34,43 @@ export default function UsersAdmin() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (editId) {
-      // If password is empty, don't send it to the server (so it won't be overwritten)
-      const payload = { ...form };
-      if (!payload.password) delete payload.password;
-      const updated = await updateUser(editId, payload, user);
-      setUsers(users.map(u => u._id === editId ? updated : u));
-      setEditId(null);
-    } else {
-      const created = await createUser(form, user);
-      setUsers([...users, created]);
+    try {
+      if (editId) {
+        const payload = { ...form };
+        if (!payload.password) delete payload.password;
+        const updated = await updateUser(editId, payload, user);
+        setUsers(users.map(u => u._id === editId ? updated : u));
+        setEditId(null);
+        showSuccess('Usuario actualizado correctamente.');
+      } else {
+        const created = await createUser(form, user);
+        setUsers([...users, created]);
+        showSuccess('Usuario creado correctamente.');
+      }
+      setForm({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
+      setIsUserModalOpen(false);
+    } catch (err) {
+      showError(err?.message || 'No se pudo guardar el usuario.');
     }
-    setForm({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
   };
 
   const handleEdit = user => {
     setEditId(user._id);
     // Do not prefill password when editing
     setForm({ nombre: (user.nombre || '').toString().toUpperCase(), apellido: (user.apellido || '').toString().toUpperCase(), email: user.email, documento: user.documento || '', rol: user.rol, password: '' });
+    setIsUserModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setEditId(null);
+    setForm({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
+    setIsUserModalOpen(true);
+  };
+
+  const handleCloseUserModal = () => {
+    setIsUserModalOpen(false);
+    setEditId(null);
+    setForm({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
   };
 
   const handleDelete = async id => {
@@ -89,27 +110,12 @@ export default function UsersAdmin() {
 
   return (
     <div className="p-8 bg-gray-50 rounded-lg">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Administrar Usuarios</h2>
-
-      {/* per-panel searches are displayed inside each panel */}
-
-      <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap gap-3 items-center">
-        <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" required className="px-3 py-2 border rounded w-40" />
-        <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required className="px-3 py-2 border rounded w-40" />
-        <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" className="px-3 py-2 border rounded w-56" />
-        <input name="documento" value={form.documento} onChange={handleChange} placeholder="Documento" className="px-3 py-2 border rounded w-40" />
-        <input name="password" value={form.password} onChange={handleChange} placeholder={editId ? 'Nueva contraseña (opcional)' : 'Contraseña'} type="password" className="px-3 py-2 border rounded w-40" required={!editId} />
-
-        <select name="rol" value={form.rol} onChange={handleChange} required className="px-3 py-2 border rounded w-40">
-          <option value={UserRoles.ADMIN}>Admin</option>
-          <option value={UserRoles.ENTRENADOR}>Entrenador</option>
-          <option value={UserRoles.MANTENIMIENTO}>Mantenimiento</option>
-          <option value={UserRoles.ALUMNOS}>Alumnos</option>
-          <option value={UserRoles.SUBCOMISION}>Subcomision</option>
-        </select>
-        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded font-medium">{editId ? 'Actualizar' : 'Crear'} usuario</button>
-        {editId && <button type="button" className="px-4 py-2 bg-gray-200 text-gray-800 rounded" onClick={() => { setEditId(null); setForm({ nombre: '', apellido: '', email: '', rol: UserRoles.ENTRENADOR }); }}>Cancelar</button>}
-      </form>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-gray-800">Administrar Usuarios</h2>
+        <button type="button" onClick={handleCreate} className="px-4 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700">
+          Crear usuario
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-6">
         <div className="bg-white rounded-lg shadow p-4">
           <div className="mb-3 flex items-center justify-between">
@@ -129,19 +135,19 @@ export default function UsersAdmin() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {mainUsers.map(u => (
-                  <tr key={u._id} className="hover:bg-gray-50">
+                  <tr key={u._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleEdit(u)}>
                     <td className="px-4 py-2 text-sm text-gray-900">{u.nombre}</td>
                     <td className="px-4 py-2 text-sm text-gray-900">{u.apellido}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{u.email}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{u.rol}</td>
-                    <td className="px-4 py-2 text-sm text-right relative">
-                      <button onClick={() => setMenuOpen(menuOpen === u._id ? null : u._id)} className="text-gray-500 hover:text-gray-700">⋮</button>
+                    <td className="px-4 py-2 text-sm text-right relative" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === u._id ? null : u._id); }} className="text-gray-500 hover:text-gray-700">⋮</button>
                       {menuOpen === u._id && (
-                        <div className="absolute right-4 mt-2 w-44 bg-white border rounded shadow-lg z-20">
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => { handleEdit(u); setMenuOpen(null); }}>Editar</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => { setChangeUser(u); setShowChangeModal(true); setMenuOpen(null); }}>Cambiar contraseña</button>
+                        <div className="absolute right-4 bottom-full mb-2 w-44 bg-white border rounded shadow-lg z-20">
+                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); handleEdit(u); setMenuOpen(null); }}>Editar</button>
+                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); setChangeUser(u); setShowChangeModal(true); setMenuOpen(null); }}>Cambiar contraseña</button>
                           <button className="block w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed" disabled>Desactivar</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onClick={() => handleDelete(u._id)}>Eliminar</button>
+                          <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); handleDelete(u._id); }}>Eliminar</button>
                         </div>
                       )}
                     </td>
@@ -170,19 +176,19 @@ export default function UsersAdmin() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {alumnos.map(u => (
-                  <tr key={u._id} className="hover:bg-gray-50">
+                  <tr key={u._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleEdit(u)}>
                     <td className="px-4 py-2 text-sm text-gray-900">{u.nombre}</td>
                     <td className="px-4 py-2 text-sm text-gray-900">{u.apellido}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{u.email}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{u.documento || '—'}</td>
-                    <td className="px-4 py-2 text-sm text-right relative">
-                      <button onClick={() => setMenuOpen(menuOpen === u._id ? null : u._id)} className="text-gray-500 hover:text-gray-700">⋮</button>
+                    <td className="px-4 py-2 text-sm text-right relative" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === u._id ? null : u._id); }} className="text-gray-500 hover:text-gray-700">⋮</button>
                       {menuOpen === u._id && (
-                        <div className="absolute right-4 mt-2 w-44 bg-white border rounded shadow-lg z-20">
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => { handleEdit(u); setMenuOpen(null); }}>Editar</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => { setChangeUser(u); setShowChangeModal(true); setMenuOpen(null); }}>Cambiar contraseña</button>
+                        <div className="absolute right-4 bottom-full mb-2 w-44 bg-white border rounded shadow-lg z-20">
+                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); handleEdit(u); setMenuOpen(null); }}>Editar</button>
+                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); setChangeUser(u); setShowChangeModal(true); setMenuOpen(null); }}>Cambiar contraseña</button>
                           <button className="block w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed" disabled>Desactivar</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onClick={() => handleDelete(u._id)}>Eliminar</button>
+                          <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); handleDelete(u._id); }}>Eliminar</button>
                         </div>
                       )}
                     </td>
@@ -193,6 +199,34 @@ export default function UsersAdmin() {
           </div>
         </div>
       </div>
+      {isUserModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={handleCloseUserModal} />
+          <div className="relative z-10 bg-white rounded-xl shadow-xl w-full max-w-4xl p-6">
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <h3 className="text-lg font-semibold">{editId ? 'Modificar Usuario' : 'Crear Usuario'}</h3>
+              <button onClick={handleCloseUserModal} className="text-gray-500 hover:text-gray-700">Cerrar</button>
+            </div>
+            <form onSubmit={handleSubmit} className="flex flex-wrap gap-3 items-center">
+              <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" required className="px-3 py-2 border rounded w-40" />
+              <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required className="px-3 py-2 border rounded w-40" />
+              <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" className="px-3 py-2 border rounded w-56" />
+              <input name="documento" value={form.documento} onChange={handleChange} placeholder="Documento" className="px-3 py-2 border rounded w-40" />
+              <input name="password" value={form.password} onChange={handleChange} placeholder={editId ? 'Nueva contraseña (opcional)' : 'Contraseña'} type="password" className="px-3 py-2 border rounded w-40" required={!editId} />
+
+              <select name="rol" value={form.rol} onChange={handleChange} required className="px-3 py-2 border rounded w-40">
+                <option value={UserRoles.ADMIN}>Admin</option>
+                <option value={UserRoles.ENTRENADOR}>Entrenador</option>
+                <option value={UserRoles.MANTENIMIENTO}>Mantenimiento</option>
+                <option value={UserRoles.ALUMNOS}>Alumnos</option>
+                <option value={UserRoles.SUBCOMISION}>Subcomision</option>
+              </select>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded font-medium">{editId ? 'Actualizar' : 'Crear'} usuario</button>
+              <button type="button" className="px-4 py-2 bg-gray-200 text-gray-800 rounded" onClick={handleCloseUserModal}>Cancelar</button>
+            </form>
+          </div>
+        </div>
+      )}
       <ChangePasswordModal open={showChangeModal} onClose={() => { setShowChangeModal(false); setChangeUser(null); }} user={changeUser} />
     </div>
   );
