@@ -20,6 +20,7 @@ import AddEventModal from './Events/AddEventModal';
 import AddAnnouncementModal from './Announcements/AddAnnouncementModal.jsx';
 import AnnouncementsListModal from './Announcements/AnnouncementsListModal';
 import UsersAdminModal from './Login/UsersAdminModal.jsx';
+import LoggedUsersModal from './Login/LoggedUsersModal.jsx';
 import EventsListModal from './Events/EventsListModal';
 import ArrivalsListModal from './Students/ArrivalsListModal';
 import Remar from './Remar/Remar';
@@ -55,6 +56,7 @@ export default function Dashboard() {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);
   const [isUsersAdminOpen, setIsUsersAdminOpen] = useState(false);
+  const [isLoggedUsersOpen, setIsLoggedUsersOpen] = useState(false);
   const [isRemarHistoryOpen, setIsRemarHistoryOpen] = useState(false);
   const role = String(user?.rol || '').trim().toLowerCase();
   const canManageEvents = ['admin','entrenador','mantenimiento','subcomision'].includes(role);
@@ -404,6 +406,14 @@ export default function Dashboard() {
               className="max-w-xs w-full sm:w-auto mx-auto sm:mx-0 px-4 py-3 text-base sm:text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors flex items-center justify-center text-center"
             >
               Administrar cuentas
+            </button>
+          )}
+          {user?.rol === 'admin' && (
+            <button
+              onClick={() => setIsLoggedUsersOpen(true)}
+              className="max-w-xs w-full sm:w-auto mx-auto sm:mx-0 px-4 py-3 text-base sm:text-sm bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-colors flex items-center justify-center text-center"
+            >
+              Historial de logins
             </button>
           )}
 
@@ -798,6 +808,10 @@ export default function Dashboard() {
       <UsersAdminModal
         isOpen={isUsersAdminOpen}
         onRequestClose={() => setIsUsersAdminOpen(false)}
+      />
+      <LoggedUsersModal
+        isOpen={isLoggedUsersOpen}
+        onRequestClose={() => setIsLoggedUsersOpen(false)}
       />
     </div>
   );

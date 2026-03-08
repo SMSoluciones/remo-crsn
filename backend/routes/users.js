@@ -27,6 +27,17 @@ router.get('/trainers', async (req, res) => {
   res.json(trainers);
 });
 
+router.get('/session/logged', requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find({ lastLoginAt: { $exists: true, $ne: null } })
+      .select('nombre apellido email rol documento lastLoginAt')
+      .sort({ lastLoginAt: -1 });
+    return res.json(users);
+  } catch (err) {
+    return res.status(500).json({ error: 'Error obteniendo historial de logins' });
+  }
+});
+
 // Crear usuario
 router.post('/', requireAdmin, async (req, res) => {
   try {
@@ -91,6 +102,8 @@ router.post('/login', async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ error: 'Contraseña incorrecta' });
     }
+    user.lastLoginAt = new Date();
+    await user.save();
     const { password: _, ...userData } = user.toObject();
     res.json(userData);
   } catch (err) {

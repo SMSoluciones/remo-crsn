@@ -6,7 +6,6 @@ import { useAuth } from '../../context/useAuth';
 export default function UsersAdmin() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
-  const [query, setQuery] = useState('');
   const [mainQuery, setMainQuery] = useState('');
   const [alumnosQuery, setAlumnosQuery] = useState('');
   const [form, setForm] = useState({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });

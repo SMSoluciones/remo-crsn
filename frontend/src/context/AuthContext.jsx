@@ -34,7 +34,9 @@ export function AuthProvider({ children }) {
       console.error('Error al guardar el correo electrónico en localStorage:', error);
     }
   };
-  const logout = () => setUser(null);
+  const logout = () => {
+    setUser(null);
+  };
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>

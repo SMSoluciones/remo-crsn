@@ -62,6 +62,14 @@ export async function deleteUser(id, auth) {
   return await res.json();
 }
 
+export async function fetchLoggedUsers(auth) {
+  const headers = {};
+  if (auth?.rol) headers['x-user-role'] = auth.rol;
+  const res = await fetch(`${API_URL}/session/logged`, { headers });
+  if (!res.ok) throw new Error('Error obteniendo historial de logins');
+  return await res.json();
+}
+
 // Modelo de datos para Usuarios y roles
 export const UserRoles = {
   ADMIN: 'admin',
