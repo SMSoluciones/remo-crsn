@@ -44,17 +44,19 @@ export default function Sidebar({ section, setSection }) {
       ))}
       {/* Botón Mi Perfil - colocado abajo para garantizar visibilidad */}
       {user && (() => {
-        const isEnabled = user?.rol === 'alumnos';
+        const currentRole = String(user?.rol || '').trim().toLowerCase();
+        const isEnabled = currentRole === 'alumnos' || currentRole === 'alumno';
         return (
           <button
             className={`mt-auto flex flex-col items-center gap-1 ${isEnabled ? 'text-gray-500 hover:text-green-700 focus:text-green-700' : 'text-gray-300 cursor-not-allowed'} transition`}
             onClick={() => {
               if (!isEnabled) return;
               try {
-                const documento = user.documento ? String(user.documento).trim() : '';
-                const email = user.email ? String(user.email).trim().toLowerCase() : '';
-                if (documento) localStorage.setItem('open_student_documento', documento);
-                else if (email) localStorage.setItem('open_student_email', email);
+                if (window.appOpenMyProfileModal) {
+                  window.appOpenMyProfileModal();
+                } else {
+                  localStorage.setItem('open_my_profile', '1');
+                }
               } catch { /* ignore */ }
               setSection('students');
             }}

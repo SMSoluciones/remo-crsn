@@ -122,7 +122,7 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
         </div>
         <div data-aos="zoom-in" data-aos-duration="300">
       {loading ? (
-        <div className="flex justify-center py-6"><BeatLoader size={8} /></div>
+        <div className="flex justify-center py-6"><BeatLoader size={8} color="#1E40AF" /></div>
       ) : reports.length === 0 ? (
         <div className="text-sm text-gray-500">No hay reportes</div>
       ) : (

@@ -270,7 +270,7 @@ export default function TechnicalSheets() {
             title="Forzar recarga de fichas"
           >
             {reloading ? (
-                <div className="flex items-center gap-2"><BeatLoader size={6} color="#6B7280" /><span className="text-sm text-gray-700">Recargando...</span></div>
+                <div className="flex items-center gap-2"><BeatLoader size={6} color="#1E40AF" /><span className="text-sm text-gray-700">Recargando...</span></div>
               ) : (
               'Recargar fichas'
             )}

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchUsers, createUser, updateUser, deleteUser, UserRoles } from '../../models/User';
-import ChangePasswordModal from './ChangePasswordModal.jsx';
+import { fetchUsers, createUser, updateUser, UserRoles } from '../../models/User';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
 
@@ -12,9 +11,6 @@ export default function UsersAdmin() {
   const [form, setForm] = useState({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
   const [editId, setEditId] = useState(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(null);
-  const [changeUser, setChangeUser] = useState(null);
-  const [showChangeModal, setShowChangeModal] = useState(false);
 
   useEffect(() => {
     if (user?.rol === UserRoles.ADMIN) {
@@ -73,12 +69,6 @@ export default function UsersAdmin() {
     setForm({ nombre: '', apellido: '', email: '', documento: '', rol: UserRoles.ENTRENADOR, password: '' });
   };
 
-  const handleDelete = async id => {
-    await deleteUser(id, user);
-    setUsers(users.filter(u => u._id !== id));
-    setMenuOpen(null);
-  };
-
   const norm = (s) => (s || '').toString().trim().toLowerCase();
 
   // group + sort
@@ -130,7 +120,6 @@ export default function UsersAdmin() {
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Apellido</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -140,17 +129,6 @@ export default function UsersAdmin() {
                     <td className="px-4 py-2 text-sm text-gray-900">{u.apellido}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{u.email}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{u.rol}</td>
-                    <td className="px-4 py-2 text-sm text-right relative" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === u._id ? null : u._id); }} className="text-gray-500 hover:text-gray-700">⋮</button>
-                      {menuOpen === u._id && (
-                        <div className="absolute right-4 bottom-full mb-2 w-44 bg-white border rounded shadow-lg z-20">
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); handleEdit(u); setMenuOpen(null); }}>Editar</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); setChangeUser(u); setShowChangeModal(true); setMenuOpen(null); }}>Cambiar contraseña</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed" disabled>Desactivar</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); handleDelete(u._id); }}>Eliminar</button>
-                        </div>
-                      )}
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -171,7 +149,6 @@ export default function UsersAdmin() {
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Apellido</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -181,17 +158,6 @@ export default function UsersAdmin() {
                     <td className="px-4 py-2 text-sm text-gray-900">{u.apellido}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{u.email}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{u.documento || '—'}</td>
-                    <td className="px-4 py-2 text-sm text-right relative" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === u._id ? null : u._id); }} className="text-gray-500 hover:text-gray-700">⋮</button>
-                      {menuOpen === u._id && (
-                        <div className="absolute right-4 bottom-full mb-2 w-44 bg-white border rounded shadow-lg z-20">
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); handleEdit(u); setMenuOpen(null); }}>Editar</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); setChangeUser(u); setShowChangeModal(true); setMenuOpen(null); }}>Cambiar contraseña</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed" disabled>Desactivar</button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); handleDelete(u._id); }}>Eliminar</button>
-                        </div>
-                      )}
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -227,7 +193,6 @@ export default function UsersAdmin() {
           </div>
         </div>
       )}
-      <ChangePasswordModal open={showChangeModal} onClose={() => { setShowChangeModal(false); setChangeUser(null); }} user={changeUser} />
     </div>
   );
 }

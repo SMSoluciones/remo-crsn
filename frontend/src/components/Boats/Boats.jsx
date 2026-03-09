@@ -5,7 +5,6 @@ import { LifebuoyIcon, WrenchScrewdriverIcon, FunnelIcon, PlusIcon, XMarkIcon } 
 import Avatar from 'react-avatar';
 import { format } from 'date-fns';
 import { AuthContext } from '../../context/AuthContext';
-import AddBoatsModal from './AddBoatsModal';
 import AddBoatReportModal from './AddBoatReportModal';
 import ManageReportsModal from './ManageReportsModal';
 import ManageBoatsModal from './ManageBoatsModal';
@@ -16,11 +15,6 @@ import { showError, showSuccess } from '../../utils/toast';
 
 export default function Boats() {
   const [boats, setBoats] = useState([]); // Asegurar que el estado inicial sea un array vacío
-  const [nombre, setNombre] = useState('');
-  const [tipo, setTipo] = useState(BoatTypes[0]);
-  const [estado, setEstado] = useState(BoatStatus.ACTIVO);
-  const [showForm, setShowForm] = useState(false);
-  const [showAddBoatModal, setShowAddBoatModal] = useState(false);
   const [showAddReportModal, setShowAddReportModal] = useState(false);
   const [showManageReportsModal, setShowManageReportsModal] = useState(false);
   const [showManageBoatsModal, setShowManageBoatsModal] = useState(false);
@@ -108,25 +102,6 @@ export default function Boats() {
     loadReports();
   }, []);
 
-  const handleAddBoat = (e) => {
-    e.preventDefault();
-    setBoats([...boats, {
-      id: 'b' + (boats.length + 1),
-      nombre,
-      tipo,
-      estado,
-      fechaIngreso: new Date().toISOString().slice(0,10)
-    }]);
-    setNombre('');
-    setTipo('');
-    setEstado('');
-    setShowForm(false);
-  };
-
-  const handleBoatAdded = (newBoat) => {
-    setBoats((prevBoats) => [...prevBoats, newBoat]);
-  };
-
   const handleDeleteReport = async (id) => {
     const allowed = ['admin', 'mantenimiento', 'subcomision'];
     if (!allowed.includes(role)) { showError('No tienes permisos para eliminar reportes'); return; }
@@ -185,45 +160,12 @@ export default function Boats() {
                   </div>
                   {user && (user.rol === 'admin' || user.rol === 'profesor') && (
                     <div className="w-full sm:w-auto sm:ml-auto flex flex-col sm:flex-row gap-2">
-                      <button onClick={() => setShowAddBoatModal(true)} className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition">
-                        <PlusIcon className="h-5 w-5" /> Nuevo Bote
-                      </button>
                       <button onClick={() => setShowAddReportModal(true)} className="w-full sm:hidden flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
                         <WrenchScrewdriverIcon className="h-5 w-5" /> Reportar Falla
                       </button>
                     </div>
                   )}
                 </div>
-                {showForm && (
-                  <form onSubmit={handleAddBoat} className="bg-white rounded-xl shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4" data-aos="zoom-in">
-                    <input
-                      value={nombre}
-                      onChange={e => setNombre(e.target.value)}
-                      placeholder="Nombre"
-                      required
-                      className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
-                    />
-                    <select
-                      value={tipo}
-                      onChange={e => setTipo(e.target.value)}
-                      className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
-                      required
-                    >
-                      <option value="">Tipo</option>
-                      {BoatTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <select
-                      value={estado}
-                      onChange={e => setEstado(e.target.value)}
-                      className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
-                      required
-                    >
-                      <option value="">Estado</option>
-                      {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    <button type="submit" className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 transition">Guardar</button>
-                  </form>
-                )}
                 {/* Mobile: cards list (show on <sm) */}
                 <div className="sm:hidden space-y-4" data-aos="fade-left">
                   {filteredBoats.map((b, index) => (
@@ -353,11 +295,6 @@ export default function Boats() {
                 </div>
                 <div className="bg-white rounded-xl shadow p-6" data-aos="fade-right">
                   <h3 className="text-lg font-semibold mb-4 text-gray-700">Acciones rápidas</h3>
-                  {user && (user.rol === 'admin' || user.rol === 'profesor') && (
-                    <button onClick={() => setShowAddBoatModal(true)} className="w-full flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 transition mb-2">
-                      <PlusIcon className="h-5 w-5" /> Nuevo Bote
-                    </button>
-                  )}
                   {['admin','mantenimiento','subcomision','entrenador'].includes(role) && (
                     <button onClick={() => setShowManageBoatsModal(true)} className="w-full flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition mb-2">
                       <PlusIcon className="h-5 w-5" /> Administrar botes
@@ -376,12 +313,6 @@ export default function Boats() {
                 </div>
               </div>
             </div>
-              {showAddBoatModal && (
-              <AddBoatsModal
-                onClose={() => setShowAddBoatModal(false)}
-                onBoatAdded={handleBoatAdded}
-              />
-            )}
               {showAddReportModal && (
                 <AddBoatReportModal
                   isOpen={showAddReportModal}

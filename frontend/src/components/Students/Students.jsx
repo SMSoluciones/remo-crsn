@@ -27,6 +27,7 @@ export default function Students() {
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [openingByEmail, setOpeningByEmail] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [estadoSavingById, setEstadoSavingById] = useState({});
   const [boatsCatalog, setBoatsCatalog] = useState([]);
@@ -113,13 +114,38 @@ export default function Students() {
   // Si se solicitó abrir un perfil (desde el botón Mi Perfil), marcar state para ocultar la lista
   useEffect(() => {
     try {
+      const openMyProfile = localStorage.getItem('open_my_profile');
       const keyEmail = localStorage.getItem('open_student_email');
       const keyDoc = localStorage.getItem('open_student_documento');
-      if (keyEmail || keyDoc) setOpeningByEmail(true);
+      const keyFullName = localStorage.getItem('open_student_fullname');
+      if (openMyProfile || keyEmail || keyDoc || keyFullName) setOpeningByEmail(true);
     } catch {
       // ignore
     }
   }, []);
+
+  const findOwnStudent = useCallback((list) => {
+    const normalize = (value) => String(value || '').trim().toLowerCase();
+    const arr = Array.isArray(list) ? list : [];
+    const userDoc = String(user?.documento || user?.dni || '').trim();
+    const userEmail = normalize(user?.email);
+    const userFullName = `${normalize(user?.nombre)} ${normalize(user?.apellido)}`.trim();
+
+    const byDoc = arr.find((s) => {
+      const studentDoc = String(s?.documento || s?.dni || '').trim();
+      return !!userDoc && !!studentDoc && studentDoc === userDoc;
+    });
+    if (byDoc) return byDoc;
+
+    const byEmail = arr.find((s) => {
+      const studentEmail = normalize(s?.email);
+      return !!userEmail && !!studentEmail && studentEmail === userEmail;
+    });
+    if (byEmail) return byEmail;
+
+    const byName = arr.find((s) => `${normalize(s?.nombre)} ${normalize(s?.apellido)}`.trim() === userFullName);
+    return byName || null;
+  }, [user]);
 
   const selectedStudent = students.find(s => s.id === selected);
   const selectedStudentBoatIds = Array.isArray(selectedStudent?.botesHabilitados)
@@ -151,30 +177,74 @@ export default function Students() {
     const userEmail = user && user.email ? String(user.email).trim().toLowerCase() : null;
     const studentEmail = student && student.email ? String(student.email).trim().toLowerCase() : null;
     const isSameEmail = userEmail && studentEmail && userEmail === studentEmail;
-    if (!user || (!isAdminOrCoach && !isSameEmail)) {
+    const userDoc = user && (user.documento || user.dni) ? String(user.documento || user.dni).trim() : null;
+    const studentDoc = student && (student.documento || student.dni) ? String(student.documento || student.dni).trim() : null;
+    const isSameDocumento = userDoc && studentDoc && userDoc === studentDoc;
+    if (!user || (!isAdminOrCoach && !isSameEmail && !isSameDocumento)) {
       showError('No tienes permisos para ver el perfil del alumno.');
       return;
     }
 
     try {
+      setSelected(id);
+      setShowProfile(true);
+      setProfileLoading(true);
       const data = await fetchSheetsByStudent(id, user);
       // Asegurar que almacenamos siempre un array
       setSheets(prev => ({ ...prev, [id]: Array.isArray(data) ? data : [] }));
-      setSelected(id);
-      setShowProfile(true);
     } catch (err) {
       console.error('Error fetching sheets for student', err);
       showError('No se pudieron cargar las fichas del alumno.');
+    } finally {
+      setProfileLoading(false);
     }
   }, [students, role, user]);
+
+  useEffect(() => {
+    window.appOpenMyProfileModal = () => {
+      try {
+        const foundOwn = findOwnStudent(students);
+        if (foundOwn) {
+          handleOpenProfile(foundOwn.id);
+          setOpeningByEmail(false);
+          return;
+        }
+        localStorage.setItem('open_my_profile', '1');
+        setOpeningByEmail(true);
+      } catch {
+        localStorage.setItem('open_my_profile', '1');
+        setOpeningByEmail(true);
+      }
+    };
+
+    return () => {
+      window.appOpenMyProfileModal = undefined;
+    };
+  }, [students, findOwnStudent, handleOpenProfile]);
 
   // Si existe la key `open_student_email` en localStorage (pulsada desde la Sidebar),
   // buscar el alumno con ese email y abrir su ficha automáticamente.
   useEffect(() => {
     try {
+      const openMyProfile = localStorage.getItem('open_my_profile');
+      if (openMyProfile) {
+        if (loading) return;
+        const foundOwn = findOwnStudent(students);
+        localStorage.removeItem('open_my_profile');
+        if (foundOwn) {
+          handleOpenProfile(foundOwn.id);
+          setOpeningByEmail(false);
+          return;
+        }
+        setOpeningByEmail(false);
+        showError('No se encontró tu perfil de alumno.');
+        return;
+      }
+
       const keyEmail = localStorage.getItem('open_student_email');
       const keyDoc = localStorage.getItem('open_student_documento');
-      if (!keyEmail && !keyDoc) return;
+      const keyFullName = localStorage.getItem('open_student_fullname');
+      if (!keyEmail && !keyDoc && !keyFullName) return;
       if (keyDoc) {
         const target = String(keyDoc).trim();
         const found = students.find(s => (s.dni && String(s.dni).trim() === target) || (s.documento && String(s.documento).trim() === target));
@@ -186,6 +256,16 @@ export default function Students() {
         }
         setOpeningByEmail(false);
         return;
+      }
+      if (keyFullName) {
+        const target = String(keyFullName).trim().toLowerCase();
+        const found = students.find((s) => `${String(s.nombre || '').trim()} ${String(s.apellido || '').trim()}`.toLowerCase() === target);
+        localStorage.removeItem('open_student_fullname');
+        if (found) {
+          handleOpenProfile(found.id);
+          setOpeningByEmail(false);
+          return;
+        }
       }
       const target = String(keyEmail).trim().toLowerCase();
       const found = students.find(s => s.email && String(s.email).trim().toLowerCase() === target);
@@ -201,7 +281,7 @@ export default function Students() {
     } catch {
       // ignore
     }
-  }, [students, user, handleOpenProfile]);
+  }, [students, user, handleOpenProfile, findOwnStudent, loading]);
 
   // Registrar una función global que el sidebar/app puede invocar directamente
   // para abrir el perfil del alumno relacionado con un email.
@@ -222,6 +302,11 @@ export default function Students() {
             handleOpenProfile(byDoc.id);
             return;
           }
+          const byName = students.find(s => `${String(s.nombre || '').trim()} ${String(s.apellido || '').trim()}`.toLowerCase() === raw.toLowerCase());
+          if (byName) {
+            handleOpenProfile(byName.id);
+            return;
+          }
         }
         // si no está la lista aún, marcar pending y show loading
         window.pendingOpenStudentEmail = raw;
@@ -238,7 +323,7 @@ export default function Students() {
     try {
       const pending = window.pendingOpenStudentEmail;
       if (!pending) return;
-      const found = students.find(s => (s.email && String(s.email).trim().toLowerCase() === String(pending).toLowerCase()) || (s.dni && String(s.dni).trim() === String(pending)) || (s.documento && String(s.documento).trim() === String(pending)));
+      const found = students.find(s => (s.email && String(s.email).trim().toLowerCase() === String(pending).toLowerCase()) || (s.dni && String(s.dni).trim() === String(pending)) || (s.documento && String(s.documento).trim() === String(pending)) || (`${String(s.nombre || '').trim()} ${String(s.apellido || '').trim()}`.toLowerCase() === String(pending).toLowerCase()));
       if (found) {
         handleOpenProfile(found.id);
         delete window.pendingOpenStudentEmail;
@@ -434,7 +519,7 @@ export default function Students() {
           {!showProfile ? (
             openingByEmail ? (
               <div className="flex items-center justify-center w-full py-20 text-gray-600">
-                  <BeatLoader color="#16a34a" loading={true} size={12} />
+                  <BeatLoader color="#1E40AF" loading={true} size={12} />
                 </div>
             ) : (
               <>
@@ -551,8 +636,18 @@ export default function Students() {
               </>
             )
           ) : (
-            <div className="max-w-7xl mx-auto">
-              <button className="mb-6 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setShowProfile(false)}>Volver</button>
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setShowProfile(false)} />
+              <div className="relative z-10 bg-gray-50 rounded-xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">Perfil del alumno</h3>
+                <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setShowProfile(false)}>Cerrar</button>
+              </div>
+              {profileLoading && (
+                <div className="flex items-center justify-center py-4">
+                  <BeatLoader color="#1E40AF" loading={true} size={10} />
+                </div>
+              )}
               {!selectedStudent ? (
                 <div className="bg-white rounded-xl shadow p-8 mb-8 text-gray-700">Alumno no encontrado.</div>
               ) : (
@@ -766,6 +861,7 @@ export default function Students() {
                   </form>
                 </div>
               ) : null}
+              </div>
             </div>
           )}
         </div>

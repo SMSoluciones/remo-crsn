@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [repairBoats, setRepairBoats] = useState(null);
   const [boatsError, setBoatsError] = useState(null);
   const [enabledBoatsCount, setEnabledBoatsCount] = useState(0);
+  const [loggedUserStatus, setLoggedUserStatus] = useState('—');
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -67,8 +68,14 @@ export default function Dashboard() {
   const [stopping, setStopping] = useState(false);
   const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
   const [conflictUsage, setConflictUsage] = useState(null);
+  const isUserInactive = loggedUserStatus === 'INACTIVO';
+  const isRemarDisabled = !!userActiveUsage || isUserInactive;
 
   const handleOpenRemarAttempt = () => {
+    if (isUserInactive) {
+      showError('Tu estado es INACTIVO. No puedes iniciar REMAR.');
+      return;
+    }
     if (userActiveUsage) {
       setConflictUsage(userActiveUsage);
       setIsConflictModalOpen(true);
@@ -154,30 +161,59 @@ export default function Dashboard() {
     const isAlumno = role === 'alumno' || role === 'alumnos';
     if (!isAlumno) {
       setEnabledBoatsCount(0);
+      setLoggedUserStatus('—');
       return () => { mounted = false; };
     }
 
     setEnabledBoatsCount(null);
+    setLoggedUserStatus('...');
     fetchStudents()
       .then((list) => {
         if (!mounted) return;
         const students = Array.isArray(list) ? list : [];
-        const userEmail = String(user?.email || '').trim().toLowerCase();
-        const userDoc = String(user?.documento || '').trim();
-        const found = students.find((student) => {
-          const studentEmail = String(student?.email || '').trim().toLowerCase();
+        const normalize = (value) => String(value || '').trim().toLowerCase();
+        const userEmail = normalize(user?.email);
+        const userDoc = String(user?.documento || user?.dni || '').trim();
+        const userNombre = normalize(user?.nombre);
+        const userApellido = normalize(user?.apellido);
+        const lsEmail = normalize(localStorage.getItem('open_student_email'));
+        const lsDoc = String(localStorage.getItem('open_student_documento') || '').trim();
+
+        const byDocumento = students.find((student) => {
           const studentDoc = String(student?.documento || student?.dni || '').trim();
-          if (userEmail && studentEmail && studentEmail === userEmail) return true;
-          if (userDoc && studentDoc && studentDoc === userDoc) return true;
+          return !!userDoc && !!studentDoc && studentDoc === userDoc;
+        });
+
+        const byEmail = students.find((student) => {
+          const studentEmail = normalize(student?.email);
+          return !!userEmail && !!studentEmail && studentEmail === userEmail;
+        });
+
+        const byLocalStorage = students.find((student) => {
+          const studentEmail = normalize(student?.email);
+          const studentDoc = String(student?.documento || student?.dni || '').trim();
+          if (lsDoc && studentDoc && studentDoc === lsDoc) return true;
+          if (lsEmail && studentEmail && studentEmail === lsEmail) return true;
           return false;
         });
 
+        const byName = students.find((student) => {
+          const studentNombre = normalize(student?.nombre);
+          const studentApellido = normalize(student?.apellido);
+          return !!userNombre && !!userApellido && studentNombre === userNombre && studentApellido === userApellido;
+        });
+
+        const found = byDocumento || byEmail || byLocalStorage || byName || null;
+
         const enabled = Array.isArray(found?.botesHabilitados) ? found.botesHabilitados.length : 0;
+        const status = String(found?.estado || '—').trim().toUpperCase();
         setEnabledBoatsCount(enabled);
+        setLoggedUserStatus(status || '—');
       })
       .catch(() => {
         if (!mounted) return;
         setEnabledBoatsCount(0);
+        setLoggedUserStatus('—');
       });
 
     return () => { mounted = false; };
@@ -406,9 +442,9 @@ export default function Dashboard() {
           data-aos-delay="140"
           data-aos-immediate="true"
           onClick={() => handleOpenRemarAttempt()}
-          disabled={!!userActiveUsage}
-          aria-disabled={!!userActiveUsage}
-          className={`${userActiveUsage ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'} rounded-full w-16 h-16 shadow flex items-center justify-center`}
+          disabled={isRemarDisabled}
+          aria-disabled={isRemarDisabled}
+          className={`${isRemarDisabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'} rounded-full w-16 h-16 shadow flex items-center justify-center`}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
@@ -503,9 +539,9 @@ export default function Dashboard() {
         data-aos-immediate="true"
         onClick={() => handleOpenRemarAttempt()}
         aria-label="Abrir Remar"
-        disabled={!!userActiveUsage}
-        aria-disabled={!!userActiveUsage}
-        className={`${userActiveUsage ? 'hidden md:flex fixed bottom-6 right-6 z-50 bg-gray-300 text-gray-500 cursor-not-allowed' : 'hidden md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white'} rounded-full w-20 h-20 shadow-lg items-center justify-center`}
+        disabled={isRemarDisabled}
+        aria-disabled={isRemarDisabled}
+        className={`${isRemarDisabled ? 'hidden md:flex fixed bottom-6 right-6 z-50 bg-gray-300 text-gray-500 cursor-not-allowed' : 'hidden md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white'} rounded-full w-20 h-20 shadow-lg items-center justify-center`}
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
           <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
@@ -514,6 +550,21 @@ export default function Dashboard() {
       {/* duplicate button removed to avoid duplicate rendering */}
       {/* REMAR History Modal (migrado a componente) */}
       <RemarHistoryModal isOpen={isRemarHistoryOpen} onClose={() => setIsRemarHistoryOpen(false)} user={user} boatsList={boatsList} />
+
+      <div className="w-full max-w-xs sm:max-w-6xl mx-auto mb-2 flex justify-center sm:justify-end">
+        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs shadow ${loggedUserStatus === 'ACTIVO' ? 'bg-green-600 text-white' : loggedUserStatus === 'INACTIVO' ? 'bg-red-600 text-white' : 'bg-gray-500 text-white'}`}>
+          {loggedUserStatus === 'ACTIVO' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75" />
+            </svg>
+          ) : loggedUserStatus === 'INACTIVO' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5" />
+            </svg>
+          ) : null}
+          Estado: {loggedUserStatus}
+        </span>
+      </div>
       
       {/* Estadísticas - movidas para aparecer arriba */}
       <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 transition-transform duration-300 relative overflow-hidden box-border">
@@ -594,20 +645,20 @@ export default function Dashboard() {
           data-aos-delay="480"
           data-aos-immediate="true"
           role="button"
-          tabIndex={userActiveUsage ? -1 : 0}
-          onClick={() => { if (!userActiveUsage) handleOpenRemarAttempt(); }}
-          onKeyDown={(e) => { if (!userActiveUsage && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleOpenRemarAttempt(); } }}
-          aria-disabled={!!userActiveUsage}
-          className={`${userActiveUsage ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white'} rounded-2xl p-4 shadow-lg h-auto md:h-56 transition-transform duration-300 hover:scale-105 transform relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border`}
+          tabIndex={isRemarDisabled ? -1 : 0}
+          onClick={() => { if (!isRemarDisabled) handleOpenRemarAttempt(); }}
+          onKeyDown={(e) => { if (!isRemarDisabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleOpenRemarAttempt(); } }}
+          aria-disabled={isRemarDisabled}
+          className={`${isRemarDisabled ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white'} rounded-2xl p-4 shadow-lg h-auto md:h-56 transition-transform duration-300 hover:scale-105 transform relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border`}
         >
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-2xl font-extrabold">REMAR</h2>
             <button
-              onClick={(e) => { e.stopPropagation(); if (!userActiveUsage) handleOpenRemarAttempt(); }}
+              onClick={(e) => { e.stopPropagation(); if (!isRemarDisabled) handleOpenRemarAttempt(); }}
               aria-label="Abrir Remar"
-              disabled={!!userActiveUsage}
-              aria-disabled={!!userActiveUsage}
-              className={`${userActiveUsage ? 'relative z-20 bg-gray-400 text-gray-600 rounded-full p-2 cursor-not-allowed' : 'relative z-20 text-white bg-orange-500 rounded-full p-2 hover:bg-orange-600'}`}
+              disabled={isRemarDisabled}
+              aria-disabled={isRemarDisabled}
+              className={`${isRemarDisabled ? 'relative z-20 bg-gray-400 text-gray-600 rounded-full p-2 cursor-not-allowed' : 'relative z-20 text-white bg-orange-500 rounded-full p-2 hover:bg-orange-600'}`}
             >
               <ArrowUpRightIcon className="w-6 h-6" />
             </button>

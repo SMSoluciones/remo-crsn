@@ -32,6 +32,17 @@ export async function fetchBoats() {
   }
 }
 
+export async function createBoat(data, user) {
+  try {
+    const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+    const res = await axios.post(`${API_BASE_URL}/api/boats`, data, { headers });
+    return res.data;
+  } catch (err) {
+    console.error('Error creating boat:', err);
+    throw err;
+  }
+}
+
 export async function updateBoat(id, data, user) {
   try {
     const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};

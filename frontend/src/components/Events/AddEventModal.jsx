@@ -147,7 +147,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-base font-semibold">Eventos existentes</h4>
-            {listLoading && <div className="flex items-center"><BeatLoader size={6} color="#6B7280" /></div>}
+            {listLoading && <div className="flex items-center"><BeatLoader size={6} color="#1E40AF" /></div>}
           </div>
           {listError ? (
             <div className="text-sm text-red-600">{listError}</div>

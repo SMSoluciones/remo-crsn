@@ -119,7 +119,7 @@ export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [],
 
           <div className="flex justify-end gap-2 mt-2">
             <button type="button" onClick={onRequestClose} className="px-4 py-2 border rounded">Cancelar</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">{loading ? <BeatLoader size={8} color="#fff" /> : 'Reportar'}</button>
+            <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">{loading ? <BeatLoader size={8} color="#1E40AF" /> : 'Reportar'}</button>
           </div>
         </form>
       </div>

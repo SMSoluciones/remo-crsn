@@ -50,14 +50,14 @@ function MainApp() {
 
   const navItems = [
     { label: 'Dashboard', icon: <ChartBarIcon className="h-6 w-6" />, section: 'dashboard' },
+    { label: 'Botes', icon: <LifebuoyIcon className="h-6 w-6" />, section: 'boats' },
+    { label: 'Alumnos', icon: <UserGroupIcon className="h-6 w-6" />, section: 'students' },
+    { label: 'Fichas Técnicas', icon: <WrenchScrewdriverIcon className="h-6 w-6" />, section: 'sheets' },
     { label: 'Información', icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
       </svg>
     ), section: 'informacion' },
-    { label: 'Botes', icon: <LifebuoyIcon className="h-6 w-6" />, section: 'boats' },
-    { label: 'Alumnos', icon: <UserGroupIcon className="h-6 w-6" />, section: 'students' },
-    { label: 'Fichas Técnicas', icon: <WrenchScrewdriverIcon className="h-6 w-6" />, section: 'sheets' },
     { label: 'Configuración', icon: <Cog6ToothIcon className="h-6 w-6" />, section: 'settings' },
   ];
 
@@ -73,25 +73,19 @@ function MainApp() {
         <img src="icon.svg" alt="" className="h-10 w-10" />
         {/* Botón Mi Perfil arriba del Dashboard */}
         {user && (() => {
-          const isEnabled = user?.rol === 'alumnos';
+          const currentRole = String(user?.rol || '').trim().toLowerCase();
+          const isEnabled = currentRole === 'alumnos' || currentRole === 'alumno';
           return (
             <button
               className={`flex flex-col items-center gap-1 ${isEnabled ? 'text-gray-500 hover:text-green-700 focus:text-green-700' : 'text-gray-300 cursor-not-allowed'} transition`}
               onClick={() => {
                 if (!isEnabled) return;
-                // Intentar usar la función global expuesta por Students para abrir directamente el perfil
                 try {
-                  const documento = user.documento ? String(user.documento).trim() : '';
-                  const email = user.email ? String(user.email).trim().toLowerCase() : '';
-                  const identifier = documento || email;
                   setSection('students');
-                  if (window.appOpenStudentProfile) {
-                    // slight delay to ensure Students is mounted
-                    setTimeout(() => window.appOpenStudentProfile(identifier), 50);
+                  if (window.appOpenMyProfileModal) {
+                    setTimeout(() => window.appOpenMyProfileModal(), 50);
                   } else {
-                    // fallback: store in localStorage para que Students lo detecte
-                    if (documento) localStorage.setItem('open_student_documento', documento);
-                    else if (email) localStorage.setItem('open_student_email', email);
+                    localStorage.setItem('open_my_profile', '1');
                   }
                 } catch { /* ignore */ }
               }}
@@ -128,6 +122,33 @@ function MainApp() {
           />
           <aside data-aos="fade-right" data-aos-duration="500" className="fixed left-0 top-0 h-full w-64 bg-white shadow p-6 z-50">
             <img src="icon.svg" alt="" className="h-10 w-10 mb-6" />
+            {user && (() => {
+              const currentRole = String(user?.rol || '').trim().toLowerCase();
+              const isEnabled = currentRole === 'alumnos' || currentRole === 'alumno';
+              return (
+                <button
+                  className={`flex items-center gap-3 w-full text-left py-3 ${isEnabled ? 'text-gray-700 hover:text-green-700' : 'text-gray-300 cursor-not-allowed'}`}
+                  onClick={() => {
+                    if (!isEnabled) return;
+                    try {
+                      setSection('students');
+                      if (window.appOpenMyProfileModal) {
+                        setTimeout(() => window.appOpenMyProfileModal(), 50);
+                      } else {
+                        localStorage.setItem('open_my_profile', '1');
+                      }
+                    } catch { /* ignore */ }
+                    setMobileMenuOpen(false);
+                  }}
+                  title="Mi Perfil"
+                  disabled={!isEnabled}
+                  aria-disabled={!isEnabled}
+                >
+                  <UserIcon className="h-6 w-6" />
+                  <span className="font-medium">Mi Perfil</span>
+                </button>
+              );
+            })()}
             {visibleNavItems.map(item => (
               <button
                 key={item.section}
