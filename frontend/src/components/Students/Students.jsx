@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import ProtectedRoute from '../ProtectedRoute';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
-import { fetchStudents, deleteStudent, updateStudent } from '../../models/Student';
+import { fetchStudents, deleteStudent, updateStudent, downloadStudentsExcel } from '../../models/Student';
 import { fetchBoats } from '../../models/Boat';
 import { fetchSheetsByStudent } from '../../models/TechnicalSheet';
 import Avatar from 'react-avatar';
@@ -33,6 +33,7 @@ export default function Students() {
   const [boatsCatalog, setBoatsCatalog] = useState([]);
   const [selectedBoatToAdd, setSelectedBoatToAdd] = useState('');
   const [savingAllowedBoats, setSavingAllowedBoats] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
   const itemsPerPage = 2;
 
   // Lista de categorías disponibles (únicas)
@@ -439,6 +440,36 @@ export default function Students() {
     }
   };
 
+  const handleDownloadExcel = async () => {
+    const filteredIds = filtered
+      .map((student) => String(student.id || student._id || '').trim())
+      .filter(Boolean);
+
+    if (filteredIds.length === 0) {
+      showError('No hay alumnos para exportar con los filtros actuales.');
+      return;
+    }
+
+    try {
+      setDownloadingExcel(true);
+      const { blob, filename } = await downloadStudentsExcel(filteredIds);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showSuccess(`Excel descargado con ${filteredIds.length} alumno(s).`);
+    } catch (err) {
+      console.error('Error descargando excel de alumnos:', err);
+      showError('No se pudo descargar el Excel de alumnos.');
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
   // Agregar ficha técnica (POST al backend)
   const handleAddSheet = async (e) => {
     e.preventDefault();
@@ -545,6 +576,16 @@ export default function Students() {
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
+                  </div>
+                  <div className="w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={handleDownloadExcel}
+                      disabled={downloadingExcel}
+                      className="w-full sm:w-auto px-4 py-2 rounded bg-emerald-700 text-white hover:bg-emerald-800 disabled:bg-gray-300 disabled:text-gray-500"
+                    >
+                      {downloadingExcel ? 'Descargando...' : 'Descargar Excel'}
+                    </button>
                   </div>
                   {/* Botón "Nuevo Alumno" visible en móvil debajo de los filtros */}
                   <div className="w-full sm:hidden">

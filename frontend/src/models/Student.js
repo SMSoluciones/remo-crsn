@@ -48,7 +48,25 @@ export async function deleteStudent(id) {
   return res.json();
 }
 
-export default { fetchStudents, createStudent, updateStudent, deleteStudent };
+export async function downloadStudentsExcel(studentIds = []) {
+  const hasIds = Array.isArray(studentIds) && studentIds.length > 0;
+  const res = hasIds
+    ? await fetch(`${BASE}/export/excel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: studentIds }),
+    })
+    : await fetch(`${BASE}/export/excel`);
+  if (!res.ok) throw new Error('Error downloading students excel');
+
+  const disposition = res.headers.get('content-disposition') || '';
+  const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+  const filename = filenameMatch ? filenameMatch[1] : 'alumnos.xls';
+  const blob = await res.blob();
+  return { blob, filename };
+}
+
+export default { fetchStudents, createStudent, updateStudent, deleteStudent, downloadStudentsExcel };
 // Modelo de datos para Alumnos (clase ligera para manejo en frontend)
 export class Student {
   constructor({ id, socioN, tipo, ciudad, nombre, apellido, dni, categoria, domicilio, nacimiento, celular, email, beca, competitivo, federado, estado, fechaIngreso, botesHabilitados }) {
