@@ -129,7 +129,7 @@ export default function Boats() {
     const t = d ? new Date(d).getTime() : 0;
     return Number.isFinite(t) ? t : 0;
   };
-  const latestReports = Array.isArray(reports) ? [...reports].sort((a, b) => toTime(b) - toTime(a)).slice(0, 5) : [];
+  const latestReports = Array.isArray(reports) ? [...reports].sort((a, b) => toTime(b) - toTime(a)).slice(0, 3) : [];
 
   // panel de reportes cargados desde backend
 

@@ -108,9 +108,9 @@ export default function UsersAdmin() {
       </div>
       <div className="grid grid-cols-1 gap-6">
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h3 className="font-semibold">Admin / Subcomisión / Profesores / Mantenimiento</h3>
-            <input placeholder="Buscar en este grupo" value={mainQuery} onChange={(e) => setMainQuery(e.target.value)} className="px-3 py-1 border rounded w-56" />
+            <input placeholder="Buscar" value={mainQuery} onChange={(e) => setMainQuery(e.target.value)} className="px-3 py-1 border rounded w-full sm:w-44" />
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -137,9 +137,9 @@ export default function UsersAdmin() {
         </div>
 
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h3 className="font-semibold">Alumnos</h3>
-            <input placeholder="Buscar en Alumnos" value={alumnosQuery} onChange={(e) => setAlumnosQuery(e.target.value)} className="px-3 py-1 border rounded w-56" />
+            <input placeholder="Buscar" value={alumnosQuery} onChange={(e) => setAlumnosQuery(e.target.value)} className="px-3 py-1 border rounded w-full sm:w-44" />
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
