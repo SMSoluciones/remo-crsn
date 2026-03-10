@@ -31,6 +31,15 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
 
   useEffect(() => { if (isOpen) load(); }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onRequestClose?.();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onRequestClose]);
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
@@ -80,80 +89,98 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onRequestClose}>
-      <div className="w-full max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6 outline-none transform transition-all duration-300" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Administrar botes</h3>
-          <button onClick={onRequestClose} className="text-gray-600 hover:text-gray-800"><XMarkIcon className="w-6 h-6"/></button>
+    <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={onRequestClose}>
+      <div
+        className="modal-panel w-full max-w-2xl mx-auto bg-slate-50 rounded-2xl shadow-2xl outline-none transform transition-all duration-300 max-h-[94vh] flex flex-col border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-800 tracking-wide">Administrar botes</h3>
+          <button
+            type="button"
+            onClick={onRequestClose}
+            className="p-1.5 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+            aria-label="Cerrar modal"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
         </div>
-        <form onSubmit={handleCreate} className="mb-4 p-3 border rounded grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
-          <div className="md:col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Nombre</label>
+        <div className="p-3 sm:p-4 overflow-y-auto">
+        <form onSubmit={handleCreate} className="mb-3 p-3 sm:p-4 bg-white border border-slate-200 rounded-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2 items-end shadow-sm">
+          <div className="sm:col-span-2 md:col-span-2">
+            <label className="block text-xs font-medium text-slate-600 mb-1">Nombre</label>
             <input
-              className="w-full border px-2 py-1 rounded"
+              className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
               value={newBoat.nombre}
               onChange={(e) => setNewBoat(prev => ({ ...prev, nombre: e.target.value }))}
               required
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Tipo</label>
-            <select className="w-full border px-2 py-1 rounded" value={newBoat.tipo} onChange={(e) => setNewBoat(prev => ({ ...prev, tipo: e.target.value }))}>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Tipo</label>
+            <select className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.tipo} onChange={(e) => setNewBoat(prev => ({ ...prev, tipo: e.target.value }))}>
               {BoatTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Estado</label>
-            <select className="w-full border px-2 py-1 rounded" value={newBoat.estado} onChange={(e) => setNewBoat(prev => ({ ...prev, estado: e.target.value }))}>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Estado</label>
+            <select className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.estado} onChange={(e) => setNewBoat(prev => ({ ...prev, estado: e.target.value }))}>
               {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Dificultad</label>
-            <input type="number" min="1" max="5" className="w-full border px-2 py-1 rounded" value={newBoat.nivelDif} onChange={(e) => setNewBoat(prev => ({ ...prev, nivelDif: e.target.value }))} />
+            <label className="block text-xs font-medium text-slate-600 mb-1">Dificultad</label>
+            <input type="number" min="1" max="5" className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.nivelDif} onChange={(e) => setNewBoat(prev => ({ ...prev, nivelDif: e.target.value }))} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Remo</label>
-            <input type="number" min="1" className="w-full border px-2 py-1 rounded" value={newBoat.row} onChange={(e) => setNewBoat(prev => ({ ...prev, row: e.target.value }))} />
+            <label className="block text-xs font-medium text-slate-600 mb-1">Remo</label>
+            <input type="number" min="1" className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.row} onChange={(e) => setNewBoat(prev => ({ ...prev, row: e.target.value }))} />
           </div>
-          <div className="md:col-span-6 flex justify-end">
-            <button type="submit" className="px-3 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700">Agregar bote</button>
+          <div className="sm:col-span-2 md:col-span-6 flex justify-end">
+            <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-sm font-medium">Agregar bote</button>
           </div>
         </form>
         <div data-aos="zoom-in" data-aos-duration="300">
       {loading ? (
         <div className="flex justify-center py-6"><BeatLoader color="#1E40AF" /></div>
       ) : (
-        <div className="space-y-3 max-h-[60vh] overflow-auto">
+        <div className="space-y-3 max-h-[58vh] sm:max-h-[60vh] overflow-y-auto">
           {boats.map(b => (
-            <div key={b._id} className="p-3 border rounded grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-              <div className="md:col-span-2 space-y-2">
-                <div className="flex items-center gap-3">
-                  <input className="border px-2 py-1 rounded flex-1" defaultValue={b.nombre} onBlur={(e) => handleUpdate(b._id, { nombre: e.target.value })} />
-                  <select className="border px-2 py-1 rounded" defaultValue={b.tipo} onChange={(e) => handleUpdate(b._id, { tipo: e.target.value })}>
+            <div key={b._id} className="p-3 sm:p-4 border border-slate-200 bg-white rounded-xl grid grid-cols-1 md:grid-cols-3 gap-3 items-start md:items-center shadow-sm">
+              <div className="md:col-span-2 space-y-2 min-w-0">
+                <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_120px] gap-2 sm:gap-3">
+                  <input className="border border-slate-300 px-2 py-1.5 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" defaultValue={b.nombre} onBlur={(e) => handleUpdate(b._id, { nombre: e.target.value })} />
+                  <select className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" defaultValue={b.tipo} onChange={(e) => handleUpdate(b._id, { tipo: e.target.value })}>
                     {BoatTypes.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
-                <div className="flex items-center gap-3">
-                  <select className="border px-2 py-1 rounded" defaultValue={b.estado} onChange={(e) => handleUpdate(b._id, { estado: e.target.value })}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                  <select className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" defaultValue={b.estado} onChange={(e) => handleUpdate(b._id, { estado: e.target.value })}>
                     {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
-                  <input type="date" defaultValue={b.fechaIngreso ? new Date(b.fechaIngreso).toISOString().slice(0,10) : ''} className="border px-2 py-1 rounded" onChange={(e) => handleUpdate(b._id, { fechaIngreso: e.target.value })} />
+                  <input type="date" defaultValue={b.fechaIngreso ? new Date(b.fechaIngreso).toISOString().slice(0,10) : ''} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onChange={(e) => handleUpdate(b._id, { fechaIngreso: e.target.value })} />
                 </div>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm">Dificultad</label>
-                  <input type="number" min="1" max="5" defaultValue={b.nivelDif || 1} className="border px-2 py-1 rounded w-20" onBlur={(e) => handleUpdate(b._id, { nivelDif: Number(e.target.value) })} />
-                  <label className="text-sm">Remo</label>
-                  <input type="number" min="1" defaultValue={b.row || 1} className="border px-2 py-1 rounded w-20" onBlur={(e) => handleUpdate(b._id, { row: Number(e.target.value) })} />
+                <div className="grid grid-cols-2 sm:grid-cols-[auto_100px_auto_100px] items-center gap-2 sm:gap-3">
+                  <label className="text-sm text-slate-600 font-medium">Dificultad</label>
+                  <input type="number" min="1" max="5" defaultValue={b.nivelDif || 1} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onBlur={(e) => handleUpdate(b._id, { nivelDif: Number(e.target.value) })} />
+                  <label className="text-sm text-slate-600 font-medium">Remo</label>
+                  <input type="number" min="1" defaultValue={b.row || 1} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onBlur={(e) => handleUpdate(b._id, { row: Number(e.target.value) })} />
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <button onClick={() => handleDelete(b._id)} className="text-red-600 hover:text-red-800">Eliminar</button>
+              <div className="flex md:flex-col items-end md:items-end justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDelete(b._id)}
+                  className="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium"
+                >
+                  Eliminar
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
+        </div>
         </div>
       </div>
     </div>

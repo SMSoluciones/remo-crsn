@@ -677,12 +677,11 @@ export default function Students() {
               </>
             )
           ) : (
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-              <div className="absolute inset-0 bg-black/40" onClick={() => setShowProfile(false)} />
-              <div className="relative z-10 bg-gray-50 rounded-xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Perfil del alumno</h3>
-                <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setShowProfile(false)}>Cerrar</button>
+            <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={() => setShowProfile(false)}>
+              <div className="modal-panel relative z-10 bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] overflow-y-auto p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6 bg-white border border-slate-200 rounded-xl px-4 py-3">
+                <h3 className="text-xl font-semibold text-slate-800">Perfil del alumno</h3>
+                <button className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:bg-slate-100 text-slate-700" onClick={() => setShowProfile(false)}>Cerrar</button>
               </div>
               {profileLoading && (
                 <div className="flex items-center justify-center py-4">
@@ -690,9 +689,9 @@ export default function Students() {
                 </div>
               )}
               {!selectedStudent ? (
-                <div className="bg-white rounded-xl shadow p-8 mb-8 text-gray-700">Alumno no encontrado.</div>
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 mb-8 text-gray-700">Alumno no encontrado.</div>
               ) : (
-                <div className="bg-white rounded-xl shadow p-8 mb-8 flex flex-col items-center gap-6">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 mb-8 flex flex-col items-center gap-6">
                   <Avatar name={`${selectedStudent.nombre} ${selectedStudent.apellido}`} size="100" round={true} />
                   <div className="text-center max-w-2xl">
                     <div className="text-3xl font-bold text-gray-900 mb-4">{selectedStudent.nombre} {selectedStudent.apellido}</div>
@@ -715,7 +714,7 @@ export default function Students() {
                           value={String(selectedStudent.estado || 'ACTIVO').toUpperCase()}
                           onChange={(e) => handleEstadoChange(selectedStudent, e.target.value)}
                           disabled={!!estadoSavingById[selectedStudent.id]}
-                          className="border rounded px-2 py-1 bg-white disabled:bg-gray-100 disabled:text-gray-500"
+                          className="border border-slate-300 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 disabled:bg-gray-100 disabled:text-gray-500"
                         >
                           <option value="ACTIVO">ACTIVO</option>
                           <option value="INACTIVO">INACTIVO</option>
@@ -741,7 +740,7 @@ export default function Students() {
                 </div>
               )}
               {selectedStudent && (
-                <div className="bg-white rounded-xl shadow p-6 mb-8">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-8">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                     <h3 className="text-xl font-semibold text-gray-800">Botes habilitados para este alumno</h3>
                     {canManageAllowedBoats && (
@@ -750,7 +749,7 @@ export default function Students() {
                           value={selectedBoatToAdd}
                           onChange={(e) => setSelectedBoatToAdd(e.target.value)}
                           disabled={savingAllowedBoats}
-                          className="border rounded px-3 py-2 bg-white disabled:bg-gray-100 min-w-[220px]"
+                          className="border border-slate-300 rounded-lg px-3 py-2 bg-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 disabled:bg-gray-100"
                         >
                           <option value="">Seleccionar bote activo</option>
                           {availableBoatsToAdd.map((boat) => (
@@ -763,7 +762,7 @@ export default function Students() {
                           type="button"
                           onClick={handleAddAllowedBoat}
                           disabled={!selectedBoatToAdd || savingAllowedBoats}
-                          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500"
+                          className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500"
                         >
                           Agregar
                         </button>
@@ -776,7 +775,7 @@ export default function Students() {
                   ) : (
                     <ul className="space-y-2">
                       {selectedStudentBoats.map((boat) => (
-                        <li key={boat.id || boat._id} className="flex items-center justify-between border rounded px-3 py-2 bg-gray-50">
+                        <li key={boat.id || boat._id} className="flex items-center justify-between border border-slate-200 rounded-lg px-3 py-2 bg-slate-50">
                           <div className="text-sm text-gray-800">
                             <span className="font-semibold">{boat.nombre || 'Bote'}</span>
                             <span className="ml-2 text-gray-500 uppercase text-xs">{boat.tipo || '—'}</span>
@@ -801,7 +800,7 @@ export default function Students() {
                 <h3 className="text-2xl font-semibold mb-6 text-gray-800">Histórico de Fichas Técnicas</h3>
                 {/* Gráfico de evolución de promedios */}
                 {studentSheets.length > 0 && (
-                  <div className="bg-white rounded-xl shadow p-10 mb-8">
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 mb-8">
                     <h4 className="text-xl font-bold mb-4 text-gray-700">Evolución de Promedios</h4>
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={studentSheets.map((sheet) => {
@@ -838,7 +837,7 @@ export default function Students() {
                       const promedio = (puntajes.reduce((a, b) => a + b, 0) / puntajes.length).toFixed(1);
                       const fechaFormateada = new Date(sheet.fecha).toLocaleDateString('es-ES');
                         return (
-                        <div key={sheet._id || sheet.id || idx} className="bg-white rounded-xl shadow-lg p-8 flex flex-col gap-6 border-l-4" style={{ borderColor: promedio >= 8 ? '#22c55e' : promedio >= 6 ? '#facc15' : '#ef4444' }}>
+                        <div key={sheet._id || sheet.id || idx} className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 flex flex-col gap-6 border-l-4" style={{ borderColor: promedio >= 8 ? '#22c55e' : promedio >= 6 ? '#facc15' : '#ef4444' }}>
                           <div className="flex gap-8 items-center mb-4">
                             <span className="font-bold text-gray-700 text-xl">{fechaFormateada}</span>
                             <span className="text-gray-500">Entrenador: <span className="font-semibold text-gray-700">{sheet.entrenador}</span></span>
@@ -864,14 +863,14 @@ export default function Students() {
                 </div>
                 <div className="flex justify-center mt-6">
                   <button
-                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 mx-2"
+                    className="px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 mx-2"
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(currentPage - 1)}
                   >
                     Anterior
                   </button>
                   <button
-                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 mx-2"
+                    className="px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 mx-2"
                     disabled={currentPage * itemsPerPage >= studentSheets.length}
                     onClick={() => setCurrentPage(currentPage + 1)}
                   >
@@ -882,23 +881,23 @@ export default function Students() {
               {(role === 'entrenador' || role === 'admin') ? (
                 <div className="mb-8">
                   <h3 className="text-xl font-semibold mb-4 text-gray-800">Agregar Ficha Técnica</h3>
-                  <form onSubmit={handleAddSheet} className="bg-white rounded-xl shadow p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <form onSubmit={handleAddSheet} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <input
                       type="date"
                       value={form.fecha}
                       onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))}
                       required
-                      className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
+                      className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 w-full"
                     />
                     <input
                       value={form.entrenador}
                       onChange={e => setForm(f => ({ ...f, entrenador: e.target.value }))}
                       placeholder="Entrenador responsable"
                       required
-                      className="border rounded px-3 py-2 focus:outline-none focus:ring w-full"
+                      className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 w-full"
                     />
                     {/* Postura / Remada / Equilibrio removidos del formulario */}
-                    <button type="submit" className="bg-green-700 text-white rounded px-4 py-2 hover:bg-green-800 transition col-span-1 md:col-span-3">Guardar ficha</button>
+                    <button type="submit" className="bg-emerald-600 text-white rounded-lg px-4 py-2 hover:bg-emerald-700 transition col-span-1 md:col-span-3">Guardar ficha</button>
                   </form>
                 </div>
               ) : null}

@@ -140,27 +140,31 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
   const filteredList = (list || []).filter(u => matchesUser(u) && matchesBoat(u) && matchesDate(u) && matchesZone(u));
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg p-4 mx-4 max-h-[80vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={onClose}>
+      <div className="modal-panel w-full max-w-4xl bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 max-h-[94vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold">Historial Remar</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-slate-800 tracking-wide">Historial Remar</h3>
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
-              <input value={filterUser} onChange={e => setFilterUser(e.target.value)} placeholder="Buscar usuario" className="px-2 py-1 border rounded w-full" />
-              <select value={filterBoat} onChange={e => setFilterBoat(e.target.value)} className="px-2 py-1 border rounded w-full">
+              <input value={filterUser} onChange={e => setFilterUser(e.target.value)} placeholder="Buscar usuario" className="px-2 py-1 border border-slate-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
+              <select value={filterBoat} onChange={e => setFilterBoat(e.target.value)} className="px-2 py-1 border border-slate-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500">
                 <option value="">Todos los botes</option>
                 {Array.isArray(boatsList) && boatsList.map(b => (
                   <option key={b._id || b.id} value={String(b._id || b.id)}>{b.nombre || b.name || b.modelo || (b._id||b.id)}</option>
                 ))}
               </select>
-              <input value={filterDate} onChange={e => setFilterDate(e.target.value)} type="date" className="px-2 py-1 border rounded w-full" />
-              <input value={filterZone} onChange={e => setFilterZone(e.target.value)} placeholder="Zona" className="px-2 py-1 border rounded w-full" />
+              <input value={filterDate} onChange={e => setFilterDate(e.target.value)} type="date" className="px-2 py-1 border border-slate-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
+              <input value={filterZone} onChange={e => setFilterZone(e.target.value)} placeholder="Zona" className="px-2 py-1 border border-slate-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={onClose} className="px-3 py-1 bg-red-100 text-red-700 rounded">Cerrar</button>
+            <button onClick={onClose} className="px-3 py-1 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100">Cerrar</button>
           </div>
         </div>
+        </div>
+
+        <div className="p-3 sm:p-4">
 
         {loading ? (
           <div className="text-center py-8">Cargando...</div>
@@ -169,7 +173,7 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
         ) : list.length === 0 ? (
           <div className="text-sm opacity-80">No hay registros en el historial.</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-sm">
             <table className="w-full text-sm table-auto">
               <thead>
                 <tr className="text-left border-b">
@@ -253,6 +257,7 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
             </table>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

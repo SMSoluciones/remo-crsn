@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import Modal from 'react-modal';
 import { fetchEvents, deleteEvent as deleteEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import BeatLoader from 'react-spinners/BeatLoader';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
-
-Modal.setAppElement('#root');
 
 export default function EventsListModal({ isOpen, onRequestClose }) {
   const { user } = useAuth();
@@ -37,6 +34,15 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
     return () => { mounted = false };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onRequestClose?.();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onRequestClose]);
+
   const handleDelete = async (id) => {
     if (!editable) return;
     if (!window.confirm('¿Eliminar este evento? Esta acción no se puede deshacer.')) return;
@@ -55,13 +61,13 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
 
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onRequestClose}></div>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl p-6 z-10 overflow-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Eventos</h3>
-          <button onClick={onRequestClose} className="text-gray-500 hover:text-gray-700"><XMarkIcon className="w-6 h-6"/></button>
+    <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={onRequestClose}>
+      <div className="modal-panel w-full max-w-2xl mx-auto bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 max-h-[94vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-800 tracking-wide">Eventos</h3>
+          <button onClick={onRequestClose} className="p-1.5 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100" aria-label="Cerrar modal"><XMarkIcon className="w-6 h-6"/></button>
         </div>
+        <div className="p-3 sm:p-4 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-8"><BeatLoader color="#1E40AF" /></div>
         ) : events.length === 0 ? (
@@ -73,7 +79,7 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
               const fecha = ev.date ? new Date(ev.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Sin fecha';
               const isPast = ev.date ? new Date(ev.date) < new Date() : false;
               return (
-                <div key={id} className={`border rounded-lg p-4 flex justify-between items-start ${isPast ? 'bg-red-50' : ''}`}>
+                <div key={id} className={`border border-slate-200 rounded-xl p-4 flex justify-between items-start bg-white shadow-sm ${isPast ? 'bg-red-50' : ''}`}>
                   <div>
                     <div className="font-medium text-gray-800">{ev.title || 'Evento'}</div>
                     <div className="text-sm text-gray-600">{fecha}</div>
@@ -91,6 +97,7 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
             })}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

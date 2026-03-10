@@ -467,8 +467,8 @@ export default function Dashboard() {
           </button>
 
           {isStopModalOpen && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60" onClick={() => setIsStopModalOpen(false)}>
-              <div className="w-full max-w-md bg-white rounded-xl p-6 mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed inset-0 z-60 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={() => setIsStopModalOpen(false)}>
+              <div className="modal-panel w-full max-w-md bg-white rounded-xl p-6 mx-4" onClick={(e) => e.stopPropagation()}>
                 <h3 className="text-lg font-semibold mb-2">Detener la remada actual</h3>
                 <p className="text-sm text-gray-700 mb-4">¿Detener la remada actual? Se registrará la hora de detención: <strong>{new Date().toLocaleString('es-ES')}</strong></p>
                 <div className="flex justify-end gap-2">
@@ -501,8 +501,8 @@ export default function Dashboard() {
 
       {/* Conflict modal: preventing starting a new Remar when one is active */}
       {isConflictModalOpen && conflictUsage && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-70" onClick={() => setIsConflictModalOpen(false)}>
-          <div className="w-full max-w-md bg-white rounded-xl p-6 mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-70 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={() => setIsConflictModalOpen(false)}>
+          <div className="modal-panel w-full max-w-md bg-white rounded-xl p-6 mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-2">No se pueden iniciar dos sesiones de Remo a la vez</h3>
             <p className="text-sm text-gray-700 mb-4">¿Terminar sesión iniciada con el: "{conflictUsage.boatDisplay || (conflictUsage.boatId && (conflictUsage.boatId.nombre || conflictUsage.boatId.name)) || conflictUsage.boat || 'este bote'}"?</p>
             <div className="flex justify-end gap-2">

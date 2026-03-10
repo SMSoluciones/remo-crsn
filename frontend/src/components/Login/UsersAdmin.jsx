@@ -166,30 +166,31 @@ export default function UsersAdmin() {
         </div>
       </div>
       {isUserModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={handleCloseUserModal} />
-          <div className="relative z-10 bg-white rounded-xl shadow-xl w-full max-w-4xl p-6">
-            <div className="flex items-center justify-between border-b pb-3 mb-4">
-              <h3 className="text-lg font-semibold">{editId ? 'Modificar Usuario' : 'Crear Usuario'}</h3>
-              <button onClick={handleCloseUserModal} className="text-gray-500 hover:text-gray-700">Cerrar</button>
+        <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={handleCloseUserModal}>
+          <div className="modal-panel relative z-10 w-full max-w-4xl bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 max-h-[94vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-800 tracking-wide">{editId ? 'Modificar usuario' : 'Crear usuario'}</h3>
+              <button onClick={handleCloseUserModal} className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100">Cerrar</button>
             </div>
-            <form onSubmit={handleSubmit} className="flex flex-wrap gap-3 items-center">
-              <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" required className="px-3 py-2 border rounded w-40" />
-              <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required className="px-3 py-2 border rounded w-40" />
-              <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" className="px-3 py-2 border rounded w-56" />
-              <input name="documento" value={form.documento} onChange={handleChange} placeholder="Documento" className="px-3 py-2 border rounded w-40" />
-              <input name="password" value={form.password} onChange={handleChange} placeholder={editId ? 'Nueva contraseña (opcional)' : 'Contraseña'} type="password" className="px-3 py-2 border rounded w-40" required={!editId} />
+            <div className="p-3 sm:p-4">
+            <form onSubmit={handleSubmit} className="flex flex-wrap gap-3 items-center bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-4">
+              <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" required className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
+              <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
+              <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" className="px-3 py-2 border border-slate-300 rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
+              <input name="documento" value={form.documento} onChange={handleChange} placeholder="Documento" className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
+              <input name="password" value={form.password} onChange={handleChange} placeholder={editId ? 'Nueva contrasena (opcional)' : 'Contrasena'} type="password" className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" required={!editId} />
 
-              <select name="rol" value={form.rol} onChange={handleChange} required className="px-3 py-2 border rounded w-40">
+              <select name="rol" value={form.rol} onChange={handleChange} required className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500">
                 <option value={UserRoles.ADMIN}>Admin</option>
                 <option value={UserRoles.ENTRENADOR}>Entrenador</option>
                 <option value={UserRoles.MANTENIMIENTO}>Mantenimiento</option>
                 <option value={UserRoles.ALUMNOS}>Alumnos</option>
                 <option value={UserRoles.SUBCOMISION}>Subcomision</option>
               </select>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded font-medium">{editId ? 'Actualizar' : 'Crear'} usuario</button>
-              <button type="button" className="px-4 py-2 bg-gray-200 text-gray-800 rounded" onClick={handleCloseUserModal}>Cancelar</button>
+              <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700">{editId ? 'Actualizar' : 'Crear'} usuario</button>
+              <button type="button" className="px-4 py-2 bg-white border border-slate-300 text-slate-800 rounded-lg hover:bg-slate-100" onClick={handleCloseUserModal}>Cancelar</button>
             </form>
+            </div>
           </div>
         </div>
       )}

@@ -39,18 +39,23 @@ export default function ChangePasswordModal({ open, onClose, user }) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-40 p-4">
-      <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md mx-2">
-        <h3 className="text-lg font-semibold mb-4">Cambiar contraseña</h3>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input type="password" placeholder="Nueva contraseña" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="px-3 py-2 border rounded w-full" required />
-          <input type="password" placeholder="Confirmar nueva contraseña" value={confirm} onChange={e => setConfirm(e.target.value)} className="px-3 py-2 border rounded w-full" required />
+    <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={onClose}>
+      <div className="modal-panel w-full max-w-md mx-auto bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 max-h-[94vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-800 tracking-wide">Cambiar contrasena</h3>
+          <button type="button" onClick={onClose} className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div className="p-3 sm:p-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-3 sm:p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+          <input type="password" placeholder="Nueva contrasena" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" required />
+          <input type="password" placeholder="Confirmar nueva contrasena" value={confirm} onChange={e => setConfirm(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" required />
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <div className="flex justify-end gap-2 mt-2">
-            <button type="button" onClick={onClose} className="px-3 py-2 rounded bg-gray-200">Cancelar</button>
-            <button type="submit" disabled={loading} className="px-3 py-2 rounded bg-green-700 text-white">{loading ? 'Actualizando...' : 'Actualizar contraseña'}</button>
+            <button type="button" onClick={onClose} className="px-3 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100">Cancelar</button>
+            <button type="submit" disabled={loading} className="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">{loading ? 'Actualizando...' : 'Actualizar contrasena'}</button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

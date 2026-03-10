@@ -51,22 +51,23 @@ export default function LoggedUsersModal({ isOpen, onRequestClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onRequestClose} />
+    <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={onRequestClose}>
       <div
-        className="relative z-10 bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[85vh] overflow-y-auto p-4"
-        data-aos="fade-up"
+        className="modal-panel relative z-10 w-full max-w-4xl bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 max-h-[94vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b pb-3 mb-4">
-          <h3 className="text-lg font-semibold">Usuarios que iniciaron sesión</h3>
-          <button onClick={onRequestClose} className="text-gray-500 hover:text-gray-700">Cerrar</button>
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-800 tracking-wide">Usuarios que iniciaron sesion</h3>
+          <button onClick={onRequestClose} className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100">Cerrar</button>
         </div>
+
+        <div className="p-3 sm:p-4">
 
         {loading && <p className="text-sm text-gray-500">Cargando historial...</p>}
         {!loading && error && <p className="text-sm text-red-600">{error}</p>}
 
         {!loading && !error && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -97,6 +98,7 @@ export default function LoggedUsersModal({ isOpen, onRequestClose }) {
             </table>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

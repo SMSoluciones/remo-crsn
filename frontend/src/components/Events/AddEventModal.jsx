@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import Modal from 'react-modal';
 import { showError, showSuccess } from '../../utils/toast';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { API_BASE_URL } from '../../utils/apiConfig';
 import { fetchEvents as fetchEventsApi, deleteEvent as deleteEventApi, createEvent as createEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/useAuth';
 import BeatLoader from 'react-spinners/BeatLoader';
-
-Modal.setAppElement('#root');
 
 const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted }) => {
   const { user } = useAuth();
@@ -75,6 +71,15 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onRequestClose?.();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onRequestClose]);
+
   const handleDelete = async (id) => {
     if (!id) return;
     const ok = window.confirm('¿Eliminar este evento? Esta acción no se puede deshacer.');
@@ -95,47 +100,47 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
 
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onRequestClose}></div>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl p-6 z-10" data-aos="fade-up">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Agregar Nuevo Evento</h3>
-          <button onClick={onRequestClose} className="text-gray-500 hover:text-gray-700">Cerrar</button>
+    <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={onRequestClose}>
+      <div className="modal-panel w-full max-w-3xl mx-auto bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 max-h-[94vh] flex flex-col z-10" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-800 tracking-wide">Agregar nuevo evento</h3>
+          <button onClick={onRequestClose} className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100">Cerrar</button>
         </div>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+        <div className="p-3 sm:p-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 p-3 sm:p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
           <input
             type="text"
             placeholder="Título"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border rounded px-3 py-2"
+            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
             required
           />
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="border rounded px-3 py-2"
+            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
             required
           />
           <textarea
             placeholder="Descripción"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="border rounded px-3 py-2"
+            className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
             required
           ></textarea>
           <div className="flex justify-end gap-4">
             <button
               type="button"
               onClick={onRequestClose}
-              className="px-4 py-2 border rounded hover:bg-gray-200"
+              className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:bg-slate-100"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
               disabled={loading}
             >
               {loading ? 'Guardando...' : 'Guardar Evento'}
@@ -144,7 +149,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
         </form>
 
         {/* Lista de eventos con opción de eliminar */}
-        <div className="mt-6">
+        <div className="mt-6 bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-base font-semibold">Eventos existentes</h4>
             {listLoading && <div className="flex items-center"><BeatLoader size={6} color="#1E40AF" /></div>}
@@ -154,7 +159,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
           ) : events.length === 0 ? (
             <div className="text-sm text-gray-500">No hay eventos</div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
               <div className="max-h-72 overflow-y-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-100 text-gray-700">
@@ -203,6 +208,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

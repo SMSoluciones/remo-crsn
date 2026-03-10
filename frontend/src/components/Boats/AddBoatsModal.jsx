@@ -16,6 +16,14 @@ export default function AddBoatsModal({ onClose, onBoatAdded }) {
     AOS.init();
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose?.();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -36,11 +44,14 @@ export default function AddBoatsModal({ onClose, onBoatAdded }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="absolute inset-0" onClick={onClose} />
-      <div data-aos="zoom-in" data-aos-duration="300" className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md transform transition-all duration-300">
-        <h2 className="text-xl font-bold mb-4">Agregar Nuevo Bote</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 z-50 modal-overlay p-2 sm:p-4 flex items-start sm:items-center justify-center overflow-y-auto" onClick={onClose}>
+      <div className="modal-panel w-full max-w-md mx-auto bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 max-h-[94vh] flex flex-col transform transition-all duration-300" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-semibold text-slate-800 tracking-wide">Agregar nuevo bote</h2>
+          <button type="button" onClick={onClose} className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100">Cerrar</button>
+        </div>
+        <div className="p-3 sm:p-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-4 p-3 sm:p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
           <div>
             <label className="block text-sm font-medium mb-1">Nombre</label>
             <input
@@ -48,7 +59,7 @@ export default function AddBoatsModal({ onClose, onBoatAdded }) {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               required
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
             />
           </div>
           <div>
@@ -57,7 +68,7 @@ export default function AddBoatsModal({ onClose, onBoatAdded }) {
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
               required
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
             >
               {BoatTypes.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -70,7 +81,7 @@ export default function AddBoatsModal({ onClose, onBoatAdded }) {
               value={estado}
               onChange={(e) => setEstado(e.target.value)}
               required
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
             >
               {Object.values(BoatStatus).map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -86,7 +97,7 @@ export default function AddBoatsModal({ onClose, onBoatAdded }) {
               min="1"
               max="5"
               required
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
             />
           </div>
           <div>
@@ -97,25 +108,26 @@ export default function AddBoatsModal({ onClose, onBoatAdded }) {
               onChange={(e) => setRow(Number(e.target.value))}
               min="1"
               required
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
             />
           </div>
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:bg-slate-100 text-slate-700"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
             >
               Guardar
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
