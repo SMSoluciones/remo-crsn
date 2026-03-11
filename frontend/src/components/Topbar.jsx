@@ -62,7 +62,7 @@ export default function Topbar({ onLogout, onMobileMenuToggle, theme = 'light', 
               <p className={`text-sm font-semibold truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-800'}`}>{user?.nombre} {user?.apellido}</p>
               <p className={`text-xs truncate ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{user?.email}</p>
             </div>
-            <button className={`block w-full text-left px-4 py-2.5 text-sm ${theme === 'dark' ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={() => { setShowChange(true); setMenuOpen(false); }}>Cambiar contrasena</button>
+            <button className={`block w-full text-left px-4 py-2.5 text-sm ${theme === 'dark' ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={() => { setShowChange(true); setMenuOpen(false); }}>Cambiar contraseña</button>
             <button className={`md:hidden block w-full text-left px-4 py-2.5 text-sm ${theme === 'dark' ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={() => { onToggleTheme && onToggleTheme(); setMenuOpen(false); }}>
               {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
             </button>

@@ -178,7 +178,7 @@ export default function UsersAdmin() {
               <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" required className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
               <input name="email" value={form.email} onChange={handleChange} placeholder="Email" required type="email" className="px-3 py-2 border border-slate-300 rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
               <input name="documento" value={form.documento} onChange={handleChange} placeholder="Documento" className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" />
-              <input name="password" value={form.password} onChange={handleChange} placeholder={editId ? 'Nueva contrasena (opcional)' : 'Contrasena'} type="password" className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" required={!editId} />
+              <input name="password" value={form.password} onChange={handleChange} placeholder={editId ? 'Nueva contraseña (opcional)' : 'Contraseña'} type="password" className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" required={!editId} />
 
               <select name="rol" value={form.rol} onChange={handleChange} required className="px-3 py-2 border border-slate-300 rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500">
                 <option value={UserRoles.ADMIN}>Admin</option>
