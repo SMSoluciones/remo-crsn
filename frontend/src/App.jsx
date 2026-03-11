@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Cog6ToothIcon, UserIcon } from '@heroicons/react/24/outline';
@@ -24,6 +23,32 @@ function MainApp() {
   const { user, logout } = useAuth();
   const [section, setSection] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useLayoutEffect(() => {
+    const isDark = theme === 'dark';
+    const root = document.documentElement;
+    const body = document.body;
+
+    // Keep DOM classes and data attribute strictly in sync with app state.
+    root.classList.remove('dark');
+    body.classList.remove('dark');
+    if (isDark) {
+      root.classList.add('dark');
+      body.classList.add('dark');
+    }
+    root.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
 
   // Exponer setSection globalmente para permitir redirecciones desde componentes
   useEffect(() => {
@@ -68,8 +93,8 @@ function MainApp() {
   });
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <aside className="hidden md:flex md:flex-col bg-white shadow-lg h-screen w-24 items-center py-8 gap-8 fixed left-0 top-0 z-20">
+    <div className={`flex min-h-screen ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-gray-100 text-slate-900'}`}>
+      <aside className={`hidden md:flex md:flex-col h-screen w-24 items-center py-8 gap-8 fixed left-0 top-0 z-20 shadow-lg ${theme === 'dark' ? 'bg-slate-900 border-r border-slate-700' : 'bg-white border-r border-slate-200'}`}>
         <img src="icon.svg" alt="" className="h-10 w-10" />
         {/* Botón Mi Perfil arriba del Dashboard */}
         {user && (() => {
@@ -77,7 +102,7 @@ function MainApp() {
           const isEnabled = currentRole === 'alumnos' || currentRole === 'alumno';
           return (
             <button
-              className={`flex flex-col items-center gap-1 ${isEnabled ? 'text-gray-500 hover:text-green-700 focus:text-green-700' : 'text-gray-300 cursor-not-allowed'} transition`}
+              className={`flex flex-col items-center gap-1 ${isEnabled ? (theme === 'dark' ? 'text-slate-400 hover:text-emerald-400 focus:text-emerald-400' : 'text-gray-500 hover:text-green-700 focus:text-green-700') : 'text-gray-300 cursor-not-allowed'} transition`}
               onClick={() => {
                 if (!isEnabled) return;
                 try {
@@ -103,7 +128,7 @@ function MainApp() {
         {visibleNavItems.map(item => (
           <button
             key={item.section}
-            className={`flex flex-col items-center gap-1 text-gray-500 hover:text-green-700 focus:text-green-700 transition ${section === item.section ? 'text-green-700' : ''}`}
+            className={`flex flex-col items-center gap-1 transition ${theme === 'dark' ? 'text-slate-400 hover:text-emerald-400 focus:text-emerald-400' : 'text-gray-500 hover:text-green-700 focus:text-green-700'} ${section === item.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
             onClick={() => setSection(item.section)}
             title={item.label}
           >
@@ -116,18 +141,18 @@ function MainApp() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
-            className="fixed inset-0 bg-white/30 backdrop-blur-sm z-40"
+            className={`fixed inset-0 backdrop-blur-sm z-40 ${theme === 'dark' ? 'bg-slate-950/55' : 'bg-white/30'}`}
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <aside data-aos="fade-right" data-aos-duration="500" className="fixed left-0 top-0 h-full w-64 bg-white shadow p-6 z-50">
+          <aside data-aos="fade-right" data-aos-duration="500" className={`fixed left-0 top-0 h-full w-64 shadow p-6 z-50 ${theme === 'dark' ? 'bg-slate-900 border-r border-slate-700' : 'bg-white border-r border-slate-200'}`}>
             <img src="icon.svg" alt="" className="h-10 w-10 mb-6" />
             {user && (() => {
               const currentRole = String(user?.rol || '').trim().toLowerCase();
               const isEnabled = currentRole === 'alumnos' || currentRole === 'alumno';
               return (
                 <button
-                  className={`flex items-center gap-3 w-full text-left py-3 ${isEnabled ? 'text-gray-700 hover:text-green-700' : 'text-gray-300 cursor-not-allowed'}`}
+                  className={`flex items-center gap-3 w-full text-left py-3 ${isEnabled ? (theme === 'dark' ? 'text-slate-200 hover:text-emerald-400' : 'text-gray-700 hover:text-green-700') : 'text-gray-300 cursor-not-allowed'}`}
                   onClick={() => {
                     if (!isEnabled) return;
                     try {
@@ -152,7 +177,7 @@ function MainApp() {
             {visibleNavItems.map(item => (
               <button
                 key={item.section}
-                className={`flex items-center gap-3 w-full text-left text-gray-700 hover:text-green-700 py-3 ${section === item.section ? 'text-green-700' : ''}`}
+                className={`flex items-center gap-3 w-full text-left py-3 ${theme === 'dark' ? 'text-slate-200 hover:text-emerald-400' : 'text-gray-700 hover:text-green-700'} ${section === item.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
                 onClick={() => { setSection(item.section); setMobileMenuOpen(false); }}
                 title={item.label}
               >
@@ -164,7 +189,7 @@ function MainApp() {
         </div>
       )}
       <div className="flex-1 flex flex-col md:ml-24">
-  <Topbar onLogout={logout} onMobileMenuToggle={setMobileMenuOpen} />
+  <Topbar onLogout={logout} onMobileMenuToggle={setMobileMenuOpen} theme={theme} onToggleTheme={toggleTheme} />
   <ToastContainer position="bottom-right" transition={Slide} />
         <main className="flex flex-row gap-8 pt-24 md:pt-28 px-4 md:px-10 pb-8">
           <div className="flex-1">

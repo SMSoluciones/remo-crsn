@@ -1,10 +1,11 @@
 import Avatar from 'react-avatar';
 import { BellIcon } from '@heroicons/react/24/outline';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/useAuth';
 import { useState, useRef, useEffect } from 'react';
 import ChangePasswordModal from './Login/ChangePasswordModal';
 
-export default function Topbar({ onLogout, onMobileMenuToggle }) {
+export default function Topbar({ onLogout, onMobileMenuToggle, theme = 'light', onToggleTheme }) {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showChange, setShowChange] = useState(false);
@@ -30,33 +31,45 @@ export default function Topbar({ onLogout, onMobileMenuToggle }) {
   }, []);
 
   return (
-  <header className="h-20 bg-white shadow flex items-center justify-between px-4 md:px-8 fixed top-0 left-0 md:left-24 right-0 z-10">
+  <header className={`h-20 shadow flex items-center justify-between px-4 md:px-8 fixed top-0 left-0 md:left-24 right-0 z-10 border-b ${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
       <div className="flex items-center gap-4">
-        <button className="md:hidden p-2 rounded hover:bg-gray-100" onClick={() => onMobileMenuToggle && onMobileMenuToggle(true)} aria-label="Abrir menú">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        <button className={`md:hidden p-2 rounded ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-gray-100'}`} onClick={() => onMobileMenuToggle && onMobileMenuToggle(true)} aria-label="Abrir menú">
+          <svg className={`w-6 h-6 ${theme === 'dark' ? 'text-slate-100' : 'text-gray-700'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
       </div>
       <div ref={containerRef} className="flex items-center gap-6 relative">
+        <button
+          type="button"
+          className={`hidden md:inline-flex p-2 rounded-lg border transition ${theme === 'dark' ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-100'}`}
+          onClick={onToggleTheme}
+          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        >
+          {theme === 'dark' ? <SunIcon className="h-5 w-5 text-amber-500" /> : <MoonIcon className="h-5 w-5 text-slate-700" />}
+        </button>
         <button className="relative">
-          <BellIcon className="h-6 w-6 text-gray-500" />
+          <BellIcon className={`h-6 w-6 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-500'}`} />
           <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
         </button>
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setMenuOpen(!menuOpen)}>
           <Avatar name={user?.nombre + ' ' + user?.apellido} size="36" round={true} />
-          <span className="font-medium text-gray-700">{user?.nombre}</span>
-          <svg className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <span className={`font-medium ${theme === 'dark' ? 'text-slate-100' : 'text-gray-700'}`}>{user?.nombre}</span>
+          <svg className={`w-4 h-4 transition-transform duration-200 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} ${menuOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" />
           </svg>
         </div>
 
         {menuOpen && (
-          <div className="dropdown-slide-down absolute right-0 top-14 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl shadow-xl z-30 w-56 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70">
-              <p className="text-sm font-semibold text-slate-800 truncate">{user?.nombre} {user?.apellido}</p>
-              <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+          <div className={`dropdown-slide-down absolute right-0 top-14 backdrop-blur-sm border rounded-xl shadow-xl z-30 w-56 overflow-hidden ${theme === 'dark' ? 'bg-slate-900/95 border-slate-700' : 'bg-white/95 border-slate-200'}`}>
+            <div className={`px-4 py-3 border-b ${theme === 'dark' ? 'border-slate-700 bg-slate-800/80' : 'border-slate-100 bg-slate-50/70'}`}>
+              <p className={`text-sm font-semibold truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-800'}`}>{user?.nombre} {user?.apellido}</p>
+              <p className={`text-xs truncate ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{user?.email}</p>
             </div>
-            <button className="block w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100" onClick={() => { setShowChange(true); setMenuOpen(false); }}>Cambiar contrasena</button>
-            <button className="block w-full text-left px-4 py-2.5 text-sm text-rose-700 hover:bg-rose-50" onClick={() => { logout(); onLogout && onLogout(); }}>Logout</button>
+            <button className={`block w-full text-left px-4 py-2.5 text-sm ${theme === 'dark' ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={() => { setShowChange(true); setMenuOpen(false); }}>Cambiar contrasena</button>
+            <button className={`md:hidden block w-full text-left px-4 py-2.5 text-sm ${theme === 'dark' ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'}`} onClick={() => { onToggleTheme && onToggleTheme(); setMenuOpen(false); }}>
+              {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+            </button>
+            <button className={`block w-full text-left px-4 py-2.5 text-sm ${theme === 'dark' ? 'text-rose-300 hover:bg-rose-900/30' : 'text-rose-700 hover:bg-rose-50'}`} onClick={() => { logout(); onLogout && onLogout(); }}>Logout</button>
           </div>
         )}
 

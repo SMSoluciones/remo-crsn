@@ -7,7 +7,7 @@ import { fetchBoats } from '../../models/Boat';
 import { fetchSheetsByStudent } from '../../models/TechnicalSheet';
 import Avatar from 'react-avatar';
 import BeatLoader from 'react-spinners/BeatLoader';
-import { EllipsisVerticalIcon, UserIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { EllipsisVerticalIcon, UserIcon, PlusIcon, Squares2X2Icon, Bars3Icon } from '@heroicons/react/24/outline';
 import AddStudentModal from './AddStudentModal';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
@@ -23,7 +23,6 @@ export default function Students() {
   const [showProfile, setShowProfile] = useState(false);
   const [openMenuFor, setOpenMenuFor] = useState(null);
   const [sheets, setSheets] = useState({}); // { studentId: [fichas...] }
-  const [form, setForm] = useState({ fecha: '', entrenador: '', coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [openingByEmail, setOpeningByEmail] = useState(false);
@@ -34,6 +33,8 @@ export default function Students() {
   const [selectedBoatToAdd, setSelectedBoatToAdd] = useState('');
   const [savingAllowedBoats, setSavingAllowedBoats] = useState(false);
   const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [sheetTestFilter, setSheetTestFilter] = useState('');
+  const [studentsViewMode, setStudentsViewMode] = useState('grid');
   const itemsPerPage = 2;
 
   // Lista de categorías disponibles (únicas)
@@ -60,6 +61,8 @@ export default function Students() {
     }
     return matchesName && matchesCategory && matchesEstado;
   });
+  const totalStudentsCount = students.length;
+  const filteredStudentsCount = filtered.length;
 
   useEffect(() => {
     // Close open menus when clicking outside
@@ -164,7 +167,76 @@ export default function Students() {
     return !isAlreadyAdded && isActive;
   });
   const studentSheets = sheets[selected] || [];
-  const paginatedSheets = studentSheets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const parseTimeToSeconds = (value) => {
+    if (value === undefined || value === null) return undefined;
+    const text = String(value).trim();
+    if (!text) return undefined;
+    const parts = text.split(':').map((part) => part.trim());
+    if (parts.length === 1) {
+      const seconds = Number(parts[0]);
+      return Number.isFinite(seconds) ? seconds : undefined;
+    }
+    const minutes = Number(parts[0]);
+    const seconds = Number(parts[1]);
+    if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) return undefined;
+    return minutes * 60 + seconds;
+  };
+
+  const getTrainerName = (sheet) => {
+    if (sheet?.entrenador) return sheet.entrenador;
+    if (sheet?.entrenadorId && typeof sheet.entrenadorId === 'object') {
+      const fullName = `${sheet.entrenadorId.nombre || ''} ${sheet.entrenadorId.apellido || ''}`.trim();
+      if (fullName) return fullName;
+      if (sheet.entrenadorId.email) return sheet.entrenadorId.email;
+    }
+    return 'Sin entrenador';
+  };
+
+  const getMainTest = (sheet) => {
+    if (Array.isArray(sheet?.tests) && sheet.tests.length > 0) return sheet.tests[0];
+    return null;
+  };
+
+  const getSheetTime = (sheet) => {
+    const test = getMainTest(sheet);
+    return test?.tiempo || sheet?.tiempoFinal || '';
+  };
+
+  const getSheetDistance = (sheet) => {
+    const test = getMainTest(sheet);
+    const explicit = String(sheet?.prueba || '').trim();
+    if (test?.distance) return `${test.distance}m`;
+    if (explicit) return `${explicit}m`;
+    return 'Sin prueba';
+  };
+
+  const getSheetDistanceValue = (sheet) => {
+    const test = getMainTest(sheet);
+    if (test?.distance !== undefined && test?.distance !== null) return String(test.distance).trim();
+    return String(sheet?.prueba || '').trim();
+  };
+
+  const availableSheetTests = Array.from(
+    new Set(studentSheets.map((sheet) => getSheetDistanceValue(sheet)).filter(Boolean))
+  ).sort((a, b) => Number(a) - Number(b));
+
+  const filteredStudentSheets = studentSheets.filter((sheet) => {
+    if (!sheetTestFilter) return true;
+    return getSheetDistanceValue(sheet) === sheetTestFilter;
+  });
+
+  const paginatedSheets = filteredStudentSheets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const chartData = filteredStudentSheets.map((sheet) => {
+    const base = { fecha: new Date(sheet.fecha).toLocaleDateString('es-ES') };
+    const tests = Array.isArray(sheet.tests) ? sheet.tests : [];
+    tests.forEach((test) => {
+      const seconds = parseTimeToSeconds(test?.tiempo || test?.tiempoFinal);
+      if (Number.isFinite(seconds) && test?.distance) base[`t${test.distance}`] = seconds;
+    });
+    return base;
+  });
 
   // Abrir perfil
   const handleOpenProfile = useCallback(async (id) => {
@@ -188,6 +260,7 @@ export default function Students() {
 
     try {
       setSelected(id);
+      setSheetTestFilter('');
       setShowProfile(true);
       setProfileLoading(true);
       const data = await fetchSheetsByStudent(id, user);
@@ -356,6 +429,10 @@ export default function Students() {
     setSelectedBoatToAdd('');
   }, [selected]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selected, sheetTestFilter]);
+
   const saveAllowedBoats = async (student, nextBoatIds) => {
     const studentId = student?.id || student?._id;
     if (!studentId) return;
@@ -470,40 +547,18 @@ export default function Students() {
     }
   };
 
-  // Agregar ficha técnica (POST al backend)
-  const handleAddSheet = async (e) => {
-    e.preventDefault();
-    if (!user || !(role === 'admin' || role === 'entrenador')) {
-      showError('No tiene permisos para crear fichas técnicas');
-      return;
-    }
-    try {
-      const payload = { ...form, fecha: form.fecha || new Date().toISOString().slice(0,10), studentId: selected };
-  const { createSheet } = await import('../../models/TechnicalSheet');
-  // ensure entrenadorId fallback uses _id when available
-  if (!payload.entrenadorId && user) payload.entrenadorId = user._id || user.id;
-  const created = await createSheet(payload, user);
-      setSheets(prev => ({ ...prev, [selected]: [...(prev[selected] || []), created] }));
-  setForm({ fecha: '', entrenador: '', coordinacion: 5, resistencia: 5, velocidad: 5, observaciones: '' });
-  showSuccess('Ficha técnica creada correctamente');
-    } catch (err) {
-      console.error('Error creando ficha:', err);
-      showError('No se pudo crear la ficha técnica');
-    }
-  };
-
   // Allow 'alumnos' to access the students view so they can see active students and their own profile.
 
   return (
     <ProtectedRoute>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-slate-100">
         {/* Sidebar: avatares para filtrar por estado */}
-        <aside className="hidden sm:flex w-24 bg-white border-r flex-col items-center py-6 gap-4">
+        <aside className="hidden sm:flex w-24 bg-white/95 border-r border-slate-200 flex-col items-center py-6 gap-4 shadow-sm">
           <div className="flex flex-col items-center gap-4">
             <button
               onClick={(e) => { e.stopPropagation(); setEstadoFilter(prev => prev === 'ACTIVO' ? '' : 'ACTIVO'); }}
               title="Activos"
-              className="flex flex-col items-center gap-1 focus:outline-none"
+              className="flex flex-col items-center gap-1 focus:outline-none rounded-xl px-2 py-2 hover:bg-slate-50 transition"
             >
               <div className={`relative w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 ${estadoFilter === 'ACTIVO' ? 'ring-2 ring-green-400' : ''}`}>
                 <UserIcon className={`h-6 w-6 ${estadoFilter === 'ACTIVO' ? 'text-green-700' : 'text-gray-500'}`} />
@@ -519,7 +574,7 @@ export default function Students() {
             <button
               onClick={(e) => { e.stopPropagation(); if (!canViewInactive) { showError('No tienes permisos para ver alumnos inactivos'); return; } setEstadoFilter(prev => prev === 'INACTIVO' ? '' : 'INACTIVO'); }}
               title={canViewInactive ? 'Inactivos' : 'No autorizado'}
-              className={`flex flex-col items-center gap-1 focus:outline-none ${!canViewInactive ? 'opacity-40 cursor-not-allowed' : ''}`}
+              className={`flex flex-col items-center gap-1 focus:outline-none rounded-xl px-2 py-2 hover:bg-slate-50 transition ${!canViewInactive ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
               <div className={`relative w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 ${estadoFilter === 'INACTIVO' ? 'ring-2 ring-red-400' : ''}`}>
                 <UserIcon className={`h-6 w-6 ${estadoFilter === 'INACTIVO' ? 'text-red-700' : 'text-gray-500'}`} />
@@ -535,7 +590,7 @@ export default function Students() {
             </button>
 
             {(role === 'admin' || role === 'entrenador') ? (
-              <button onClick={() => setShowAddStudent(true)} className="bg-black rounded-full p-2 hover:bg-gray-800 transition mt-2">
+              <button onClick={() => setShowAddStudent(true)} className="bg-slate-900 rounded-full p-2 hover:bg-slate-700 transition mt-2 shadow">
                 <PlusIcon className="h-6 w-6 text-white" />
               </button>
             ) : (
@@ -546,7 +601,7 @@ export default function Students() {
           </div>
         </aside>
         {/* Main content */}
-        <div className="flex-1 flex flex-col px-4 sm:px-12 py-6 sm:py-10 max-w-xs sm:max-w-6xl mx-auto">
+        <div className="flex-1 flex flex-col px-4 sm:px-10 py-6 sm:py-8 w-full max-w-7xl mx-auto">
           {!showProfile ? (
             openingByEmail ? (
               <div className="flex items-center justify-center w-full py-20 text-gray-600">
@@ -554,23 +609,31 @@ export default function Students() {
                 </div>
             ) : (
               <>
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900">Equipo</h2>
-                  <div className="flex items-center gap-4">
-                    <span className="hidden sm:inline-block font-semibold text-gray-700">Club Regatas San Nicolás - REMO</span>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-3xl font-bold text-slate-900">Equipo</h2>
+                    <div className="flex items-center gap-4">
+                    <span className="hidden sm:inline-block font-semibold text-slate-700">Club Regatas San Nicolás - REMO</span>
                     <img src="/icon.svg" alt="logo" className="h-8 w-8" />
                   </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold">Total: {totalStudentsCount}</span>
+                    <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-xs font-semibold">Mostrando: {filteredStudentsCount}</span>
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold">Activos: {activeCount}</span>
+                    <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-3 py-1 text-xs font-semibold">Inactivos: {inactiveCount}</span>
+                  </div>
                 </div>
-                <div className="mb-8 flex flex-col sm:flex-row items-center gap-4">
+                <div className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4">
                   <input
                     type="text"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Buscar alumno"
-                    className="w-full sm:max-w-md px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring focus:ring-green-200 bg-gray-100"
+                    className="w-full sm:max-w-md px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 bg-white"
                   />
                   <div className="w-full sm:w-auto">
-                    <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="border rounded px-3 py-2 bg-white w-full sm:w-auto">
+                    <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="border border-slate-300 rounded-lg px-3 py-2.5 bg-white w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500">
                       <option value="">Todas las categorías</option>
                       {categories.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
@@ -586,6 +649,24 @@ export default function Students() {
                     >
                       {downloadingExcel ? 'Descargando...' : 'Descargar Excel'}
                     </button>
+                  </div>
+                  <div className="hidden sm:block w-full sm:w-auto">
+                    <div className="inline-flex w-full sm:w-auto rounded-lg border border-slate-300 bg-white p-1">
+                      <button
+                        type="button"
+                        onClick={() => setStudentsViewMode('grid')}
+                        className={`inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-sm transition w-1/2 sm:w-auto ${studentsViewMode === 'grid' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        <Squares2X2Icon className="h-4 w-4" /> Cuadros
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStudentsViewMode('list')}
+                        className={`inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-sm transition w-1/2 sm:w-auto ${studentsViewMode === 'list' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                      >
+                        <Bars3Icon className="h-4 w-4" /> Lista
+                      </button>
+                    </div>
                   </div>
                   {/* Botón "Nuevo Alumno" visible en móvil debajo de los filtros */}
                   <div className="w-full sm:hidden">
@@ -634,21 +715,29 @@ export default function Students() {
                 {loading ? (
                   <div className="flex items-center justify-center py-8"><BeatLoader color="#1E40AF" /></div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  <div className={studentsViewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5' : 'flex flex-col gap-3'}>
+                    {filtered.length === 0 && (
+                      <div className="col-span-full bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500 shadow-sm">
+                        No hay alumnos que coincidan con los filtros seleccionados.
+                      </div>
+                    )}
                     {filtered.map(s => (
                         <div
                           key={s.id}
-                          className={`relative rounded-xl shadow flex items-center gap-4 px-4 py-4 sm:px-6 sm:py-5 cursor-pointer transition-all bg-white hover:bg-blue-600 group ${openMenuFor === s.id ? 'z-20' : ''}`}
+                          className={`relative rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 px-4 py-4 sm:px-5 sm:py-4 cursor-pointer transition-all bg-white ${studentsViewMode === 'grid' ? 'hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5 group' : 'hover:bg-slate-50'} ${openMenuFor === s.id ? 'z-20' : ''}`}
                           onClick={() => handleOpenProfile(s.id)}
                         >
                           <Avatar name={`${s.nombre} ${s.apellido}`} size={48} round={true} />
-                          <div>
-                            <div className="font-semibold text-base sm:text-lg text-gray-900 group-hover:text-white">{s.nombre} {s.apellido}</div>
-                            <div className="text-sm text-gray-500 group-hover:text-white">{s.categoria}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className={`font-semibold text-base sm:text-lg truncate ${studentsViewMode === 'grid' ? 'text-slate-900' : 'text-slate-900'}`}>{s.nombre} {s.apellido}</div>
+                            <div className="text-sm text-slate-500">{s.categoria}</div>
+                            {studentsViewMode === 'list' && (
+                              <div className="text-xs text-slate-400 mt-0.5">DNI: {s.dni || '—'}</div>
+                            )}
                           </div>
                           <div className="absolute top-4 right-4">
                             <button data-menu-button={s.id} onClick={(e) => { e.stopPropagation(); setOpenMenuFor(openMenuFor === s.id ? null : s.id); }} className="p-1 rounded">
-                              <EllipsisVerticalIcon className="h-5 w-5 text-gray-400 group-hover:text-white" />
+                              <EllipsisVerticalIcon className="h-5 w-5 text-slate-400 hover:text-slate-600" />
                             </button>
                             {openMenuFor === s.id && (
                               <div data-menu-owner={s.id} className="mt-2 w-40 bg-white border rounded shadow-lg text-sm right-0 absolute z-50">
@@ -797,65 +886,98 @@ export default function Students() {
                 </div>
               )}
               <div className="mb-8">
-                <h3 className="text-2xl font-semibold mb-6 text-gray-800">Histórico de Fichas Técnicas</h3>
-                {/* Gráfico de evolución de promedios */}
-                {studentSheets.length > 0 && (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                  <h3 className="text-2xl font-semibold text-gray-800">Histórico de Fichas Técnicas</h3>
+                  <select
+                    value={sheetTestFilter}
+                    onChange={(e) => setSheetTestFilter(e.target.value)}
+                    className="border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 w-full sm:w-auto"
+                  >
+                    <option value="">Todas las pruebas</option>
+                    {availableSheetTests.map((testValue) => (
+                      <option key={testValue} value={testValue}>{testValue}m</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Gráfico con métricas vigentes de las fichas técnicas */}
+                {filteredStudentSheets.length > 0 && (
                   <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 mb-8">
-                    <h4 className="text-xl font-bold mb-4 text-gray-700">Evolución de Promedios</h4>
+                    <h4 className="text-xl font-bold mb-4 text-gray-700">Evolución de tiempos por prueba</h4>
                     <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={studentSheets.map((sheet) => {
-                        const puntajes = [sheet.coordinacion, sheet.resistencia, sheet.velocidad];
-                        return {
-                          fecha: sheet.fecha,
-                          promedio: (puntajes.reduce((a, b) => a + b, 0) / puntajes.length).toFixed(2),
-                          coordinacion: sheet.coordinacion,
-                          resistencia: sheet.resistencia,
-                          velocidad: sheet.velocidad,
-                        };
-                      })}>
+                      <LineChart data={chartData}>
                         <XAxis dataKey="fecha" stroke="#888" fontSize={14} />
-                        <YAxis domain={[0, 10]} stroke="#888" fontSize={14} />
+                        <YAxis stroke="#888" fontSize={14} />
                         <Tooltip />
                         <Legend />
-                        <Line type="monotone" dataKey="promedio" stroke="#22c55e" strokeWidth={3} dot={{ r: 5 }} name="Promedio" />
-                        <Line type="monotone" dataKey="postura" stroke="#6366f1" strokeWidth={2} dot={false} name="Postura" />
-                        <Line type="monotone" dataKey="remada" stroke="#f59e42" strokeWidth={2} dot={false} name="Remada" />
-                        <Line type="monotone" dataKey="equilibrio" stroke="#06b6d4" strokeWidth={2} dot={false} name="Equilibrio" />
-                        <Line type="monotone" dataKey="coordinacion" stroke="#eab308" strokeWidth={2} dot={false} name="Coordinación" />
-                        <Line type="monotone" dataKey="resistencia" stroke="#ef4444" strokeWidth={2} dot={false} name="Resistencia" />
-                        <Line type="monotone" dataKey="velocidad" stroke="#10b981" strokeWidth={2} dot={false} name="Velocidad" />
+                        <Line type="monotone" dataKey="t100" stroke="#f59e0b" strokeWidth={2} dot={false} name="100m" />
+                        <Line type="monotone" dataKey="t500" stroke="#06b6d4" strokeWidth={2} dot={false} name="500m" />
+                        <Line type="monotone" dataKey="t2000" stroke="#22c55e" strokeWidth={2} dot={false} name="2000m" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 )}
                 <div className="space-y-8">
-                  {studentSheets.length === 0 ? (
+                  {filteredStudentSheets.length === 0 ? (
                     <div className="text-gray-500">No hay fichas técnicas registradas.</div>
                   ) : (
                     paginatedSheets.map((sheet, idx) => {
-                      const puntajes = [sheet.coordinacion, sheet.resistencia, sheet.velocidad].map(p => Number(p) || 0);
-                      const promedio = (puntajes.reduce((a, b) => a + b, 0) / puntajes.length).toFixed(1);
                       const fechaFormateada = new Date(sheet.fecha).toLocaleDateString('es-ES');
+                      const tests = Array.isArray(sheet.tests) ? sheet.tests : [];
+                      const mainTest = getMainTest(sheet);
+                      const trainerName = getTrainerName(sheet);
+                      const distanceLabel = getSheetDistance(sheet);
+                      const hasWeight = sheet.peso !== undefined && sheet.peso !== null && String(sheet.peso).trim() !== '';
+                      const hasCategory = !!String(sheet.categoria || '').trim();
+                      const hasPicoWatts = Number.isFinite(Number(sheet.picoWatts));
+                      const hasAvgWatts = Number.isFinite(Number(sheet.promedioFinalWatts || mainTest?.promedioWatts));
+                      const hasRpm = Number.isFinite(Number(sheet.rpm || mainTest?.rpm));
+                      const hasMainTime = !!String(getSheetTime(sheet) || '').trim();
                         return (
-                        <div key={sheet._id || sheet.id || idx} className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 flex flex-col gap-6 border-l-4" style={{ borderColor: promedio >= 8 ? '#22c55e' : promedio >= 6 ? '#facc15' : '#ef4444' }}>
-                          <div className="flex gap-8 items-center mb-4">
+                        <div key={sheet._id || sheet.id || idx} className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 flex flex-col gap-6 border-l-4" style={{ borderColor: '#0ea5e9' }}>
+                          <div className="flex flex-wrap gap-4 sm:gap-8 items-center mb-2">
                             <span className="font-bold text-gray-700 text-xl">{fechaFormateada}</span>
-                            <span className="text-gray-500">Entrenador: <span className="font-semibold text-gray-700">{sheet.entrenador}</span></span>
-                            <span className={`ml-auto px-4 py-2 rounded-full text-white font-bold text-lg ${promedio >= 8 ? 'bg-green-600' : promedio >= 6 ? 'bg-yellow-500' : 'bg-red-500'}`}>Promedio: {promedio}</span>
+                            <span className="text-gray-500">Entrenador: <span className="font-semibold text-gray-700">{trainerName}</span></span>
+                            <span className="ml-auto px-4 py-2 rounded-full text-white font-bold text-sm sm:text-base bg-sky-600">Prueba: {distanceLabel}</span>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                            {/* Postura / Remada / Equilibrio removidos */}
-                            <div className="flex items-center gap-3">
-                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.coordinacion >= 8 ? 'bg-green-100 text-green-700' : sheet.coordinacion >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Coordinación: {sheet.coordinacion}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.resistencia >= 8 ? 'bg-green-100 text-green-700' : sheet.resistencia >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Resistencia: {sheet.resistencia}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className={`px-3 py-2 rounded text-sm font-bold ${sheet.velocidad >= 8 ? 'bg-green-100 text-green-700' : sheet.velocidad >= 6 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Velocidad: {sheet.velocidad}</span>
-                            </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {hasWeight && (
+                              <span className="px-3 py-2 rounded text-sm font-semibold bg-slate-100 text-slate-700">Peso: {sheet.peso} kg</span>
+                            )}
+                            {hasCategory && (
+                              <span className="px-3 py-2 rounded text-sm font-semibold bg-slate-100 text-slate-700">Categoría prueba: {sheet.categoria}</span>
+                            )}
+                            {hasPicoWatts && (
+                              <span className="px-3 py-2 rounded text-sm font-semibold bg-amber-50 text-amber-700">Pico watts: {sheet.picoWatts}</span>
+                            )}
+                            {hasAvgWatts && (
+                              <span className="px-3 py-2 rounded text-sm font-semibold bg-cyan-50 text-cyan-700">Promedio watts: {sheet.promedioFinalWatts || mainTest?.promedioWatts}</span>
+                            )}
+                            {hasRpm && (
+                              <span className="px-3 py-2 rounded text-sm font-semibold bg-emerald-50 text-emerald-700">RPM: {sheet.rpm || mainTest?.rpm}</span>
+                            )}
+                            {hasMainTime && (
+                              <span className="px-3 py-2 rounded text-sm font-semibold bg-indigo-50 text-indigo-700">Tiempo final: {getSheetTime(sheet)}</span>
+                            )}
                           </div>
-                          <div className="text-gray-700 mt-4"><span className="font-semibold">Observaciones:</span> {sheet.observaciones}</div>
+
+                          {tests.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {tests.map((test, testIdx) => (
+                                <div key={`${sheet._id || sheet.id || idx}-test-${testIdx}`} className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                                  <div className="font-semibold text-slate-700 mb-2">Test {test.distance ? `${test.distance}m` : testIdx + 1}</div>
+                                  <div className="text-sm text-slate-600">Tiempo: {test.tiempo || test.tiempoFinal || '—'}</div>
+                                  {test.promedioWatts !== undefined && test.promedioWatts !== null && <div className="text-sm text-slate-600">Promedio watts: {test.promedioWatts}</div>}
+                                  {test.rpm !== undefined && test.rpm !== null && <div className="text-sm text-slate-600">RPM: {test.rpm}</div>}
+                                  {test.parcial500 && <div className="text-sm text-slate-600">Parcial 500: {test.parcial500}</div>}
+                                  {test.parcial1000 && <div className="text-sm text-slate-600">Parcial 1000: {test.parcial1000}</div>}
+                                  {test.parcial1500 && <div className="text-sm text-slate-600">Parcial 1500: {test.parcial1500}</div>}
+                                  {test.parcial2000 && <div className="text-sm text-slate-600">Parcial 2000: {test.parcial2000}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="text-gray-700 mt-1"><span className="font-semibold">Observaciones:</span> {sheet.observaciones || 'Sin observaciones.'}</div>
                         </div>
                       );
                     })
@@ -871,36 +993,13 @@ export default function Students() {
                   </button>
                   <button
                     className="px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 mx-2"
-                    disabled={currentPage * itemsPerPage >= studentSheets.length}
+                    disabled={currentPage * itemsPerPage >= filteredStudentSheets.length}
                     onClick={() => setCurrentPage(currentPage + 1)}
                   >
                     Siguiente
                   </button>
                 </div>
               </div>
-              {(role === 'entrenador' || role === 'admin') ? (
-                <div className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4 text-gray-800">Agregar Ficha Técnica</h3>
-                  <form onSubmit={handleAddSheet} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input
-                      type="date"
-                      value={form.fecha}
-                      onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))}
-                      required
-                      className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 w-full"
-                    />
-                    <input
-                      value={form.entrenador}
-                      onChange={e => setForm(f => ({ ...f, entrenador: e.target.value }))}
-                      placeholder="Entrenador responsable"
-                      required
-                      className="border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 w-full"
-                    />
-                    {/* Postura / Remada / Equilibrio removidos del formulario */}
-                    <button type="submit" className="bg-emerald-600 text-white rounded-lg px-4 py-2 hover:bg-emerald-700 transition col-span-1 md:col-span-3">Guardar ficha</button>
-                  </form>
-                </div>
-              ) : null}
               </div>
             </div>
           )}

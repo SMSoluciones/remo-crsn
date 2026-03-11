@@ -567,7 +567,7 @@ export default function Dashboard() {
       </div>
       
       {/* Estadísticas - movidas para aparecer arriba */}
-      <div className="bg-white text-black rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 transition-transform duration-300 relative overflow-hidden box-border">
+      <div className="dashboard-surface bg-white text-black dark:bg-slate-900 dark:text-slate-100 rounded-2xl p-4 sm:p-6 shadow-lg w-full max-w-xs sm:max-w-6xl mx-auto mb-6 transition-transform duration-300 relative overflow-hidden box-border border border-transparent dark:border-slate-700">
         <h2 className="text-lg font-bold mb-4">Estadísticas</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div data-aos="fade-up" data-aos-duration="600" data-aos-delay="100" className="bg-purple-600 text-white rounded-2xl p-4 sm:p-6 shadow-lg flex flex-col items-center justify-center text-center w-full max-w-full min-w-0 box-border">
@@ -598,10 +598,10 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      <div data-aos="fade-up" data-aos-duration="700" data-aos-delay="450" className="bg-white text-slate-900 rounded-3xl p-4 sm:p-6 shadow-xl border border-slate-200/80 w-full max-w-xs sm:max-w-6xl mx-auto mb-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl relative overflow-hidden box-border">
+      <div data-aos="fade-up" data-aos-duration="700" data-aos-delay="450" className="dashboard-surface bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 rounded-3xl p-4 sm:p-5 shadow-xl border border-slate-200/80 dark:border-slate-700 w-full max-w-xs sm:max-w-6xl mx-auto mb-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl relative overflow-hidden box-border">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-2xl font-extrabold uppercase tracking-tight">Anuncios</h2>
-          <button onClick={() => setIsAnnouncementsListOpen(true)} aria-label="Ver anuncios" className="text-slate-700 bg-slate-100 rounded-full p-2 border border-slate-200 hover:bg-slate-900 hover:text-white transition-colors">
+          <button onClick={() => setIsAnnouncementsListOpen(true)} aria-label="Ver anuncios" className="dashboard-arrow-btn rounded-full p-2 border transition-colors">
             <ArrowUpRightIcon className="w-6 h-6" />
           </button>
         </div>
@@ -624,10 +624,10 @@ export default function Dashboard() {
                   : 'Sin fecha';
                     return (
                       <div key={an._id || an.id} className="px-1 h-full w-full max-w-full box-border flex justify-center">
-                        <div className="h-full border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm bg-gradient-to-b from-slate-50 to-white transition flex flex-col justify-start w-full max-w-xs lg:max-w-none mx-auto min-w-0">
-                      <p className="font-bold text-slate-800 truncate text-base sm:text-lg">{an.title || 'Anuncio'}</p>
-                      <p className="mt-1 text-slate-500 font-medium">{fecha}</p>
-                      <p className="mt-1 italic text-slate-600">{an.description || 'Sin descripción'}</p>
+                        <div className="dashboard-inner-surface h-full border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-xs sm:text-sm bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 transition flex flex-col justify-start w-full max-w-xs lg:max-w-none mx-auto min-w-0">
+                      <p className="font-bold text-slate-900 dark:text-slate-100 truncate text-base sm:text-lg">{an.title || 'Anuncio'}</p>
+                      <p className="mt-1 text-slate-700 dark:text-slate-300 font-semibold">{fecha}</p>
+                      <p className="mt-1 italic text-slate-700 dark:text-slate-300">{an.description || 'Sin descripción'}</p>
                     </div>
                   </div>
                 );
@@ -649,10 +649,10 @@ export default function Dashboard() {
           onClick={() => { if (!isRemarDisabled) handleOpenRemarAttempt(); }}
           onKeyDown={(e) => { if (!isRemarDisabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleOpenRemarAttempt(); } }}
           aria-disabled={isRemarDisabled}
-          className={`${isRemarDisabled ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-600 text-white'} rounded-3xl p-5 shadow-xl border border-white/20 h-auto md:h-56 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl transform relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border`}
+          className={`${isRemarDisabled ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-600 text-white'} rounded-3xl p-4 shadow-xl border border-white/20 h-auto md:h-52 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl transform relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border`}
         >
           <div className="flex justify-between items-center mb-2">
-            <h2 className="text-3xl font-extrabold tracking-tight">REMAR</h2>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">REMAR</h2>
             <button
               onClick={(e) => { e.stopPropagation(); if (!isRemarDisabled) handleOpenRemarAttempt(); }}
               aria-label="Abrir Remar"
@@ -665,10 +665,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div data-aos="fade-up" data-aos-duration="700" data-aos-delay="500" className="bg-white text-slate-900 rounded-3xl p-4 shadow-xl border border-slate-200/80 h-auto md:h-56 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
+        <div data-aos="fade-up" data-aos-duration="700" data-aos-delay="500" className="dashboard-surface bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 rounded-3xl p-4 shadow-xl border border-slate-200/80 dark:border-slate-700 h-auto md:h-52 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-2xl font-extrabold tracking-tight">Eventos</h2>
-            <button onClick={() => setIsEventsListOpen(true)} aria-label="Ver eventos" className="relative z-20 text-slate-700 bg-slate-100 rounded-full p-2 border border-slate-200 hover:bg-slate-900 hover:text-white transition-colors">
+            <button onClick={() => setIsEventsListOpen(true)} aria-label="Ver eventos" className="dashboard-arrow-btn relative z-20 rounded-full p-2 border transition-colors">
               <ArrowUpRightIcon className="w-6 h-6" />
             </button>
           </div>
@@ -679,7 +679,7 @@ export default function Dashboard() {
           ) : events.length === 0 ? (
             <div className="text-sm opacity-70 flex items-center justify-center h-24">No hay eventos</div>
           ) : (
-            <div className="h-auto md:h-36 overflow-hidden">
+            <div className="h-auto md:h-32 overflow-hidden">
               <Slider {...eventSliderSettings}>
                 {events.map((ev) => {
                   const fecha = ev.date
@@ -691,12 +691,12 @@ export default function Dashboard() {
                     : 'Sin fecha';
                     return (
                       <div key={ev._id || ev.id} className="px-1 h-full w-full max-w-full box-border flex justify-center">
-                        <div className="h-full border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm bg-gradient-to-b from-slate-50 to-white transition flex flex-col justify-start w-full max-w-xs lg:max-w-none mx-auto min-w-0">
-                        <p className="font-bold text-slate-800 truncate text-base">
+                        <div className="dashboard-inner-surface h-full border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-xs sm:text-sm bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 transition flex flex-col justify-start w-full max-w-xs lg:max-w-none mx-auto min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-slate-100 truncate text-base">
                           {ev.title || 'Evento'}
                         </p>
-                        <p className="mt-1 text-slate-500 font-medium">{fecha}</p>
-                        <p className="mt-1 italic text-slate-600">
+                        <p className="mt-1 text-slate-700 dark:text-slate-300 font-semibold">{fecha}</p>
+                        <p className="mt-1 italic text-slate-700 dark:text-slate-300">
                           {ev.description || 'Sin descripción'}
                         </p>
                       </div>
@@ -724,10 +724,10 @@ export default function Dashboard() {
           <div className="text-3xl sm:text-4xl font-bold">24</div>
         </div>
 
-        <div data-aos="fade-up" data-aos-duration="650" data-aos-delay="550" className="bg-white text-slate-900 rounded-3xl p-4 sm:p-6 shadow-xl border border-slate-200/80 flex flex-col justify-between h-auto md:h-40 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
+        <div data-aos="fade-up" data-aos-duration="650" data-aos-delay="550" className="dashboard-surface bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 rounded-3xl p-4 sm:p-5 shadow-xl border border-slate-200/80 dark:border-slate-700 flex flex-col justify-between h-auto md:h-36 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
           <div className="flex justify-between items-center">
               <h2 className="text-2xl font-extrabold tracking-tight">Llegados</h2>
-              <button onClick={() => setIsArrivalsListOpen(true)} aria-label="Ver llegados" className="relative z-20 text-slate-700 bg-slate-100 rounded-full p-2 border border-slate-200 hover:bg-slate-900 hover:text-white transition-colors">
+              <button onClick={() => setIsArrivalsListOpen(true)} aria-label="Ver llegados" className="dashboard-arrow-btn relative z-20 rounded-full p-2 border transition-colors">
                 <ArrowUpRightIcon className="w-6 h-6" />
               </button>
             </div>
@@ -745,8 +745,8 @@ export default function Dashboard() {
                       const display = (first + ' ' + last).trim() || (s.dni || s._id || 'Sin nombre');
                       return (
                         <div key={s._id || s.id || s.dni} className="px-1 h-full w-full box-border flex items-center">
-                          <div className="h-full border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-lg bg-gradient-to-b from-slate-50 to-white transition flex items-center w-full">
-                            <p className="font-bold text-slate-800 truncate tracking-tight">{String(display).toUpperCase()}</p>
+                          <div className="dashboard-inner-surface h-full border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-base sm:text-lg bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 transition flex items-center w-full">
+                            <p className="font-bold text-slate-900 dark:text-slate-100 truncate tracking-tight">{String(display).toUpperCase()}</p>
                           </div>
                         </div>
                       );
