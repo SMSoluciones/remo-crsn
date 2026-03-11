@@ -14,6 +14,8 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterKeywords, setFilterKeywords] = useState('');
+  const role = (user && (user.rol || user.role)) ? String(user.rol || user.role).toLowerCase() : '';
+  const canDeleteReports = ['admin', 'subcomision'].includes(role);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -21,7 +23,6 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
       const data = await fetchBoatReports().catch(() => []);
       // Determine visibility of closed reports based on user role
       const all = Array.isArray(data) ? data : [];
-      const role = (user && (user.rol || user.role)) ? String(user.rol || user.role).toLowerCase() : '';
       const allowed = ['admin', 'subcomision', 'mantenimiento', 'entrenador', 'profesor'];
       let visible = all;
       if (!allowed.includes(role)) {
@@ -36,7 +37,7 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [role]);
 
   useEffect(() => {
     if (isOpen) load();
@@ -59,6 +60,10 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
   };
 
   const handleDelete = async (id) => {
+    if (!canDeleteReports) {
+      showError('No tienes permisos para eliminar reportes');
+      return;
+    }
     if (!window.confirm('Eliminar este reporte?')) return;
     try {
       await deleteBoatReport(id, user);
@@ -193,9 +198,11 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
                       <option value="en_reparacion">en_reparacion</option>
                       <option value="cerrado">cerrado</option>
                     </select>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleDelete(id)} className="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium">Eliminar</button>
-                    </div>
+                    {canDeleteReports && (
+                      <div className="flex gap-2">
+                        <button onClick={() => handleDelete(id)} className="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium">Eliminar</button>
+                      </div>
+                    )}
                   </div>
                 </li>
               );

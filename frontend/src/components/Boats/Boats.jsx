@@ -25,6 +25,7 @@ export default function Boats() {
   const [activeBoatLocks, setActiveBoatLocks] = useState({});
   const { user } = useContext(AuthContext);
   const role = String(user?.rol || '').trim().toLowerCase();
+  const canDeleteReports = ['admin', 'subcomision'].includes(role);
 
   const loadActiveLocks = async () => {
     try {
@@ -103,8 +104,7 @@ export default function Boats() {
   }, []);
 
   const handleDeleteReport = async (id) => {
-    const allowed = ['admin', 'mantenimiento', 'subcomision'];
-    if (!allowed.includes(role)) { showError('No tienes permisos para eliminar reportes'); return; }
+    if (!canDeleteReports) { showError('No tienes permisos para eliminar reportes'); return; }
     if (!window.confirm('¿Eliminar este reporte?')) return;
     try {
       await deleteBoatReport(id, user);
@@ -299,7 +299,7 @@ export default function Boats() {
                           </div>
                           <div className="flex items-center gap-2">
                             <div className={`px-2 py-1 rounded text-xs font-bold ${r.status === 'en_reparacion' ? 'bg-yellow-200 text-yellow-800' : r.status === 'cerrado' ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>{r.status}</div>
-                            {['admin','mantenimiento','subcomision'].includes(role) && (
+                            {canDeleteReports && (
                               <button onClick={() => handleDeleteReport(id)} aria-label="Eliminar reporte" className="text-red-600 hover:text-red-800">
                                 <XMarkIcon className="w-4 h-4" />
                               </button>
@@ -331,7 +331,7 @@ export default function Boats() {
                             <span className="font-medium text-slate-800">{boatName}</span>
                             <span className={`px-2 py-1 rounded-full ring-1 text-xs font-bold ${r.status === 'en_reparacion' ? 'bg-yellow-100 text-yellow-800 ring-yellow-200' : r.status === 'cerrado' ? 'bg-emerald-100 text-emerald-800 ring-emerald-200' : 'bg-red-100 text-red-800 ring-red-200'}`}>{r.status}</span>
                             <span className="ml-auto text-slate-500">{fecha}</span>
-                            {['admin','mantenimiento','subcomision'].includes(role) && (
+                            {canDeleteReports && (
                               <button onClick={() => handleDeleteReport(id)} aria-label="Eliminar reporte" className="ml-3 text-red-600 hover:text-red-800">
                                 <XMarkIcon className="w-4 h-4" />
                               </button>

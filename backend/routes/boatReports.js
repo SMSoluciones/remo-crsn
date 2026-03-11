@@ -115,6 +115,11 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
+    const role = String(req.header('x-user-role') || req.body?.userRole || '').trim().toLowerCase();
+    const canDelete = role === 'admin' || role === 'subcomision';
+    if (!canDelete) {
+      return res.status(403).json({ error: 'Acceso restringido a admin o subcomision' });
+    }
     await BoatReport.findByIdAndDelete(req.params.id);
     res.json({ message: 'Reporte eliminado' });
   } catch (err) {
