@@ -128,7 +128,7 @@ export default function Dashboard() {
     pauseOnHover: true,
   };
   const recentSliderSettings = {
-    dots: true,
+    dots: false,
     infinite: recentArr.length > 1,
     speed: 400,
     slidesToShow: 1,
