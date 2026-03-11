@@ -31,6 +31,7 @@ export default function Students() {
   const [estadoSavingById, setEstadoSavingById] = useState({});
   const [boatsCatalog, setBoatsCatalog] = useState([]);
   const [selectedBoatToAdd, setSelectedBoatToAdd] = useState('');
+  const [selectedLevelToAdd, setSelectedLevelToAdd] = useState('');
   const [savingAllowedBoats, setSavingAllowedBoats] = useState(false);
   const [downloadingExcel, setDownloadingExcel] = useState(false);
   const [sheetTestFilter, setSheetTestFilter] = useState('');
@@ -166,6 +167,13 @@ export default function Students() {
     const isActive = String(boat.estado || '').toLowerCase() === 'activo';
     return !isAlreadyAdded && isActive;
   });
+  const availableLevelsToAdd = Array.from(
+    new Set(
+      availableBoatsToAdd
+        .map((boat) => String(boat?.nivelDif || '').trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => Number(a) - Number(b));
   const studentSheets = sheets[selected] || [];
 
   const parseTimeToSeconds = (value) => {
@@ -427,6 +435,7 @@ export default function Students() {
 
   useEffect(() => {
     setSelectedBoatToAdd('');
+    setSelectedLevelToAdd('');
   }, [selected]);
 
   useEffect(() => {
@@ -488,6 +497,61 @@ export default function Students() {
     const nextIds = currentIds.filter((item) => item !== String(boatId));
     const ok = await saveAllowedBoats(selectedStudent, nextIds);
     if (ok) showSuccess('Bote removido de habilitados.');
+  };
+
+  const handleClearAllowedBoats = async () => {
+    if (!selectedStudent) return;
+    if (!canManageAllowedBoats) {
+      showError('No tienes permisos para modificar botes habilitados.');
+      return;
+    }
+
+    const currentIds = Array.isArray(selectedStudent.botesHabilitados)
+      ? selectedStudent.botesHabilitados.map((item) => String(item))
+      : [];
+
+    if (currentIds.length === 0) {
+      showError('El alumno no tiene botes habilitados para borrar.');
+      return;
+    }
+
+    const confirmed = window.confirm('¿Borrar todos los botes habilitados de este alumno?');
+    if (!confirmed) return;
+
+    const ok = await saveAllowedBoats(selectedStudent, []);
+    if (ok) showSuccess('Se borraron todos los botes habilitados del alumno.');
+  };
+
+  const handleAddAllowedBoatLevel = async () => {
+    if (!selectedStudent || !selectedLevelToAdd) return;
+    if (!canManageAllowedBoats) {
+      showError('No tienes permisos para modificar botes habilitados.');
+      return;
+    }
+
+    const targetLevel = String(selectedLevelToAdd).trim();
+    const currentIds = Array.isArray(selectedStudent.botesHabilitados)
+      ? selectedStudent.botesHabilitados.map((boatId) => String(boatId))
+      : [];
+
+    const idsFromLevel = boatsCatalog
+      .filter((boat) => String(boat?.estado || '').toLowerCase() === 'activo')
+      .filter((boat) => String(boat?.nivelDif || '').trim() === targetLevel)
+      .map((boat) => String(boat.id || boat._id))
+      .filter(Boolean)
+      .filter((boatId) => !currentIds.includes(boatId));
+
+    if (idsFromLevel.length === 0) {
+      showError(`No hay botes activos disponibles para el nivel ${targetLevel}.`);
+      return;
+    }
+
+    const nextIds = Array.from(new Set([...currentIds, ...idsFromLevel]));
+    const ok = await saveAllowedBoats(selectedStudent, nextIds);
+    if (ok) {
+      setSelectedLevelToAdd('');
+      showSuccess(`Nivel ${targetLevel} asignado con ${idsFromLevel.length} bote(s).`);
+    }
   };
 
   const handleEstadoChange = async (student, newEstado) => {
@@ -833,28 +897,63 @@ export default function Students() {
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                     <h3 className="text-xl font-semibold text-gray-800">Botes habilitados para este alumno</h3>
                     {canManageAllowedBoats && (
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={selectedBoatToAdd}
-                          onChange={(e) => setSelectedBoatToAdd(e.target.value)}
-                          disabled={savingAllowedBoats}
-                          className="border border-slate-300 rounded-lg px-3 py-2 bg-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 disabled:bg-gray-100"
-                        >
-                          <option value="">Seleccionar bote activo</option>
-                          {availableBoatsToAdd.map((boat) => (
-                            <option key={boat.id || boat._id} value={boat.id || boat._id}>
-                              {boat.nombre} ({boat.tipo})
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={handleAddAllowedBoat}
-                          disabled={!selectedBoatToAdd || savingAllowedBoats}
-                          className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500"
-                        >
-                          Agregar
-                        </button>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={selectedBoatToAdd}
+                            onChange={(e) => setSelectedBoatToAdd(e.target.value)}
+                            disabled={savingAllowedBoats}
+                            className="border border-slate-300 rounded-lg px-3 py-2 bg-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 disabled:bg-gray-100"
+                          >
+                            <option value="">Seleccionar bote activo</option>
+                            {availableBoatsToAdd.map((boat) => (
+                              <option key={boat.id || boat._id} value={boat.id || boat._id}>
+                                {boat.nombre} ({boat.tipo})
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={handleAddAllowedBoat}
+                            disabled={!selectedBoatToAdd || savingAllowedBoats}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500"
+                          >
+                            Agregar bote
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={selectedLevelToAdd}
+                            onChange={(e) => setSelectedLevelToAdd(e.target.value)}
+                            disabled={savingAllowedBoats}
+                            className="border border-slate-300 rounded-lg px-3 py-2 bg-white min-w-[180px] focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 disabled:bg-gray-100"
+                          >
+                            <option value="">Seleccionar nivel</option>
+                            {availableLevelsToAdd.map((level) => (
+                              <option key={level} value={level}>Nivel {level}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={handleAddAllowedBoatLevel}
+                            disabled={!selectedLevelToAdd || savingAllowedBoats}
+                            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500"
+                          >
+                            Agregar nivel
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:ml-auto">
+                          <button
+                            type="button"
+                            onClick={handleClearAllowedBoats}
+                            disabled={savingAllowedBoats || selectedStudentBoats.length === 0}
+                            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:text-gray-500"
+                          >
+                            Borrar todos
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
