@@ -172,6 +172,84 @@ html.dark .dashboard-arrow-btn:hover {
 	border-color: #f97316;
 }
 
+html[data-theme='light'] .settings-page .settings-surface {
+	background-color: #ffffff !important;
+	border-color: #e2e8f0 !important;
+	color: #334155 !important;
+}
+
+html[data-theme='light'] .settings-page .settings-heading {
+	color: #0f172a !important;
+}
+
+html[data-theme='light'] .settings-page .settings-subtext {
+	color: #64748b !important;
+}
+
+html[data-theme='light'] .settings-page .settings-avatar {
+	background-color: #f1f5f9 !important;
+	border-color: #e2e8f0 !important;
+}
+
+html[data-theme='light'] .settings-page .settings-input {
+	background-color: #ffffff !important;
+	color: #0f172a !important;
+	border-color: #cbd5e1 !important;
+}
+
+html[data-theme='light'] .settings-page .settings-input::placeholder {
+	color: #94a3b8 !important;
+}
+
+html[data-theme='light'] .settings-page .settings-divider {
+	border-color: #e2e8f0 !important;
+}
+
+html[data-theme='light'] .settings-page .settings-btn-neutral {
+	background-color: #e2e8f0 !important;
+	border-color: #cbd5e1 !important;
+	color: #0f172a !important;
+}
+
+html[data-theme='dark'] .settings-page .settings-surface {
+	background-color: #0f172a !important;
+	border-color: #334155 !important;
+	color: #cbd5e1 !important;
+}
+
+html[data-theme='dark'] .settings-page .settings-heading {
+	color: #f1f5f9 !important;
+}
+
+html[data-theme='dark'] .settings-page .settings-subtext {
+	color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .settings-page .settings-avatar {
+	background-color: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+html[data-theme='dark'] .settings-page .settings-input {
+	background-color: #020617 !important;
+	color: #e2e8f0 !important;
+	border-color: #334155 !important;
+}
+
+html[data-theme='dark'] .settings-page .settings-input::placeholder {
+	color: #64748b !important;
+}
+
+html[data-theme='dark'] .settings-page .settings-divider {
+	border-color: #334155 !important;
+}
+
+html[data-theme='dark'] .settings-page .settings-btn-neutral {
+	background-color: #1e293b !important;
+	border-color: #334155 !important;
+	color: #f1f5f9 !important;
+}
+
 .modal-overlay {
 	background: rgba(71, 85, 105, 0.55);
 }
@@ -215,6 +293,27 @@ html.dark .dashboard-arrow-btn:hover {
 
 @media (prefers-reduced-motion: reduce) {
 	.dropdown-slide-down {
+		animation: none;
+	}
+}
+
+.notifications-mobile-panel {
+	animation: notifications-slide-down 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes notifications-slide-down {
+	from {
+		opacity: 0;
+		transform: translateY(-28px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.notifications-mobile-panel {
 		animation: none;
 	}
 }

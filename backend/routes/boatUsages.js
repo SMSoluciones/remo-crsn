@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const BoatUsage = require('../models/BoatUsage');
 const Boat = require('../models/Boat');
+const Student = require('../models/Student');
 
 // POST /api/boat-usages
 router.post('/', async (req, res) => {
@@ -25,6 +26,41 @@ router.post('/', async (req, res) => {
     const userEmail = req.header('x-user-email') || req.body.userEmail || '';
     const userDocumento = req.header('x-user-documento') || req.body.userDocumento || '';
     const userName = req.header('x-user-name') || req.header('x-user-fullname') || req.header('x-user') || req.body.userName || 'Desconocido';
+
+    // Authorization guard: when the requester is linked to a student profile,
+    // only allow creating usages for boats present in botesHabilitados.
+    try {
+      const normalize = (value) => String(value || '').trim().toLowerCase();
+      const emailNorm = normalize(userEmail);
+      const docNorm = String(userDocumento || '').trim();
+      const userIdNorm = String(userId || '').trim();
+      const fullName = String(userName || '').trim();
+      const nameTokens = fullName.split(/\s+/).filter(Boolean);
+      const firstName = nameTokens[0] || '';
+      const lastName = nameTokens.slice(1).join(' ');
+
+      const studentOr = [];
+      if (userIdNorm) studentOr.push({ user: userIdNorm });
+      if (emailNorm) studentOr.push({ email: new RegExp(`^${emailNorm}$`, 'i') });
+      if (docNorm) studentOr.push({ $or: [{ dni: docNorm }, { documento: docNorm }] });
+      if (firstName && lastName) {
+        studentOr.push({ nombre: new RegExp(`^${firstName}$`, 'i'), apellido: new RegExp(`^${lastName}$`, 'i') });
+      }
+
+      if (studentOr.length > 0) {
+        const student = await Student.findOne({ $or: studentOr }).select('botesHabilitados').lean();
+        if (student) {
+          const allowed = Array.isArray(student.botesHabilitados)
+            ? student.botesHabilitados.map((id) => String(id))
+            : [];
+          if (!allowed.includes(String(boatId))) {
+            return res.status(403).json({ error: 'No estas habilitado para usar este bote' });
+          }
+        }
+      }
+    } catch (authErr) {
+      console.warn('Could not validate student boat authorization:', authErr);
+    }
 
     const requestedAt = new Date();
     const estimatedReturn = new Date(requestedAt.getTime() + hours * 60 * 60 * 1000);

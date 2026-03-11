@@ -1,9 +1,9 @@
 import Avatar from 'react-avatar';
-import { BellIcon } from '@heroicons/react/24/outline';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/useAuth';
 import { useState, useRef, useEffect } from 'react';
 import ChangePasswordModal from './Login/ChangePasswordModal';
+import NotificationsBell from './Notifications/NotificationsBell';
 
 export default function Topbar({ onLogout, onMobileMenuToggle, theme = 'light', onToggleTheme }) {
   const { user, logout } = useAuth();
@@ -47,10 +47,7 @@ export default function Topbar({ onLogout, onMobileMenuToggle, theme = 'light', 
         >
           {theme === 'dark' ? <SunIcon className="h-5 w-5 text-amber-500" /> : <MoonIcon className="h-5 w-5 text-slate-700" />}
         </button>
-        <button className="relative">
-          <BellIcon className={`h-6 w-6 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-500'}`} />
-          <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-        </button>
+        <NotificationsBell user={user} theme={theme} />
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setMenuOpen(!menuOpen)}>
           <Avatar name={user?.nombre + ' ' + user?.apellido} size="36" round={true} />
           <span className={`font-medium ${theme === 'dark' ? 'text-slate-100' : 'text-gray-700'}`}>{user?.nombre}</span>

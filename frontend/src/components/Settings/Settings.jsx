@@ -116,44 +116,54 @@ export default function Settings() {
   // Password change handled by shared ChangePasswordModal
 
   return (
-    <div className="bg-white rounded-xl shadow p-8 text-gray-700 max-w-3xl">
-      <h2 className="text-2xl font-bold mb-4">Configuración</h2>
+    <div className="settings-page w-full max-w-5xl mx-auto text-slate-700 dark:text-slate-200">
+      <div className="settings-surface bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm p-5 sm:p-7 mb-5">
+        <h2 className="settings-heading text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Configuración</h2>
+        <p className="settings-subtext text-sm text-slate-500 dark:text-slate-400 mt-1">Actualiza tu información de contacto y preferencias de seguridad.</p>
+      </div>
 
-      <section className="mb-6">
-      <section className="mb-6">
-        <h3 className="font-semibold mb-2">Perfil</h3>
-        <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        <section className="settings-surface xl:col-span-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm p-5 sm:p-6">
+          <h3 className="settings-heading font-semibold text-slate-900 dark:text-slate-100 mb-4">Perfil</h3>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
-              <div className="text-gray-600 font-bold">{(profile.nombre || '').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase() || '—'}</div>
+            <div className="settings-avatar w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700">
+              <div className="settings-heading text-slate-700 dark:text-slate-200 font-bold text-lg">{(profile.nombre || '').split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase() || '—'}</div>
             </div>
-            <div className="flex flex-col">
-              <input value={profile.nombre || ''} placeholder="Nombre" className="border rounded px-3 py-2 bg-gray-100 text-gray-700 w-72" disabled />
+            <div className="min-w-0">
+              <p className="settings-subtext text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Nombre</p>
+              <p className="settings-heading font-semibold text-slate-800 dark:text-slate-100 truncate">{profile.nombre || '—'}</p>
+              <p className="settings-subtext text-sm text-slate-500 dark:text-slate-400 truncate">{profile.email || 'Sin email'}</p>
             </div>
           </div>
-        </div>
-      </section>
-      </section>
+        </section>
 
-      <section className="mb-6">
-        <h3 className="font-semibold mb-2">Contacto del alumno</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input value={profile.email || ''} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} placeholder="Email" className="border rounded px-3 py-2" />
-          <input value={profile.telefono || ''} onChange={e => setProfile(p => ({ ...p, telefono: e.target.value }))} placeholder="Teléfono" className="border rounded px-3 py-2" />
-          <input value={profile.direccion || ''} onChange={e => setProfile(p => ({ ...p, direccion: e.target.value }))} placeholder="Dirección" className="border rounded px-3 py-2 col-span-1 sm:col-span-2" />
-        </div>
-      </section>
+        <section className="settings-surface xl:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm p-5 sm:p-6">
+          <h3 className="settings-heading font-semibold text-slate-900 dark:text-slate-100 mb-4">Contacto del alumno</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="settings-subtext block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">Email</label>
+              <input value={profile.email || ''} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} placeholder="Email" className="settings-input w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800" />
+            </div>
+            <div>
+              <label className="settings-subtext block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">Teléfono</label>
+              <input value={profile.telefono || ''} onChange={e => setProfile(p => ({ ...p, telefono: e.target.value }))} placeholder="Teléfono" className="settings-input w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="settings-subtext block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">Dirección</label>
+              <input value={profile.direccion || ''} onChange={e => setProfile(p => ({ ...p, direccion: e.target.value }))} placeholder="Dirección" className="settings-input w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800" />
+            </div>
+          </div>
 
-      <section className="mb-6">
-        <h3 className="font-semibold mb-2">Seguridad</h3>
-        <div className="flex gap-4">
-          <button onClick={() => setChangePwdOpen(true)} className="bg-gray-100 px-4 py-2 rounded">Cambiar contraseña</button>
-        </div>
-      </section>
+          <div className="mt-5 pt-5 border-t border-slate-200 dark:border-slate-700 settings-divider">
+            <h3 className="settings-heading font-semibold text-slate-900 dark:text-slate-100 mb-3">Seguridad</h3>
+            <button onClick={() => setChangePwdOpen(true)} className="settings-btn-neutral inline-flex items-center px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Cambiar contraseña</button>
+          </div>
 
-      <div className="flex gap-3 mt-4">
-        <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded">Guardar</button>
-        <button onClick={handleReset} className="bg-gray-200 px-4 py-2 rounded">Restaurar</button>
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <button onClick={handleSave} className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors font-medium">Guardar</button>
+            <button onClick={handleReset} className="settings-btn-neutral px-5 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors font-medium">Restaurar</button>
+          </div>
+        </section>
       </div>
 
       <ChangePasswordModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} user={user} />

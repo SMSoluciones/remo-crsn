@@ -53,6 +53,11 @@ export default function Remar({ isOpen, onRequestClose, boatsList = [], activeBo
               );
             })}
           </select>
+          {boatsList.length === 0 && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              No tenes botes habilitados todavia
+            </p>
+          )}
 
           <label className="text-sm font-medium">Duración estimada</label>
           <div className="flex gap-2">

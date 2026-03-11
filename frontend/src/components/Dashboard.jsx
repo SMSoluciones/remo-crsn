@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [repairBoats, setRepairBoats] = useState(null);
   const [boatsError, setBoatsError] = useState(null);
   const [enabledBoatsCount, setEnabledBoatsCount] = useState(0);
+  const [enabledBoatIds, setEnabledBoatIds] = useState([]);
   const [loggedUserStatus, setLoggedUserStatus] = useState('—');
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
@@ -70,10 +71,23 @@ export default function Dashboard() {
   const [conflictUsage, setConflictUsage] = useState(null);
   const isUserInactive = loggedUserStatus === 'INACTIVO';
   const isRemarDisabled = !!userActiveUsage || isUserInactive;
+  const isAlumnoRole = role === 'alumno' || role === 'alumnos';
+  const boatsForRemar = isAlumnoRole
+    ? boatsList.filter((boat) => enabledBoatIds.includes(String(boat?._id || boat?.id || '')))
+    : boatsList;
+  const remarDisabledReason = isUserInactive
+    ? 'Tu estado es INACTIVO'
+    : userActiveUsage
+      ? 'Tenes una sesion activa en curso'
+      : '';
 
   const handleOpenRemarAttempt = () => {
     if (isUserInactive) {
       showError('Tu estado es INACTIVO. No puedes iniciar REMAR.');
+      return;
+    }
+    if (isAlumnoRole && boatsForRemar.length === 0) {
+      showError('No tenes botes habilitados todavia');
       return;
     }
     if (userActiveUsage) {
@@ -158,9 +172,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     let mounted = true;
-    const isAlumno = role === 'alumno' || role === 'alumnos';
-    if (!isAlumno) {
+    if (!isAlumnoRole) {
       setEnabledBoatsCount(0);
+      setEnabledBoatIds([]);
       setLoggedUserStatus('—');
       return () => { mounted = false; };
     }
@@ -206,18 +220,30 @@ export default function Dashboard() {
         const found = byDocumento || byEmail || byLocalStorage || byName || null;
 
         const enabled = Array.isArray(found?.botesHabilitados) ? found.botesHabilitados.length : 0;
+        const enabledIds = Array.isArray(found?.botesHabilitados)
+          ? found.botesHabilitados
+            .map((boatRef) => {
+              if (!boatRef) return '';
+              if (typeof boatRef === 'string') return boatRef;
+              return boatRef._id || boatRef.id || '';
+            })
+            .map((id) => String(id).trim())
+            .filter(Boolean)
+          : [];
         const status = String(found?.estado || '—').trim().toUpperCase();
         setEnabledBoatsCount(enabled);
+        setEnabledBoatIds(enabledIds);
         setLoggedUserStatus(status || '—');
       })
       .catch(() => {
         if (!mounted) return;
         setEnabledBoatsCount(0);
+        setEnabledBoatIds([]);
         setLoggedUserStatus('—');
       });
 
     return () => { mounted = false; };
-  }, [role, user]);
+  }, [isAlumnoRole, role, user]);
 
   // Init AOS for dashboard animations
   useEffect(() => {
@@ -421,21 +447,24 @@ export default function Dashboard() {
         </div>
       </div>
       {/* Responsive inline buttons for small screens: under action buttons and above Estadísticas */}
-      <div className="md:hidden w-full max-w-6xl mx-auto px-2 mt-4 mb-4 flex gap-4 items-center justify-center">
+      <div className="md:hidden w-full max-w-6xl mx-auto px-2 mt-3 mb-3 flex flex-col gap-1.5 items-center justify-center">
         {userActiveUsage && (
-          <button
-            data-aos="zoom-in"
-            data-aos-duration="400"
-            data-aos-delay="80"
-            data-aos-immediate="true"
-            onClick={() => userActiveUsage && setIsStopModalOpen(true)}
-            aria-label="Detener remada"
-            className={`transform transition-all duration-300 scale-100 opacity-100 bg-red-600 hover:bg-red-700 text-white rounded-full w-16 h-16 shadow flex items-center justify-center`}
-          >
-            <div className="bg-white w-6 h-6 rounded-md shadow-inner" aria-hidden="true" />
-          </button>
+          <>
+            <button
+              data-aos="zoom-in"
+              data-aos-duration="400"
+              data-aos-delay="80"
+              data-aos-immediate="true"
+              onClick={() => userActiveUsage && setIsStopModalOpen(true)}
+              aria-label="Detener Remar"
+              className="transform transition-all duration-300 scale-100 opacity-100 bg-red-600 hover:bg-red-700 text-white rounded-xl px-5 py-3 shadow flex items-center justify-center gap-2 min-w-[210px]"
+            >
+              <span className="inline-flex w-4 h-4 rounded-sm bg-white shadow-inner" aria-hidden="true" />
+              <span className="font-semibold">Detener Remar</span>
+            </button>
+          </>
         )}
-        {/* Mobile Play button (visible only on small screens) */}
+        {/* Mobile REMAR primary CTA */}
         <button
           data-aos="zoom-in"
           data-aos-duration="400"
@@ -444,12 +473,16 @@ export default function Dashboard() {
           onClick={() => handleOpenRemarAttempt()}
           disabled={isRemarDisabled}
           aria-disabled={isRemarDisabled}
-          className={`${isRemarDisabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'} rounded-full w-16 h-16 shadow flex items-center justify-center`}
+          className={`${isRemarDisabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'} rounded-xl px-5 py-3 shadow flex items-center justify-center gap-2 min-w-[210px]`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`w-6 h-6 ${isRemarDisabled ? 'text-gray-500' : 'text-white'}`} aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
           </svg>
+          <span className="font-semibold">Iniciar Remar</span>
         </button>
+        <p className="text-xs text-slate-500 text-center px-2 mt-1">
+          {isRemarDisabled ? remarDisabledReason : 'Inicia una sesion de uso de bote y registra la salida.'}
+        </p>
       </div>
       {/* Floating Stop button + Modal */}
       {userActiveUsage && (
@@ -460,10 +493,11 @@ export default function Dashboard() {
             data-aos-delay="60"
             data-aos-immediate="true"
             onClick={() => userActiveUsage && setIsStopModalOpen(true)}
-            aria-label="Detener remada"
-            className={`hidden md:flex fixed bottom-32 right-6 z-50 rounded-full w-20 h-20 shadow-lg items-center justify-center transform transition-all duration-300 ${userActiveUsage ? 'scale-100 opacity-100 bg-red-600 hover:bg-red-700 text-white' : 'scale-0 opacity-0 pointer-events-none bg-red-600 text-white'}`}
+            aria-label="Detener Remar"
+            className={`hidden md:flex fixed bottom-24 right-6 z-50 rounded-xl px-5 py-3 shadow-lg items-center justify-center gap-2 transform transition-all duration-300 ${userActiveUsage ? 'scale-100 opacity-100 bg-red-600 hover:bg-red-700 text-white' : 'scale-0 opacity-0 pointer-events-none bg-red-600 text-white'}`}
           >
-            <div className="bg-white w-8 h-8 rounded-md shadow-inner" aria-hidden="true" />
+            <span className="inline-flex w-4 h-4 rounded-sm bg-white shadow-inner" aria-hidden="true" />
+            <span className="font-semibold">Detener Remar</span>
           </button>
 
           {isStopModalOpen && (
@@ -541,11 +575,12 @@ export default function Dashboard() {
         aria-label="Abrir Remar"
         disabled={isRemarDisabled}
         aria-disabled={isRemarDisabled}
-        className={`${isRemarDisabled ? 'hidden md:flex fixed bottom-6 right-6 z-50 bg-gray-300 text-gray-500 cursor-not-allowed' : 'hidden md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white'} rounded-full w-20 h-20 shadow-lg items-center justify-center`}
+        className={`${isRemarDisabled ? 'hidden md:flex fixed bottom-6 right-6 z-50 bg-gray-300 text-gray-500 cursor-not-allowed' : 'hidden md:flex fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white'} rounded-xl px-5 py-3 shadow-lg items-center justify-center gap-2`}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-white" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`w-6 h-6 ${isRemarDisabled ? 'text-gray-500' : 'text-white'}`} aria-hidden="true">
           <path fillRule="evenodd" clipRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
         </svg>
+        <span className="font-semibold">Iniciar Remar</span>
       </button>
       {/* duplicate button removed to avoid duplicate rendering */}
       {/* REMAR History Modal (migrado a componente) */}
@@ -663,6 +698,13 @@ export default function Dashboard() {
               <ArrowUpRightIcon className="w-6 h-6" />
             </button>
           </div>
+          <div className="mt-3">
+            <p className={`text-sm ${isRemarDisabled ? 'text-slate-600' : 'text-blue-100'}`}>
+              {isRemarDisabled
+                ? `No disponible: ${remarDisabledReason}.`
+                : 'Inicia una sesion para registrar salida, tiempo y retorno del bote.'}
+            </p>
+          </div>
         </div>
 
         <div data-aos="fade-up" data-aos-duration="700" data-aos-delay="500" className="dashboard-surface bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 rounded-3xl p-4 shadow-xl border border-slate-200/80 dark:border-slate-700 h-auto md:h-52 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl relative overflow-hidden w-full max-w-xs sm:max-w-full mx-auto sm:mx-0 min-w-0 box-border">
@@ -764,7 +806,7 @@ export default function Dashboard() {
         <Remar
           isOpen={isRemarOpen}
           onRequestClose={() => setIsRemarOpen(false)}
-          boatsList={boatsList}
+          boatsList={boatsForRemar}
           activeBoatLocks={activeBoatLocks}
           user={user}
           isRemarHistoryOpen={isRemarHistoryOpen}
