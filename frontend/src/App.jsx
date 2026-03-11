@@ -91,12 +91,31 @@ function MainApp() {
     if (item.section === 'sheets' && user?.rol === 'alumnos') return false;
     return true;
   });
+  const dashboardNavItem = visibleNavItems.find((item) => item.section === 'dashboard');
+  const secondaryNavItems = visibleNavItems.filter((item) => item.section !== 'dashboard');
 
   return (
     <div className={`flex min-h-screen ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-gray-100 text-slate-900'}`}>
       <aside className={`hidden md:flex md:flex-col h-screen w-24 items-center py-8 gap-8 fixed left-0 top-0 z-20 shadow-lg ${theme === 'dark' ? 'bg-slate-900 border-r border-slate-700' : 'bg-white border-r border-slate-200'}`}>
-        <img src="icon.svg" alt="" className="h-10 w-10" />
-        {/* Botón Mi Perfil arriba del Dashboard */}
+        <button
+          onClick={() => setSection('dashboard')}
+          className="focus:outline-none"
+          aria-label="Ir al Dashboard"
+          title="Dashboard"
+        >
+          <img src="icon.svg" alt="Club" className="h-10 w-10" />
+        </button>
+        {dashboardNavItem && (
+          <button
+            className={`flex flex-col items-center gap-1 transition ${theme === 'dark' ? 'text-slate-400 hover:text-emerald-400 focus:text-emerald-400' : 'text-gray-500 hover:text-green-700 focus:text-green-700'} ${section === dashboardNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
+            onClick={() => setSection(dashboardNavItem.section)}
+            title={dashboardNavItem.label}
+          >
+            {dashboardNavItem.icon}
+            <span className="text-xs font-medium">{dashboardNavItem.label}</span>
+          </button>
+        )}
+        {/* Botón Mi Perfil debajo de Dashboard */}
         {user && (() => {
           const currentRole = String(user?.rol || '').trim().toLowerCase();
           const isEnabled = currentRole === 'alumnos' || currentRole === 'alumno';
@@ -125,7 +144,7 @@ function MainApp() {
             
           );
         })()}
-        {visibleNavItems.map(item => (
+        {secondaryNavItems.map(item => (
           <button
             key={item.section}
             className={`flex flex-col items-center gap-1 transition ${theme === 'dark' ? 'text-slate-400 hover:text-emerald-400 focus:text-emerald-400' : 'text-gray-500 hover:text-green-700 focus:text-green-700'} ${section === item.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
@@ -146,7 +165,27 @@ function MainApp() {
             aria-hidden="true"
           />
           <aside data-aos="fade-right" data-aos-duration="500" className={`fixed left-0 top-0 h-full w-64 shadow p-6 z-50 ${theme === 'dark' ? 'bg-slate-900 border-r border-slate-700' : 'bg-white border-r border-slate-200'}`}>
-            <img src="icon.svg" alt="" className="h-10 w-10 mb-6" />
+            <button
+              onClick={() => {
+                setSection('dashboard');
+                setMobileMenuOpen(false);
+              }}
+              className="focus:outline-none mb-6"
+              aria-label="Ir al Dashboard"
+              title="Dashboard"
+            >
+              <img src="icon.svg" alt="Club" className="h-10 w-10" />
+            </button>
+            {dashboardNavItem && (
+              <button
+                className={`flex items-center gap-3 w-full text-left py-3 ${theme === 'dark' ? 'text-slate-200 hover:text-emerald-400' : 'text-gray-700 hover:text-green-700'} ${section === dashboardNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
+                onClick={() => { setSection(dashboardNavItem.section); setMobileMenuOpen(false); }}
+                title={dashboardNavItem.label}
+              >
+                {dashboardNavItem.icon}
+                <span className="font-medium">{dashboardNavItem.label}</span>
+              </button>
+            )}
             {user && (() => {
               const currentRole = String(user?.rol || '').trim().toLowerCase();
               const isEnabled = currentRole === 'alumnos' || currentRole === 'alumno';
@@ -174,7 +213,7 @@ function MainApp() {
                 </button>
               );
             })()}
-            {visibleNavItems.map(item => (
+            {secondaryNavItems.map(item => (
               <button
                 key={item.section}
                 className={`flex items-center gap-3 w-full text-left py-3 ${theme === 'dark' ? 'text-slate-200 hover:text-emerald-400' : 'text-gray-700 hover:text-green-700'} ${section === item.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}

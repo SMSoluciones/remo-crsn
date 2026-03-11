@@ -8,6 +8,7 @@ import { fetchStudents } from '../../models/Student';
 
 const MAX_NOTIFICATIONS = 120;
 const POLL_MS = 30000;
+const NOTIFICATION_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 
 function normalizeId(value) {
   return String(value || '').trim();
@@ -30,6 +31,17 @@ function buildStorageKey(user) {
   const email = normalizeText(user?.email).toLowerCase();
   const dni = normalizeText(user?.documento || user?.dni);
   return `notifications_state_${uid || email || dni || 'anon'}`;
+}
+
+function pruneOldNotifications(items) {
+  const now = Date.now();
+  const list = Array.isArray(items) ? items : [];
+  return list.filter((item) => {
+    const ts = new Date(item?.createdAt).getTime();
+    // Keep legacy notifications that may not have a valid createdAt.
+    if (!Number.isFinite(ts)) return true;
+    return now - ts <= NOTIFICATION_RETENTION_MS;
+  });
 }
 
 function findStudentIdForUser(students, user) {
@@ -94,6 +106,7 @@ export default function NotificationsBell({ user, theme = 'light' }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const containerRef = useRef(null);
+  const openRef = useRef(false);
   const storageRef = useRef({
     boatsSnapshot: {},
     knownAnnouncementIds: [],
@@ -121,13 +134,18 @@ export default function NotificationsBell({ user, theme = 'light' }) {
   const appendNotifications = useCallback((newItems) => {
     const compact = aggregateNotifications(newItems);
     if (!Array.isArray(compact) || compact.length === 0) return;
+    const incoming = openRef.current ? compact.map((item) => ({ ...item, read: true })) : compact;
     setNotifications((prev) => {
-      const merged = [...compact, ...prev].slice(0, MAX_NOTIFICATIONS);
+      const merged = pruneOldNotifications([...incoming, ...prev]).slice(0, MAX_NOTIFICATIONS);
       const nextState = { ...storageRef.current, notifications: merged };
       persistState(nextState);
       return merged;
     });
   }, [persistState]);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   useEffect(() => {
     try {
@@ -140,10 +158,15 @@ export default function NotificationsBell({ user, theme = 'light' }) {
         initializedAnnouncements: !!raw.initializedAnnouncements,
         initializedEvents: !!raw.initializedEvents,
         initializedSheets: !!raw.initializedSheets,
-        notifications: Array.isArray(raw.notifications) ? raw.notifications : [],
+        notifications: pruneOldNotifications(Array.isArray(raw.notifications) ? raw.notifications : []),
       };
       storageRef.current = normalized;
       setNotifications(normalized.notifications);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(normalized));
+      } catch (err) {
+        console.warn('No se pudo persistir limpieza de notificaciones antiguas', err);
+      }
     } catch (err) {
       console.warn('No se pudo cargar estado de notificaciones', err);
       setNotifications([]);
@@ -309,7 +332,7 @@ export default function NotificationsBell({ user, theme = 'light' }) {
         }
 
         if (!mounted) return;
-        nextState.notifications = storageRef.current.notifications || [];
+        nextState.notifications = pruneOldNotifications(storageRef.current.notifications || []);
         persistState(nextState);
         appendNotifications(pending);
       } catch (err) {
@@ -342,13 +365,13 @@ export default function NotificationsBell({ user, theme = 'light' }) {
     };
   }, []);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = useCallback(() => {
     setNotifications((prev) => {
       const next = prev.map((n) => ({ ...n, read: true }));
       persistState({ ...storageRef.current, notifications: next });
       return next;
     });
-  };
+  }, [persistState]);
 
   const clearAllNotifications = () => {
     setNotifications(() => {
@@ -361,10 +384,14 @@ export default function NotificationsBell({ user, theme = 'light' }) {
   const toggleOpen = () => {
     setOpen((prev) => {
       const next = !prev;
-      if (!prev && unreadCount > 0) markAllAsRead();
       return next;
     });
   };
+
+  useEffect(() => {
+    if (!open) return;
+    markAllAsRead();
+  }, [open, markAllAsRead]);
 
   return (
     <div ref={containerRef} className="relative">

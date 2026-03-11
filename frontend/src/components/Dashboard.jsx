@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [totalBoats, setTotalBoats] = useState(null);
   const [activeBoats, setActiveBoats] = useState(null);
   const [repairBoats, setRepairBoats] = useState(null);
+  const [boatsLoading, setBoatsLoading] = useState(true);
   const [boatsError, setBoatsError] = useState(null);
   const [enabledBoatsCount, setEnabledBoatsCount] = useState(0);
   const [enabledBoatIds, setEnabledBoatIds] = useState([]);
@@ -70,8 +71,9 @@ export default function Dashboard() {
   const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
   const [conflictUsage, setConflictUsage] = useState(null);
   const isUserInactive = loggedUserStatus === 'INACTIVO';
-  const isRemarDisabled = !!userActiveUsage || isUserInactive;
   const isAlumnoRole = role === 'alumno' || role === 'alumnos';
+  const isRemarLoadingPermissions = isAlumnoRole && (enabledBoatsCount === null || boatsLoading);
+  const isRemarDisabled = !!userActiveUsage || isUserInactive || isRemarLoadingPermissions;
   const boatsForRemar = isAlumnoRole
     ? boatsList.filter((boat) => enabledBoatIds.includes(String(boat?._id || boat?.id || '')))
     : boatsList;
@@ -79,9 +81,14 @@ export default function Dashboard() {
     ? 'Tu estado es INACTIVO'
     : userActiveUsage
       ? 'Tenes una sesion activa en curso'
-      : '';
+      : isRemarLoadingPermissions
+        ? 'Cargando botes habilitados...'
+        : '';
 
   const handleOpenRemarAttempt = () => {
+    if (isRemarLoadingPermissions) {
+      return;
+    }
     if (isUserInactive) {
       showError('Tu estado es INACTIVO. No puedes iniciar REMAR.');
       return;
@@ -294,6 +301,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     let mounted = true;
+    setBoatsLoading(true);
     fetchBoats()
       .then((list) => {
         if (!mounted) return;
@@ -316,6 +324,10 @@ export default function Dashboard() {
         setTotalBoats(0);
         setActiveBoats(0);
         setRepairBoats(0);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setBoatsLoading(false);
       });
     return () => { mounted = false };
   }, []);
@@ -451,10 +463,6 @@ export default function Dashboard() {
         {userActiveUsage && (
           <>
             <button
-              data-aos="zoom-in"
-              data-aos-duration="400"
-              data-aos-delay="80"
-              data-aos-immediate="true"
               onClick={() => userActiveUsage && setIsStopModalOpen(true)}
               aria-label="Detener Remar"
               className="transform transition-all duration-300 scale-100 opacity-100 bg-red-600 hover:bg-red-700 text-white rounded-xl px-5 py-3 shadow flex items-center justify-center gap-2 min-w-[210px]"
@@ -466,10 +474,6 @@ export default function Dashboard() {
         )}
         {/* Mobile REMAR primary CTA */}
         <button
-          data-aos="zoom-in"
-          data-aos-duration="400"
-          data-aos-delay="140"
-          data-aos-immediate="true"
           onClick={() => handleOpenRemarAttempt()}
           disabled={isRemarDisabled}
           aria-disabled={isRemarDisabled}
@@ -488,10 +492,6 @@ export default function Dashboard() {
       {userActiveUsage && (
         <>
           <button
-            data-aos="zoom-in"
-            data-aos-duration="450"
-            data-aos-delay="60"
-            data-aos-immediate="true"
             onClick={() => userActiveUsage && setIsStopModalOpen(true)}
             aria-label="Detener Remar"
             className={`hidden md:flex fixed bottom-24 right-6 z-50 rounded-xl px-5 py-3 shadow-lg items-center justify-center gap-2 transform transition-all duration-300 ${userActiveUsage ? 'scale-100 opacity-100 bg-red-600 hover:bg-red-700 text-white' : 'scale-0 opacity-0 pointer-events-none bg-red-600 text-white'}`}
@@ -567,10 +567,6 @@ export default function Dashboard() {
       )}
       {/* Shortcut button to open Remar modal (orange, play icon) */}
       <button
-        data-aos="zoom-in"
-        data-aos-duration="450"
-        data-aos-delay="120"
-        data-aos-immediate="true"
         onClick={() => handleOpenRemarAttempt()}
         aria-label="Abrir Remar"
         disabled={isRemarDisabled}
@@ -675,10 +671,6 @@ export default function Dashboard() {
           {/* Casillero principal */}
         {/* REMAR (same size as Eventos) */}
         <div
-          data-aos="zoom-in"
-          data-aos-duration="700"
-          data-aos-delay="480"
-          data-aos-immediate="true"
           role="button"
           tabIndex={isRemarDisabled ? -1 : 0}
           onClick={() => { if (!isRemarDisabled) handleOpenRemarAttempt(); }}
