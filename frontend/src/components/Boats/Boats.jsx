@@ -8,17 +8,26 @@ import { AuthContext } from '../../context/AuthContext';
 import AddBoatReportModal from './AddBoatReportModal';
 import ManageReportsModal from './ManageReportsModal';
 import ManageBoatsModal from './ManageBoatsModal';
+import ManageOarsModal from './ManageOarsModal';
+import ManageSeatsModal from './ManageSeatsModal';
 import BoatTechnicalSheetModal from './BoatTechnicalSheetModal';
 import Remar from '../Remar/Remar';
 import { fetchBoatReports, deleteBoatReport } from '../../models/BoatReport';
 import { fetchBoatUsages } from '../../models/BoatUsage';
+import { fetchOars, OarStatus } from '../../models/Oar';
+import { fetchSeats, SeatStatus } from '../../models/Seat';
 import { showError, showSuccess } from '../../utils/toast';
 
 export default function Boats() {
+  const [activeTab, setActiveTab] = useState('botes');
   const [boats, setBoats] = useState([]); // Asegurar que el estado inicial sea un array vacío
+  const [oars, setOars] = useState([]);
+  const [seats, setSeats] = useState([]);
   const [showAddReportModal, setShowAddReportModal] = useState(false);
   const [showManageReportsModal, setShowManageReportsModal] = useState(false);
   const [showManageBoatsModal, setShowManageBoatsModal] = useState(false);
+  const [showManageOarsModal, setShowManageOarsModal] = useState(false);
+  const [showManageSeatsModal, setShowManageSeatsModal] = useState(false);
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [showRemarModal, setShowRemarModal] = useState(false);
@@ -26,6 +35,9 @@ export default function Boats() {
   const [showTechnicalSheetModal, setShowTechnicalSheetModal] = useState(false);
   const [selectedBoat, setSelectedBoat] = useState(null);
   const [activeBoatLocks, setActiveBoatLocks] = useState({});
+  const [filterOarTipo, setFilterOarTipo] = useState('');
+  const [filterOarEstado, setFilterOarEstado] = useState('');
+  const [filterSeatEstado, setFilterSeatEstado] = useState('');
   const { user } = useContext(AuthContext);
   const role = String(user?.rol || '').trim().toLowerCase();
   const canDeleteReports = ['admin', 'subcomision'].includes(role);
@@ -88,6 +100,22 @@ export default function Boats() {
         console.error('Error cargando botes:');
       }
     })();
+    (async () => {
+      try {
+        const data = await fetchOars().catch(() => []);
+        setOars(Array.isArray(data) ? data : []);
+      } catch {
+        console.error('Error cargando remos:');
+      }
+    })();
+    (async () => {
+      try {
+        const data = await fetchSeats().catch(() => []);
+        setSeats(Array.isArray(data) ? data : []);
+      } catch {
+        console.error('Error cargando asientos:');
+      }
+    })();
     // load active boat usages / locks
     loadActiveLocks();
     // load reports
@@ -130,10 +158,20 @@ export default function Boats() {
   const filteredBoats = boats.filter(b =>
     (!filterTipo || b.tipo === filterTipo) && (!filterEstado || b.estado === filterEstado)
   );
+  const filteredOars = oars.filter((oar) =>
+    (!filterOarTipo || oar.tipo === filterOarTipo) && (!filterOarEstado || oar.estado === filterOarEstado)
+  );
+  const filteredSeats = seats.filter((seat) => !filterSeatEstado || seat.estado === filterSeatEstado);
 
   const activeBoatsCount = boats.filter((b) => b.estado === 'activo').length;
   const maintenanceBoatsCount = boats.filter((b) => b.estado === 'mantenimiento').length;
   const outOfServiceBoatsCount = boats.filter((b) => b.estado === 'fuera_servicio').length;
+  const activeOarsCount = oars.filter((o) => o.estado === 'activo').length;
+  const maintenanceOarsCount = oars.filter((o) => o.estado === 'mantenimiento').length;
+  const outOfServiceOarsCount = oars.filter((o) => o.estado === 'fuera_servicio').length;
+  const activeSeatsCount = seats.filter((s) => s.estado === 'activo').length;
+  const maintenanceSeatsCount = seats.filter((s) => s.estado === 'mantenimiento').length;
+  const outOfServiceSeatsCount = seats.filter((s) => s.estado === 'fuera_servicio').length;
 
   const statusLabel = (status) => {
     if (status === 'activo') return 'Activo';
@@ -163,26 +201,38 @@ export default function Boats() {
             <div className="bg-gray-50 min-h-screen px-4 py-8 sm:px-10 sm:py-10 flex flex-col md:flex-row gap-8 w-full sm:max-w-7xl mx-auto" data-aos="fade-up">
               <div className="flex-1 flex flex-col gap-8">
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+                  <div className="mb-4 inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1">
+                    <button type="button" onClick={() => setActiveTab('botes')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${activeTab === 'botes' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>Gestion de Botes</button>
+                    <button type="button" onClick={() => setActiveTab('remos')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${activeTab === 'remos' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>Registro de Remos</button>
+                    <button type="button" onClick={() => setActiveTab('asientos')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${activeTab === 'asientos' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>Registro de Asientos</button>
+                  </div>
+
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <LifebuoyIcon className="h-7 w-7 text-emerald-700" />
-                        <h2 className="text-2xl font-bold text-slate-800">Gestión de Botes</h2>
+                        <h2 className="text-2xl font-bold text-slate-800">{activeTab === 'botes' ? 'Gestión de Botes' : activeTab === 'remos' ? 'Registro de Remos' : 'Registro de Asientos'}</h2>
                       </div>
-                      <p className="text-sm text-slate-600">Controlá el estado de la flota y gestioná reportes de forma centralizada.</p>
+                      <p className="text-sm text-slate-600">
+                        {activeTab === 'botes'
+                          ? 'Controla el estado de la flota y gestiona reportes de forma centralizada.'
+                          : activeTab === 'remos'
+                            ? 'Registra cada par de remo por tipo (hacha/cuchara), largo y estado.'
+                            : 'Registra y controla el estado operativo de cada asiento.'}
+                      </p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full lg:w-auto lg:min-w-[360px]">
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2 sm:px-3 py-2 text-center">
                         <div className="text-[11px] sm:text-xs uppercase tracking-wide text-emerald-700">Activos</div>
-                        <div className="text-lg sm:text-xl font-bold text-emerald-800 leading-tight">{activeBoatsCount}</div>
+                        <div className="text-lg sm:text-xl font-bold text-emerald-800 leading-tight">{activeTab === 'botes' ? activeBoatsCount : activeTab === 'remos' ? activeOarsCount : activeSeatsCount}</div>
                       </div>
                       <div className="rounded-xl border border-amber-200 bg-amber-50 px-2 sm:px-3 py-2 text-center">
                         <div className="text-[11px] sm:text-xs uppercase tracking-wide text-amber-700">Manten.</div>
-                        <div className="text-lg sm:text-xl font-bold text-amber-800 leading-tight">{maintenanceBoatsCount}</div>
+                        <div className="text-lg sm:text-xl font-bold text-amber-800 leading-tight">{activeTab === 'botes' ? maintenanceBoatsCount : activeTab === 'remos' ? maintenanceOarsCount : maintenanceSeatsCount}</div>
                       </div>
                       <div className="rounded-xl border border-red-200 bg-red-50 px-2 sm:px-3 py-2 text-center">
                         <div className="text-[11px] sm:text-xs uppercase tracking-wide text-red-700">Fuera serv.</div>
-                        <div className="text-lg sm:text-xl font-bold text-red-800 leading-tight">{outOfServiceBoatsCount}</div>
+                        <div className="text-lg sm:text-xl font-bold text-red-800 leading-tight">{activeTab === 'botes' ? outOfServiceBoatsCount : activeTab === 'remos' ? outOfServiceOarsCount : outOfServiceSeatsCount}</div>
                       </div>
                     </div>
                   </div>
@@ -190,30 +240,80 @@ export default function Boats() {
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-end">
-                    <div className="w-full sm:w-auto">
-                      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Tipo</label>
-                      <div className="flex items-center gap-2">
-                        <FunnelIcon className="h-5 w-5 text-slate-400" />
-                        <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="w-full sm:w-40 border border-slate-300 rounded-lg px-3 py-2 bg-white">
-                        <option value="">Tipo</option>
-                        {BoatTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    </div>
-                    <div className="w-full sm:w-auto">
-                      <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Estado</label>
-                      <div className="flex items-center gap-2">
-                        <FunnelIcon className="h-5 w-5 text-slate-400" />
-                        <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="w-full sm:w-44 border border-slate-300 rounded-lg px-3 py-2 bg-white">
-                        <option value="">Estado</option>
-                        {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                    </div>
+                    {activeTab === 'botes' && (
+                      <>
+                        <div className="w-full sm:w-auto">
+                          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Tipo</label>
+                          <div className="flex items-center gap-2">
+                            <FunnelIcon className="h-5 w-5 text-slate-400" />
+                            <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="w-full sm:w-40 border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                              <option value="">Tipo</option>
+                              {BoatTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="w-full sm:w-auto">
+                          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Estado</label>
+                          <div className="flex items-center gap-2">
+                            <FunnelIcon className="h-5 w-5 text-slate-400" />
+                            <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="w-full sm:w-44 border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                              <option value="">Estado</option>
+                              {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab === 'remos' && (
+                      <>
+                        <div className="w-full sm:w-auto">
+                          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Tipo</label>
+                          <div className="flex items-center gap-2">
+                            <FunnelIcon className="h-5 w-5 text-slate-400" />
+                            <select value={filterOarTipo} onChange={e => setFilterOarTipo(e.target.value)} className="w-full sm:w-40 border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                              <option value="">Tipo</option>
+                              <option value="hacha">hacha</option>
+                              <option value="cuchara">cuchara</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="w-full sm:w-auto">
+                          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Estado</label>
+                          <div className="flex items-center gap-2">
+                            <FunnelIcon className="h-5 w-5 text-slate-400" />
+                            <select value={filterOarEstado} onChange={e => setFilterOarEstado(e.target.value)} className="w-full sm:w-44 border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                              <option value="">Estado</option>
+                              {Object.values(OarStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab === 'asientos' && (
+                      <div className="w-full sm:w-auto">
+                        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Estado</label>
+                        <div className="flex items-center gap-2">
+                          <FunnelIcon className="h-5 w-5 text-slate-400" />
+                          <select value={filterSeatEstado} onChange={e => setFilterSeatEstado(e.target.value)} className="w-full sm:w-44 border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                            <option value="">Estado</option>
+                            {Object.values(SeatStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => { setFilterTipo(''); setFilterEstado(''); }}
+                        onClick={() => {
+                          setFilterTipo('');
+                          setFilterEstado('');
+                          setFilterOarTipo('');
+                          setFilterOarEstado('');
+                          setFilterSeatEstado('');
+                        }}
                         className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
                       >
                         Limpiar filtros
@@ -221,81 +321,119 @@ export default function Boats() {
                     </div>
                   </div>
                 </div>
-                {/* Mobile: cards list (show on <sm) */}
-                <div className="sm:hidden space-y-4" data-aos="fade-left">
-                  {filteredBoats.map((b, index) => (
-                    <button
-                      type="button"
-                      key={b.id || index}
-                      onClick={() => handleOpenTechnicalSheet(b)}
-                      className="w-full text-left bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-4 hover:border-emerald-300 hover:shadow transition"
-                    >
-                      <div className="flex items-start gap-4">
-                        <Avatar name={b.nombre} size="40" round={true} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="font-semibold text-lg leading-tight text-gray-900">{b.nombre}</div>
-                              <div className="text-sm text-gray-600 flex flex-wrap items-center gap-2 mt-1">
-                                <span className="capitalize">{b.tipo}</span>
-                                <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800 whitespace-nowrap">{b.row !== undefined && b.row !== null ? `Remo ${b.row}` : 'Remo —'}</span>
+
+                {activeTab === 'botes' && (
+                  <>
+                    <div className="sm:hidden space-y-4" data-aos="fade-left">
+                      {filteredBoats.map((b, index) => (
+                        <button
+                          type="button"
+                          key={b.id || index}
+                          onClick={() => handleOpenTechnicalSheet(b)}
+                          className="w-full text-left bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-4 hover:border-emerald-300 hover:shadow transition"
+                        >
+                          <div className="flex items-start gap-4">
+                            <Avatar name={b.nombre} size="40" round={true} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-semibold text-lg leading-tight text-gray-900">{b.nombre}</div>
+                                  <div className="text-sm text-gray-600 flex flex-wrap items-center gap-2 mt-1">
+                                    <span className="capitalize">{b.tipo}</span>
+                                    <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800 whitespace-nowrap">{b.row !== undefined && b.row !== null ? `Remo ${b.row}` : 'Remo -'}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0 pt-0.5">
+                                  <div className={`inline-block px-2 py-1 rounded-full ring-1 text-xs font-bold whitespace-nowrap ${statusClass(b.estado)}`}>{statusLabel(b.estado)}</div>
+                                </div>
                               </div>
-                            </div>
-                            <div className="text-right shrink-0 pt-0.5">
-                              <div className={`inline-block px-2 py-1 rounded-full ring-1 text-xs font-bold whitespace-nowrap ${statusClass(b.estado)}`}>{statusLabel(b.estado)}</div>
+                              <div className="mt-2 text-sm text-gray-500">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</div>
                             </div>
                           </div>
-                          <div className="mt-2 text-sm text-gray-500">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Desktop: table (show on sm+) */}
-                <div className="hidden sm:block overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm" data-aos="fade-left">
-                  <table className="min-w-full">
-                    <thead className="bg-slate-100 border-b border-slate-200">
-                      <tr>
-                        <th className="py-3 px-4 text-left text-slate-700 font-semibold">Nombre</th>
-                        <th className="py-3 px-4 text-left text-slate-700 font-semibold">Tipo</th>
-                        <th className="py-3 px-4 text-left text-slate-700 font-semibold">
-                          <span className="inline-flex items-center gap-1">
-                            <WrenchScrewdriverIcon className="h-4 w-4 text-amber-600" /> Estado
-                          </span>
-                        </th>
-                        <th className="py-3 px-4 text-left text-slate-700 font-semibold">Fecha Ingreso</th>
-                        <th className="py-3 px-4 text-left text-slate-700 font-semibold">Remos</th>
-                        {/* Columna 'Remar' eliminada para dar más espacio al panel derecho */}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredBoats.map((b, index) => (
-                        <tr
-                          key={b.id || index}
-                          className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
-                          onClick={() => handleOpenTechnicalSheet(b)}
-                        >
-                          <td className="py-3 px-4 flex items-center gap-2 font-medium text-slate-800">
-                            <Avatar name={b.nombre} size="28" round={true} />
-                            <span>{b.nombre}</span>
-                          </td>
-                          <td className="py-3 px-4 capitalize text-slate-700">{b.tipo}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2.5 py-1 rounded-full ring-1 text-xs font-bold ${statusClass(b.estado)}`}>{statusLabel(b.estado)}</span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-700">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</td>
-                          <td className="py-3 px-4 text-slate-700">{(b.row !== undefined && b.row !== null) ? b.row : '—'}</td>
-                          {/* Columna 'Remar' eliminada */}
-                        </tr>
+                        </button>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+
+                    <div className="hidden sm:block overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm" data-aos="fade-left">
+                      <table className="min-w-full">
+                        <thead className="bg-slate-100 border-b border-slate-200">
+                          <tr>
+                            <th className="py-3 px-4 text-left text-slate-700 font-semibold">Nombre</th>
+                            <th className="py-3 px-4 text-left text-slate-700 font-semibold">Tipo</th>
+                            <th className="py-3 px-4 text-left text-slate-700 font-semibold"><span className="inline-flex items-center gap-1"><WrenchScrewdriverIcon className="h-4 w-4 text-amber-600" /> Estado</span></th>
+                            <th className="py-3 px-4 text-left text-slate-700 font-semibold">Fecha Ingreso</th>
+                            <th className="py-3 px-4 text-left text-slate-700 font-semibold">Remos</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredBoats.map((b, index) => (
+                            <tr key={b.id || index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => handleOpenTechnicalSheet(b)}>
+                              <td className="py-3 px-4 flex items-center gap-2 font-medium text-slate-800"><Avatar name={b.nombre} size="28" round={true} /><span>{b.nombre}</span></td>
+                              <td className="py-3 px-4 capitalize text-slate-700">{b.tipo}</td>
+                              <td className="py-3 px-4"><span className={`px-2.5 py-1 rounded-full ring-1 text-xs font-bold ${statusClass(b.estado)}`}>{statusLabel(b.estado)}</span></td>
+                              <td className="py-3 px-4 text-slate-700">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</td>
+                              <td className="py-3 px-4 text-slate-700">{(b.row !== undefined && b.row !== null) ? b.row : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'remos' && (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm" data-aos="fade-left">
+                    <table className="min-w-full">
+                      <thead className="bg-slate-100 border-b border-slate-200">
+                        <tr>
+                          <th className="py-3 px-4 text-left text-slate-700 font-semibold">Par de remo</th>
+                          <th className="py-3 px-4 text-left text-slate-700 font-semibold">Tipo</th>
+                          <th className="py-3 px-4 text-left text-slate-700 font-semibold">Largo (hacha)</th>
+                          <th className="py-3 px-4 text-left text-slate-700 font-semibold">Estado</th>
+                          <th className="py-3 px-4 text-left text-slate-700 font-semibold">Fecha ingreso</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredOars.map((o, index) => (
+                          <tr key={o._id || index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-4 font-medium text-slate-800">{o.nombre}</td>
+                            <td className="py-3 px-4 capitalize text-slate-700">{o.tipo}</td>
+                            <td className="py-3 px-4 text-slate-700 capitalize">{o.tipo === 'hacha' ? (o.largoHacha || '-') : '-'}</td>
+                            <td className="py-3 px-4"><span className={`px-2.5 py-1 rounded-full ring-1 text-xs font-bold ${statusClass(o.estado)}`}>{statusLabel(o.estado)}</span></td>
+                            <td className="py-3 px-4 text-slate-700">{o.fechaIngreso ? format(new Date(o.fechaIngreso), 'dd-MM-yyyy') : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {activeTab === 'asientos' && (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm" data-aos="fade-left">
+                    <table className="min-w-full">
+                      <thead className="bg-slate-100 border-b border-slate-200">
+                        <tr>
+                          <th className="py-3 px-4 text-left text-slate-700 font-semibold">Asiento</th>
+                          <th className="py-3 px-4 text-left text-slate-700 font-semibold">Estado</th>
+                          <th className="py-3 px-4 text-left text-slate-700 font-semibold">Fecha ingreso</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSeats.map((s, index) => (
+                          <tr key={s._id || index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-4 font-medium text-slate-800">{s.nombre}</td>
+                            <td className="py-3 px-4"><span className={`px-2.5 py-1 rounded-full ring-1 text-xs font-bold ${statusClass(s.estado)}`}>{statusLabel(s.estado)}</span></td>
+                            <td className="py-3 px-4 text-slate-700">{s.fechaIngreso ? format(new Date(s.fechaIngreso), 'dd-MM-yyyy') : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
               <div className="w-full md:w-96 flex flex-col gap-8">
                 {/* Mobile: cada reporte como tarjeta individual */}
-                <div className="sm:hidden space-y-3">
+                {activeTab === 'botes' && <div className="sm:hidden space-y-3">
                   <h3 className="text-lg font-semibold mb-2 text-gray-700">Últimos reportes</h3>
                   {reportsLoading ? (
                     <div className="text-sm text-gray-500">Cargando...</div>
@@ -327,10 +465,10 @@ export default function Boats() {
                     })}
                     </>
                   )}
-                </div>
+                </div>}
 
                 {/* Desktop: card con la lista (mostrar en sm+) */}
-                <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm p-6" data-aos="fade-right">
+                {activeTab === 'botes' && <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm p-6" data-aos="fade-right">
                   <h3 className="text-lg font-semibold mb-4 text-slate-800">Últimos reportes</h3>
                   <ul className="space-y-3">
                     {reportsLoading ? (
@@ -358,15 +496,22 @@ export default function Boats() {
                       })
                     )}
                   </ul>
-                </div>
+                </div>}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6" data-aos="fade-right">
                   <h3 className="text-lg font-semibold mb-4 text-slate-800">Acciones rápidas</h3>
                   {['admin','mantenimiento','subcomision','entrenador'].includes(role) && (
-                    <button onClick={() => setShowManageBoatsModal(true)} className="w-full flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition mb-2 shadow-sm">
-                      <PlusIcon className="h-5 w-5" /> Administrar botes
+                    <button
+                      onClick={() => {
+                        if (activeTab === 'botes') setShowManageBoatsModal(true);
+                        if (activeTab === 'remos') setShowManageOarsModal(true);
+                        if (activeTab === 'asientos') setShowManageSeatsModal(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition mb-2 shadow-sm"
+                    >
+                      <PlusIcon className="h-5 w-5" /> {activeTab === 'botes' ? 'Administrar botes' : activeTab === 'remos' ? 'Administrar remos' : 'Administrar asientos'}
                     </button>
                   )}
-                  <div className="flex flex-col gap-2">
+                  {activeTab === 'botes' && <div className="flex flex-col gap-2">
                     <button onClick={() => setShowAddReportModal(true)} className="w-full flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
                       <WrenchScrewdriverIcon className="h-5 w-5" /> Reportar Falla
                     </button>
@@ -375,7 +520,7 @@ export default function Boats() {
                         <WrenchScrewdriverIcon className="h-5 w-5" /> Administrar reportes
                       </button>
                     )}
-                  </div>
+                  </div>}
                 </div>
               </div>
             </div>
@@ -413,6 +558,22 @@ export default function Boats() {
                   onRequestClose={() => { setShowManageBoatsModal(false); /* refresh */ (async () => { const data = await fetchBoats().catch(() => []); setBoats(Array.isArray(data) ? data : []); })(); }}
                   user={user}
                   onUpdated={async () => { const data = await fetchBoats().catch(() => []); setBoats(Array.isArray(data) ? data : []); }}
+                />
+              )}
+              {showManageOarsModal && (
+                <ManageOarsModal
+                  isOpen={showManageOarsModal}
+                  onRequestClose={() => { setShowManageOarsModal(false); (async () => { const data = await fetchOars().catch(() => []); setOars(Array.isArray(data) ? data : []); })(); }}
+                  user={user}
+                  onUpdated={async () => { const data = await fetchOars().catch(() => []); setOars(Array.isArray(data) ? data : []); }}
+                />
+              )}
+              {showManageSeatsModal && (
+                <ManageSeatsModal
+                  isOpen={showManageSeatsModal}
+                  onRequestClose={() => { setShowManageSeatsModal(false); (async () => { const data = await fetchSeats().catch(() => []); setSeats(Array.isArray(data) ? data : []); })(); }}
+                  user={user}
+                  onUpdated={async () => { const data = await fetchSeats().catch(() => []); setSeats(Array.isArray(data) ? data : []); }}
                 />
               )}
               {showRemarModal && (
