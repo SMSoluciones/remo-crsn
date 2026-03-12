@@ -2,6 +2,30 @@ const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
 
+function normalizeElementos(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || '').trim()).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    return value.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function buildEventPayload(body = {}) {
+  const totalEntradaNumber = Number(body.totalEntrada);
+  return {
+    title: String(body.title || '').trim(),
+    date: body.date,
+    description: String(body.description || '').trim(),
+    lugar: String(body.lugar || '').trim(),
+    elementosNecesarios: normalizeElementos(body.elementosNecesarios),
+    observacionesGenerales: String(body.observacionesGenerales || '').trim(),
+    encargado: String(body.encargado || '').trim(),
+    totalEntrada: Number.isFinite(totalEntradaNumber) && totalEntradaNumber >= 0 ? totalEntradaNumber : 0,
+  };
+}
+
 function headerAuth(req, res, next) {
   const role = req.header('x-user-role');
   if (role) req.user = { rol: String(role).toLowerCase() };
@@ -28,8 +52,8 @@ router.get('/', async (req, res) => {
 // Crear un nuevo evento
 router.post('/', headerAuth, requireEventEditors, async (req, res) => {
   try {
-    const { title, date, description } = req.body;
-    const newEvent = new Event({ title, date, description });
+    const payload = buildEventPayload(req.body);
+    const newEvent = new Event(payload);
     await newEvent.save();
     res.status(201).json(newEvent);
   } catch (error) {
@@ -41,8 +65,8 @@ router.post('/', headerAuth, requireEventEditors, async (req, res) => {
 router.put('/:id', headerAuth, requireEventEditors, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, date, description } = req.body;
-    const updatedEvent = await Event.findByIdAndUpdate(id, { title, date, description }, { new: true });
+    const payload = buildEventPayload(req.body);
+    const updatedEvent = await Event.findByIdAndUpdate(id, payload, { new: true, runValidators: true });
     res.status(200).json(updatedEvent);
   } catch (error) {
     res.status(500).json({ message: 'Error al actualizar el evento', error });
@@ -57,6 +81,61 @@ router.delete('/:id', headerAuth, requireEventEditors, async (req, res) => {
     res.status(200).json({ message: 'Evento eliminado correctamente' });
   } catch (error) {
     res.status(500).json({ message: 'Error al eliminar el evento', error });
+  }
+});
+
+router.post('/:id/expenses', headerAuth, requireEventEditors, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const concepto = String(req.body?.concepto || '').trim();
+    const monto = Number(req.body?.monto);
+    const fecha = req.body?.fecha;
+    const detalle = String(req.body?.detalle || '').trim();
+
+    if (!concepto) {
+      return res.status(400).json({ error: 'El concepto del gasto es obligatorio' });
+    }
+    if (!Number.isFinite(monto) || monto < 0) {
+      return res.status(400).json({ error: 'El monto debe ser un numero valido' });
+    }
+
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    event.gastos.push({
+      concepto,
+      monto,
+      fecha: fecha || new Date().toISOString(),
+      detalle,
+    });
+
+    await event.save();
+    return res.status(201).json(event);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error al agregar gasto del evento', error });
+  }
+});
+
+router.delete('/:id/expenses/:expenseId', headerAuth, requireEventEditors, async (req, res) => {
+  try {
+    const { id, expenseId } = req.params;
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+
+    const originalLength = event.gastos.length;
+    event.gastos = event.gastos.filter((gasto) => String(gasto._id) !== String(expenseId));
+    if (event.gastos.length === originalLength) {
+      return res.status(404).json({ error: 'Gasto no encontrado' });
+    }
+
+    await event.save();
+    return res.status(200).json(event);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error al eliminar gasto del evento', error });
   }
 });
 

@@ -49,3 +49,27 @@ export const deleteEvent = async (eventId, auth) => {
     throw error;
   }
 };
+
+export const addEventExpense = async (eventId, expenseData, auth) => {
+  try {
+    const headers = {};
+    if (auth?.rol) headers['x-user-role'] = auth.rol;
+    const response = await axios.post(`${BASE}/${eventId}/expenses`, expenseData, { headers });
+    return response.data;
+  } catch (error) {
+    console.error('Error al agregar gasto del evento:', error);
+    throw error;
+  }
+};
+
+export const deleteEventExpense = async (eventId, expenseId, auth) => {
+  try {
+    const headers = {};
+    if (auth?.rol) headers['x-user-role'] = auth.rol;
+    const response = await axios.delete(`${BASE}/${eventId}/expenses/${expenseId}`, { headers });
+    return response.data;
+  } catch (error) {
+    console.error('Error al eliminar gasto del evento:', error);
+    throw error;
+  }
+};

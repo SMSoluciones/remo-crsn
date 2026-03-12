@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Cog6ToothIcon, UserIcon } from '@heroicons/react/24/outline';
+import { LifebuoyIcon, WrenchScrewdriverIcon, UserGroupIcon, ChartBarIcon, Cog6ToothIcon, UserIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 import Avatar from 'react-avatar';
 import { useAuth } from './context/useAuth.js';
 import { AuthProvider } from './context/AuthContext.jsx';
@@ -11,6 +11,7 @@ import Boats from './components/Boats/Boats.jsx';
 import Students from './components/Students/Students.jsx';
 import TechnicalSheets from './components/Students/TechnicalSheets.jsx';
 import Settings from './components/Settings/Settings.jsx';
+import Subcomision from './components/Subcomision/Subcomision.jsx';
 import Topbar from './components/Topbar.jsx';
 import Informacion from './components/Informacion/Informacion.jsx';
 import { ToastContainer, Slide } from 'react-toastify';
@@ -71,6 +72,16 @@ function MainApp() {
     }
   }, [mobileMenuOpen]);
 
+  const role = String(user?.rol || '').trim().toLowerCase();
+  const canViewSubcomision = ['admin', 'subcomision'].includes(role);
+
+  useEffect(() => {
+    if (!user) return;
+    if (section === 'subcomision' && !canViewSubcomision) {
+      setSection('dashboard');
+    }
+  }, [section, canViewSubcomision, user]);
+
   if (!user) return <Login />;
 
   const navItems = [
@@ -78,6 +89,7 @@ function MainApp() {
     { label: 'Botes', icon: <LifebuoyIcon className="h-6 w-6" />, section: 'boats' },
     { label: 'Alumnos', icon: <UserGroupIcon className="h-6 w-6" />, section: 'students' },
     { label: 'Fichas Técnicas', icon: <WrenchScrewdriverIcon className="h-6 w-6" />, section: 'sheets' },
+    { label: 'Subcomision', icon: <BriefcaseIcon className="h-6 w-6" />, section: 'subcomision' },
     { label: 'Información', icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
@@ -89,10 +101,12 @@ function MainApp() {
   // Filtrar elementos que no deberían verse por rol
   const visibleNavItems = navItems.filter(item => {
     if (item.section === 'sheets' && user?.rol === 'alumnos') return false;
+    if (item.section === 'subcomision' && !canViewSubcomision) return false;
     return true;
   });
   const dashboardNavItem = visibleNavItems.find((item) => item.section === 'dashboard');
-  const secondaryNavItems = visibleNavItems.filter((item) => item.section !== 'dashboard');
+  const subcomisionNavItem = visibleNavItems.find((item) => item.section === 'subcomision');
+  const secondaryNavItems = visibleNavItems.filter((item) => item.section !== 'dashboard' && item.section !== 'subcomision');
 
   return (
     <div className={`flex min-h-screen ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-gray-100 text-slate-900'}`}>
@@ -155,6 +169,16 @@ function MainApp() {
             <span className="text-xs font-medium">{item.label}</span>
           </button>
         ))}
+        {subcomisionNavItem && (
+          <button
+            className={`mt-auto flex flex-col items-center gap-1 transition ${theme === 'dark' ? 'text-slate-400 hover:text-emerald-400 focus:text-emerald-400' : 'text-gray-500 hover:text-green-700 focus:text-green-700'} ${section === subcomisionNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
+            onClick={() => setSection(subcomisionNavItem.section)}
+            title={subcomisionNavItem.label}
+          >
+            {subcomisionNavItem.icon}
+            <span className="text-xs font-medium">{subcomisionNavItem.label}</span>
+          </button>
+        )}
       </aside>
       {/* Mobile off-canvas menu */}
       {mobileMenuOpen && (
@@ -224,6 +248,16 @@ function MainApp() {
                 <span className="font-medium">{item.label}</span>
               </button>
             ))}
+            {subcomisionNavItem && (
+              <button
+                className={`mt-auto flex items-center gap-3 w-full text-left py-3 ${theme === 'dark' ? 'text-slate-200 hover:text-emerald-400' : 'text-gray-700 hover:text-green-700'} ${section === subcomisionNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
+                onClick={() => { setSection(subcomisionNavItem.section); setMobileMenuOpen(false); }}
+                title={subcomisionNavItem.label}
+              >
+                {subcomisionNavItem.icon}
+                <span className="font-medium">{subcomisionNavItem.label}</span>
+              </button>
+            )}
           </aside>
         </div>
       )}
@@ -236,6 +270,7 @@ function MainApp() {
             {section === 'boats' && <Boats />}
             {section === 'students' && <Students />}
             {section === 'sheets' && <TechnicalSheets />}
+            {section === 'subcomision' && canViewSubcomision && <Subcomision />}
             {section === 'informacion' && <Informacion />}
             {section === 'settings' && (
               <Settings />
