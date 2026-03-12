@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import BeatLoader from 'react-spinners/BeatLoader';
-import { fetchBoats, createBoat, updateBoat, deleteBoat, BoatTypes, BoatStatus } from '../../models/Boat';
+import { fetchBoats, createBoat, updateBoat, deleteBoat, uploadBoatPhoto, BoatTypes, BoatStatus } from '../../models/Boat';
 import { showError, showSuccess } from '../../utils/toast';
 
 
@@ -14,6 +14,9 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
     estado: BoatStatus.ACTIVO,
     nivelDif: 1,
     row: 1,
+    pesoMinimo: '',
+    pesoMaximo: '',
+    ubicacion: '',
   });
 
   const load = async () => {
@@ -49,10 +52,13 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
         estado: newBoat.estado,
         nivelDif: Number(newBoat.nivelDif) || 1,
         row: Number(newBoat.row) || 1,
+        pesoMinimo: newBoat.pesoMinimo !== '' ? Number(newBoat.pesoMinimo) : undefined,
+        pesoMaximo: newBoat.pesoMaximo !== '' ? Number(newBoat.pesoMaximo) : undefined,
+        ubicacion: newBoat.ubicacion?.trim() || undefined,
         fechaIngreso: new Date().toISOString(),
       }, user);
       setBoats(prev => [created, ...prev]);
-      setNewBoat({ nombre: '', tipo: BoatTypes[0], estado: BoatStatus.ACTIVO, nivelDif: 1, row: 1 });
+      setNewBoat({ nombre: '', tipo: BoatTypes[0], estado: BoatStatus.ACTIVO, nivelDif: 1, row: 1, pesoMinimo: '', pesoMaximo: '', ubicacion: '' });
       showSuccess('Bote agregado');
       if (typeof onUpdated === 'function') onUpdated();
     } catch (err) {
@@ -83,6 +89,19 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
     } catch (err) {
       console.error('Error eliminando bote:', err);
       showError('No se pudo eliminar el bote');
+    }
+  };
+
+  const handlePhotoUpload = async (boatId, file) => {
+    if (!file) return;
+    try {
+      const updated = await uploadBoatPhoto(boatId, file, user);
+      setBoats(prev => prev.map(b => (b._id === boatId ? updated : b)));
+      showSuccess('Foto del bote cargada');
+      if (typeof onUpdated === 'function') onUpdated();
+    } catch (err) {
+      console.error('Error cargando foto del bote:', err);
+      showError('No se pudo cargar la foto del bote');
     }
   };
 
@@ -136,6 +155,18 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
             <label className="block text-xs font-medium text-slate-600 mb-1">Remo</label>
             <input type="number" min="1" className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.row} onChange={(e) => setNewBoat(prev => ({ ...prev, row: e.target.value }))} />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Peso minimo (kg)</label>
+            <input type="number" min="0" className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.pesoMinimo} onChange={(e) => setNewBoat(prev => ({ ...prev, pesoMinimo: e.target.value }))} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Peso maximo (kg)</label>
+            <input type="number" min="0" className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.pesoMaximo} onChange={(e) => setNewBoat(prev => ({ ...prev, pesoMaximo: e.target.value }))} />
+          </div>
+          <div className="sm:col-span-2 md:col-span-2">
+            <label className="block text-xs font-medium text-slate-600 mb-1">Ubicacion</label>
+            <input className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.ubicacion} onChange={(e) => setNewBoat(prev => ({ ...prev, ubicacion: e.target.value }))} />
+          </div>
           <div className="sm:col-span-2 md:col-span-6 flex justify-end">
             <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-sm font-medium">Agregar bote</button>
           </div>
@@ -166,8 +197,31 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
                   <label className="text-sm text-slate-600 font-medium">Remo</label>
                   <input type="number" min="1" defaultValue={b.row || 1} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onBlur={(e) => handleUpdate(b._id, { row: Number(e.target.value) })} />
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-[auto_120px_auto_120px] items-center gap-2 sm:gap-3">
+                  <label className="text-sm text-slate-600 font-medium">Peso minimo (kg)</label>
+                  <input type="number" min="0" defaultValue={b.pesoMinimo ?? ''} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onBlur={(e) => handleUpdate(b._id, { pesoMinimo: e.target.value === '' ? null : Number(e.target.value) })} />
+                  <label className="text-sm text-slate-600 font-medium">Peso maximo (kg)</label>
+                  <input type="number" min="0" defaultValue={b.pesoMaximo ?? ''} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onBlur={(e) => handleUpdate(b._id, { pesoMaximo: e.target.value === '' ? null : Number(e.target.value) })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+                  <label className="text-sm text-slate-600 font-medium">Ubicacion</label>
+                  <input defaultValue={b.ubicacion || b.proveedor || ''} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onBlur={(e) => handleUpdate(b._id, { ubicacion: e.target.value.trim() })} />
+                </div>
               </div>
               <div className="flex md:flex-col items-end md:items-end justify-end gap-2">
+                <label className="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium cursor-pointer text-sm">
+                  Cargar foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      handlePhotoUpload(b._id, file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() => handleDelete(b._id)}

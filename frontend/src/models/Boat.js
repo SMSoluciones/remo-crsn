@@ -64,3 +64,16 @@ export async function deleteBoat(id, user) {
     throw err;
   }
 }
+
+export async function uploadBoatPhoto(id, file, user) {
+  try {
+    const headers = user ? { 'x-user-id': user.id || user._id || '', 'x-user-role': user.rol || '' } : {};
+    const formData = new FormData();
+    formData.append('foto', file);
+    const res = await axios.post(`${API_BASE_URL}/api/boats/${id}/photo`, formData, { headers });
+    return res.data;
+  } catch (err) {
+    console.error('Error uploading boat photo:', err);
+    throw err;
+  }
+}

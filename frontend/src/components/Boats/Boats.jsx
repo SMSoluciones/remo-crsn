@@ -8,6 +8,7 @@ import { AuthContext } from '../../context/AuthContext';
 import AddBoatReportModal from './AddBoatReportModal';
 import ManageReportsModal from './ManageReportsModal';
 import ManageBoatsModal from './ManageBoatsModal';
+import BoatTechnicalSheetModal from './BoatTechnicalSheetModal';
 import Remar from '../Remar/Remar';
 import { fetchBoatReports, deleteBoatReport } from '../../models/BoatReport';
 import { fetchBoatUsages } from '../../models/BoatUsage';
@@ -22,6 +23,8 @@ export default function Boats() {
   const [reportsLoading, setReportsLoading] = useState(false);
   const [showRemarModal, setShowRemarModal] = useState(false);
   const [remarBoatId, setRemarBoatId] = useState('');
+  const [showTechnicalSheetModal, setShowTechnicalSheetModal] = useState(false);
+  const [selectedBoat, setSelectedBoat] = useState(null);
   const [activeBoatLocks, setActiveBoatLocks] = useState({});
   const { user } = useContext(AuthContext);
   const role = String(user?.rol || '').trim().toLowerCase();
@@ -115,6 +118,11 @@ export default function Boats() {
       console.error('Error eliminando reporte:');
       showError('No se pudo eliminar el reporte');
     }
+  };
+
+  const handleOpenTechnicalSheet = (boat) => {
+    setSelectedBoat(boat);
+    setShowTechnicalSheetModal(true);
   };
 
   const [filterTipo, setFilterTipo] = useState('');
@@ -216,7 +224,12 @@ export default function Boats() {
                 {/* Mobile: cards list (show on <sm) */}
                 <div className="sm:hidden space-y-4" data-aos="fade-left">
                   {filteredBoats.map((b, index) => (
-                    <div key={b.id || index} className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-4">
+                    <button
+                      type="button"
+                      key={b.id || index}
+                      onClick={() => handleOpenTechnicalSheet(b)}
+                      className="w-full text-left bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-4 hover:border-emerald-300 hover:shadow transition"
+                    >
                       <div className="flex items-start gap-4">
                         <Avatar name={b.nombre} size="40" round={true} />
                         <div className="flex-1 min-w-0">
@@ -235,7 +248,7 @@ export default function Boats() {
                           <div className="mt-2 text-sm text-gray-500">{format(new Date(b.fechaIngreso), 'dd-MM-yyyy')}</div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
 
@@ -258,7 +271,11 @@ export default function Boats() {
                     </thead>
                     <tbody>
                       {filteredBoats.map((b, index) => (
-                        <tr key={b.id || index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <tr
+                          key={b.id || index}
+                          className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+                          onClick={() => handleOpenTechnicalSheet(b)}
+                        >
                           <td className="py-3 px-4 flex items-center gap-2 font-medium text-slate-800">
                             <Avatar name={b.nombre} size="28" round={true} />
                             <span>{b.nombre}</span>
@@ -406,6 +423,14 @@ export default function Boats() {
                   activeBoatLocks={activeBoatLocks}
                   initialSelectedBoatId={remarBoatId}
                   user={user}
+                />
+              )}
+              {showTechnicalSheetModal && (
+                <BoatTechnicalSheetModal
+                  isOpen={showTechnicalSheetModal}
+                  onRequestClose={() => { setShowTechnicalSheetModal(false); setSelectedBoat(null); }}
+                  boat={selectedBoat}
+                  reports={reports}
                 />
               )}
           </ProtectedRoute>

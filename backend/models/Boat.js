@@ -10,6 +10,26 @@ const BoatSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  pesoMinimo: {
+    type: Number,
+    min: 0,
+  },
+  pesoMaximo: {
+    type: Number,
+    min: 0,
+  },
+  fotoURL: {
+    type: String,
+    trim: true,
+  },
+  ubicacion: {
+    type: String,
+    trim: true,
+  },
+  proveedor: {
+    type: String,
+    trim: true,
+  },
 });
 
 module.exports = mongoose.model('Boat', BoatSchema);
