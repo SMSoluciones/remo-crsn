@@ -41,6 +41,7 @@ export default function Boats() {
   const { user } = useContext(AuthContext);
   const role = String(user?.rol || '').trim().toLowerCase();
   const canDeleteReports = ['admin', 'subcomision'].includes(role);
+  const canManageFleetAssets = ['admin', 'mantenimiento', 'subcomision', 'entrenador', 'profesores'].includes(role);
 
   const loadActiveLocks = async () => {
     try {
@@ -499,7 +500,7 @@ export default function Boats() {
                 </div>}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6" data-aos="fade-right">
                   <h3 className="text-lg font-semibold mb-4 text-slate-800">Acciones rápidas</h3>
-                  {['admin','mantenimiento','subcomision','entrenador'].includes(role) && (
+                  {canManageFleetAssets && (
                     <button
                       onClick={() => {
                         if (activeTab === 'botes') setShowManageBoatsModal(true);
@@ -515,7 +516,7 @@ export default function Boats() {
                     <button onClick={() => setShowAddReportModal(true)} className="w-full flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
                       <WrenchScrewdriverIcon className="h-5 w-5" /> Reportar Falla
                     </button>
-                    {['admin','mantenimiento','subcomision','entrenador'].includes(role) && (
+                    {canManageFleetAssets && (
                       <button onClick={() => setShowManageReportsModal(true)} className="w-full flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm">
                         <WrenchScrewdriverIcon className="h-5 w-5" /> Administrar reportes
                       </button>
