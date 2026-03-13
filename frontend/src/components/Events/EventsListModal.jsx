@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import { fetchEvents, finalizeEvent as finalizeEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import BeatLoader from 'react-spinners/BeatLoader';
@@ -45,7 +46,16 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
 
   const handleFinalize = async (id) => {
     if (!editable) return;
-    if (!window.confirm('¿Finalizar este evento? Dejara de figurar en eventos activos.')) return;
+    const result = await fireThemedSwal({
+      title: 'Finalizar evento?',
+      text: 'Dejara de figurar en eventos activos.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Finalizar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       setFinalizingId(id);
       await finalizeEventApi(id, user);

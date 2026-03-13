@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import BeatLoader from 'react-spinners/BeatLoader';
 import { fetchBoats, createBoat, updateBoat, deleteBoat, uploadBoatPhoto, BoatTypes, BoatStatus } from '../../models/Boat';
@@ -80,7 +81,16 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Eliminar este bote?')) return;
+    const result = await fireThemedSwal({
+      title: 'Eliminar bote?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       await deleteBoat(id, user);
       setBoats(prev => prev.filter(b => b._id !== id));

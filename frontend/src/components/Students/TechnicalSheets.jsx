@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
@@ -172,7 +173,16 @@ export default function TechnicalSheets() {
   };
 
   const handleDeleteSheet = async (id) => {
-    if (!window.confirm('¿Está seguro de que desea eliminar esta ficha técnica?')) return;
+    const result = await fireThemedSwal({
+      title: 'Eliminar ficha tecnica?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       const res = await fetch(`${API_BASE_URL}/api/technical-sheets/${id}`, {
         method: 'DELETE',

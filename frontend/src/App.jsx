@@ -106,7 +106,10 @@ function MainApp() {
   });
   const dashboardNavItem = visibleNavItems.find((item) => item.section === 'dashboard');
   const subcomisionNavItem = visibleNavItems.find((item) => item.section === 'subcomision');
-  const secondaryNavItems = visibleNavItems.filter((item) => item.section !== 'dashboard' && item.section !== 'subcomision');
+  const settingsNavItem = visibleNavItems.find((item) => item.section === 'settings');
+  const secondaryNavItems = visibleNavItems.filter(
+    (item) => item.section !== 'dashboard' && item.section !== 'subcomision' && item.section !== 'settings'
+  );
 
   return (
     <div className={`flex min-h-screen ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-gray-100 text-slate-900'}`}>
@@ -169,15 +172,29 @@ function MainApp() {
             <span className="text-xs font-medium">{item.label}</span>
           </button>
         ))}
-        {subcomisionNavItem && (
-          <button
-            className={`mt-auto flex flex-col items-center gap-1 transition ${theme === 'dark' ? 'text-slate-400 hover:text-emerald-400 focus:text-emerald-400' : 'text-gray-500 hover:text-green-700 focus:text-green-700'} ${section === subcomisionNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
-            onClick={() => setSection(subcomisionNavItem.section)}
-            title={subcomisionNavItem.label}
-          >
-            {subcomisionNavItem.icon}
-            <span className="text-xs font-medium">{subcomisionNavItem.label}</span>
-          </button>
+        {(subcomisionNavItem || settingsNavItem) && (
+          <div className="mt-auto flex flex-col items-center gap-2">
+            {subcomisionNavItem && (
+              <button
+                className={`flex flex-col items-center gap-1 transition ${theme === 'dark' ? 'text-slate-400 hover:text-emerald-400 focus:text-emerald-400' : 'text-gray-500 hover:text-green-700 focus:text-green-700'} ${section === subcomisionNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
+                onClick={() => setSection(subcomisionNavItem.section)}
+                title={subcomisionNavItem.label}
+              >
+                {subcomisionNavItem.icon}
+                <span className="text-xs font-medium">{subcomisionNavItem.label}</span>
+              </button>
+            )}
+            {settingsNavItem && (
+              <button
+                className={`flex flex-col items-center gap-1 transition ${theme === 'dark' ? 'text-slate-400 hover:text-emerald-400 focus:text-emerald-400' : 'text-gray-500 hover:text-green-700 focus:text-green-700'} ${section === settingsNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
+                onClick={() => setSection(settingsNavItem.section)}
+                title={settingsNavItem.label}
+              >
+                {settingsNavItem.icon}
+                <span className="text-xs font-medium">{settingsNavItem.label}</span>
+              </button>
+            )}
+          </div>
         )}
       </aside>
       {/* Mobile off-canvas menu */}
@@ -188,7 +205,7 @@ function MainApp() {
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <aside data-aos="fade-right" data-aos-duration="500" className={`fixed left-0 top-0 h-full w-64 shadow p-6 z-50 ${theme === 'dark' ? 'bg-slate-900 border-r border-slate-700' : 'bg-white border-r border-slate-200'}`}>
+          <aside data-aos="fade-right" data-aos-duration="500" className={`fixed left-0 top-0 h-full w-64 shadow p-6 z-50 flex flex-col overflow-y-auto ${theme === 'dark' ? 'bg-slate-900 border-r border-slate-700' : 'bg-white border-r border-slate-200'}`}>
             <button
               onClick={() => {
                 setSection('dashboard');
@@ -248,15 +265,29 @@ function MainApp() {
                 <span className="font-medium">{item.label}</span>
               </button>
             ))}
-            {subcomisionNavItem && (
-              <button
-                className={`mt-auto flex items-center gap-3 w-full text-left py-3 ${theme === 'dark' ? 'text-slate-200 hover:text-emerald-400' : 'text-gray-700 hover:text-green-700'} ${section === subcomisionNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
-                onClick={() => { setSection(subcomisionNavItem.section); setMobileMenuOpen(false); }}
-                title={subcomisionNavItem.label}
-              >
-                {subcomisionNavItem.icon}
-                <span className="font-medium">{subcomisionNavItem.label}</span>
-              </button>
+            {(subcomisionNavItem || settingsNavItem) && (
+              <div className="mt-auto">
+                {subcomisionNavItem && (
+                  <button
+                    className={`flex items-center gap-3 w-full text-left py-3 ${theme === 'dark' ? 'text-slate-200 hover:text-emerald-400' : 'text-gray-700 hover:text-green-700'} ${section === subcomisionNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
+                    onClick={() => { setSection(subcomisionNavItem.section); setMobileMenuOpen(false); }}
+                    title={subcomisionNavItem.label}
+                  >
+                    {subcomisionNavItem.icon}
+                    <span className="font-medium">{subcomisionNavItem.label}</span>
+                  </button>
+                )}
+                {settingsNavItem && (
+                  <button
+                    className={`flex items-center gap-3 w-full text-left py-3 ${theme === 'dark' ? 'text-slate-200 hover:text-emerald-400' : 'text-gray-700 hover:text-green-700'} ${section === settingsNavItem.section ? (theme === 'dark' ? 'text-emerald-400' : 'text-green-700') : ''}`}
+                    onClick={() => { setSection(settingsNavItem.section); setMobileMenuOpen(false); }}
+                    title={settingsNavItem.label}
+                  >
+                    {settingsNavItem.icon}
+                    <span className="font-medium">{settingsNavItem.label}</span>
+                  </button>
+                )}
+              </div>
             )}
           </aside>
         </div>

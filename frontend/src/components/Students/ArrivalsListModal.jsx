@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import Modal from 'react-modal';
 import { fetchStudents, deleteStudent } from '../../models/Student';
 import BeatLoader from 'react-spinners/BeatLoader';
@@ -52,7 +53,16 @@ export default function ArrivalsListModal({ isOpen, onRequestClose }) {
 
   const handleDelete = async (id) => {
     if (!editable) return;
-    if (!window.confirm('¿Eliminar este alumno?')) return;
+    const result = await fireThemedSwal({
+      title: 'Eliminar alumno?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       setDeletingId(id);
       await deleteStudent(id);

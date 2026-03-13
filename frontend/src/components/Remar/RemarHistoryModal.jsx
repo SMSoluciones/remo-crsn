@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import { fetchBoatUsages, stopBoatUsage } from '../../models/BoatUsage';
 import { showSuccess, showError } from '../../utils/toast';
 import { API_BASE_URL } from '../../utils/apiConfig';
@@ -83,7 +84,16 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
 
   const handleDelete = async (id) => {
     if (!id) return;
-    if (!window.confirm('¿Eliminar esta entrada del historial?')) return;
+    const result = await fireThemedSwal({
+      title: 'Eliminar entrada del historial?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     setDeletingId(id);
     try {
       const url = `${API_BASE_URL}/api/boat-usages/${id}`;
@@ -101,7 +111,11 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
       setList(prev => prev.filter(it => String(it._id) !== String(id)));
     } catch (err) {
       console.error('Delete failed', err);
-      alert('No se pudo eliminar: ' + (err.message || 'error'));
+      await fireThemedSwal({
+        title: 'No se pudo eliminar',
+        text: err.message || 'error',
+        icon: 'error',
+      });
     } finally {
       setDeletingId(null);
     }
@@ -228,7 +242,16 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
                                   <button
                                     disabled={stoppingId === (u._id||u.id)}
                                     onClick={async () => {
-                                      if (!window.confirm('¿Detener la remada y registrar hora de regreso exacta?')) return;
+                                      const result = await fireThemedSwal({
+                                        title: 'Detener remada?',
+                                        text: 'Se registrara la hora de regreso exacta.',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Detener',
+                                        cancelButtonText: 'Cancelar',
+                                        reverseButtons: true,
+                                      });
+                                      if (!result.isConfirmed) return;
                                       try {
                                         setStoppingId(u._id||u.id);
                                         const updated = await stopBoatUsage(u._id||u.id, user);

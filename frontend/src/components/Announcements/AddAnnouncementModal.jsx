@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -83,8 +84,16 @@ export default function AddAnnouncementModal({ isOpen, onRequestClose, onAnnounc
 
 	const handleDelete = async (id) => {
 		if (!id) return;
-		const ok = window.confirm('¿Eliminar este anuncio? Esta acción no se puede deshacer.');
-		if (!ok) return;
+		const result = await fireThemedSwal({
+			title: 'Eliminar anuncio?',
+			text: 'Esta accion no se puede deshacer.',
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: 'Eliminar',
+			cancelButtonText: 'Cancelar',
+			reverseButtons: true,
+		});
+		if (!result.isConfirmed) return;
 		try {
 			setDeletingId(id);
 			await deleteAnnouncement(id, user);

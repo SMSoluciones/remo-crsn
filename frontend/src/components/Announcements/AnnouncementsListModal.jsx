@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import BeatLoader from 'react-spinners/BeatLoader';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/useAuth';
@@ -44,7 +45,16 @@ export default function AnnouncementsListModal({ isOpen, onRequestClose }) {
 
   const handleDelete = async (id) => {
     if (!editable) return;
-    if (!window.confirm('¿Eliminar este anuncio?')) return;
+    const result = await fireThemedSwal({
+      title: 'Eliminar anuncio?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       setDeletingId(id);
       await deleteAnnouncement(id, user);

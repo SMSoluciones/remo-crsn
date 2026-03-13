@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import { showError, showSuccess } from '../../utils/toast';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -83,8 +84,16 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
 
   const handleFinalize = async (id) => {
     if (!id) return;
-    const ok = window.confirm('¿Finalizar este evento? Dejara de figurar en la lista de eventos activos.');
-    if (!ok) return;
+    const result = await fireThemedSwal({
+      title: 'Finalizar evento?',
+      text: 'Dejara de figurar en la lista de eventos activos.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Finalizar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       setFinalizingId(id);
       await finalizeEventApi(id, user);

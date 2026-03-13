@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import BeatLoader from 'react-spinners/BeatLoader';
 import {
@@ -71,7 +72,16 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Eliminar este par de remo?')) return;
+    const result = await fireThemedSwal({
+      title: 'Eliminar par de remo?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       await deleteOar(id, user);
       setOars(prev => prev.filter(o => o._id !== id));

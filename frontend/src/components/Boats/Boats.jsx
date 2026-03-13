@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import { BoatStatus, BoatTypes, fetchBoats } from '../../models/Boat';
 import ProtectedRoute from '../ProtectedRoute';
 import { LifebuoyIcon, WrenchScrewdriverIcon, FunnelIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
@@ -137,7 +138,16 @@ export default function Boats() {
 
   const handleDeleteReport = async (id) => {
     if (!canDeleteReports) { showError('No tienes permisos para eliminar reportes'); return; }
-    if (!window.confirm('¿Eliminar este reporte?')) return;
+    const result = await fireThemedSwal({
+      title: 'Eliminar reporte?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       await deleteBoatReport(id, user);
       const data = await fetchBoatReports().catch(() => []);

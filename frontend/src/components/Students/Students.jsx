@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import ProtectedRoute from '../ProtectedRoute';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
@@ -430,6 +431,20 @@ export default function Students() {
     }
   };
 
+  const handleDeleteStudentWithConfirm = async (id) => {
+    const result = await fireThemedSwal({
+      title: 'Eliminar alumno?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+    await handleDeleteStudent(id);
+  };
+
   const canChangeEstado = role === 'admin' || role === 'subcomision' || role === 'entrenador';
   const canManageAllowedBoats = role === 'admin' || role === 'entrenador';
 
@@ -515,7 +530,16 @@ export default function Students() {
       return;
     }
 
-    const confirmed = window.confirm('¿Borrar todos los botes habilitados de este alumno?');
+    const result = await fireThemedSwal({
+      title: 'Borrar botes habilitados?',
+      text: 'Se eliminaran todos los botes habilitados de este alumno.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Si, borrar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    const confirmed = result.isConfirmed;
     if (!confirmed) return;
 
     const ok = await saveAllowedBoats(selectedStudent, []);
@@ -813,7 +837,7 @@ export default function Students() {
                                   )}
                                   {role === 'admin' && (
                                     <li>
-                                      <button onClick={(ev) => { ev.stopPropagation(); if (!window.confirm('¿Seguro que desea eliminar este alumno?')) { setOpenMenuFor(null); return; } handleDeleteStudent(s.id); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600">Eliminar</button>
+                                      <button onClick={async (ev) => { ev.stopPropagation(); await handleDeleteStudentWithConfirm(s.id); setOpenMenuFor(null); }} className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600">Eliminar</button>
                                     </li>
                                   )}
                                   <li>

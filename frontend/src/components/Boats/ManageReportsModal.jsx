@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { fireThemedSwal } from '../../utils/swalTheme';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import BeatLoader from 'react-spinners/BeatLoader';
 import { fetchBoatReports, deleteBoatReport, updateBoatReport } from '../../models/BoatReport';
@@ -64,7 +65,16 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
       showError('No tienes permisos para eliminar reportes');
       return;
     }
-    if (!window.confirm('Eliminar este reporte?')) return;
+    const result = await fireThemedSwal({
+      title: 'Eliminar reporte?',
+      text: 'Esta accion no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       await deleteBoatReport(id, user);
       showSuccess('Reporte eliminado');
