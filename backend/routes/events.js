@@ -14,7 +14,7 @@ function normalizeElementos(value) {
 
 function buildEventPayload(body = {}) {
   const totalEntradaNumber = Number(body.totalEntrada);
-  return {
+  const payload = {
     title: String(body.title || '').trim(),
     date: body.date,
     description: String(body.description || '').trim(),
@@ -24,6 +24,7 @@ function buildEventPayload(body = {}) {
     encargado: String(body.encargado || '').trim(),
     totalEntrada: Number.isFinite(totalEntradaNumber) && totalEntradaNumber >= 0 ? totalEntradaNumber : 0,
   };
+  return payload;
 }
 
 function headerAuth(req, res, next) {
@@ -81,6 +82,21 @@ router.delete('/:id', headerAuth, requireEventEditors, async (req, res) => {
     res.status(200).json({ message: 'Evento eliminado correctamente' });
   } catch (error) {
     res.status(500).json({ message: 'Error al eliminar el evento', error });
+  }
+});
+
+router.patch('/:id/finalize', headerAuth, requireEventEditors, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const event = await Event.findByIdAndUpdate(
+      id,
+      { isFinalizado: true, finalizadoAt: new Date() },
+      { new: true, runValidators: true }
+    );
+    if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
+    return res.status(200).json(event);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error al finalizar el evento', error });
   }
 });
 

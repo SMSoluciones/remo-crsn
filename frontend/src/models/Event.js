@@ -50,6 +50,18 @@ export const deleteEvent = async (eventId, auth) => {
   }
 };
 
+export const finalizeEvent = async (eventId, auth) => {
+  try {
+    const headers = {};
+    if (auth?.rol) headers['x-user-role'] = auth.rol;
+    const response = await axios.patch(`${BASE}/${eventId}/finalize`, {}, { headers });
+    return response.data;
+  } catch (error) {
+    console.error('Error al finalizar el evento:', error);
+    throw error;
+  }
+};
+
 export const addEventExpense = async (eventId, expenseData, auth) => {
   try {
     const headers = {};

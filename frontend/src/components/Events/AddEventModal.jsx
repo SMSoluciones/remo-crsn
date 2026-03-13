@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { showError, showSuccess } from '../../utils/toast';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { fetchEvents as fetchEventsApi, deleteEvent as deleteEventApi, createEvent as createEventApi } from '../../models/Event';
+import { fetchEvents as fetchEventsApi, finalizeEvent as finalizeEventApi, createEvent as createEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/useAuth';
 import BeatLoader from 'react-spinners/BeatLoader';
@@ -16,7 +16,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState(null);
   const [events, setEvents] = useState([]);
-  const [deletingId, setDeletingId] = useState(null);
+  const [finalizingId, setFinalizingId] = useState(null);
 
   useEffect(() => {
     AOS.init({ duration: 300, easing: 'ease-out', once: true });
@@ -52,9 +52,10 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
       const data = await fetchEventsApi();
       const arr = Array.isArray(data) ? data : [];
       const sorted = arr
+        .filter((e) => !e?.isFinalizado)
         .filter((e) => e && e.date)
         .sort((a, b) => new Date(a.date) - new Date(b.date));
-      const noDate = arr.filter((e) => !e || !e.date);
+      const noDate = arr.filter((e) => (!e || !e.date) && !e?.isFinalizado);
       setEvents([...sorted, ...noDate]);
     } catch (err) {
       console.error('Error listando eventos:', err);
@@ -80,21 +81,21 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onRequestClose]);
 
-  const handleDelete = async (id) => {
+  const handleFinalize = async (id) => {
     if (!id) return;
-    const ok = window.confirm('¿Eliminar este evento? Esta acción no se puede deshacer.');
+    const ok = window.confirm('¿Finalizar este evento? Dejara de figurar en la lista de eventos activos.');
     if (!ok) return;
     try {
-      setDeletingId(id);
-      await deleteEventApi(id, user);
+      setFinalizingId(id);
+      await finalizeEventApi(id, user);
       setEvents((prev) => prev.filter((e) => (e._id || e.id) !== id));
       if (typeof onEventDeleted === 'function') onEventDeleted(id);
-      showSuccess('Evento eliminado');
+      showSuccess('Evento finalizado');
     } catch (err) {
-      console.error('Error eliminando evento:', err);
-      showError('No se pudo eliminar el evento');
+      console.error('Error finalizando evento:', err);
+      showError('No se pudo finalizar el evento');
     } finally {
-      setDeletingId(null);
+      setFinalizingId(null);
     }
   };
 
@@ -148,7 +149,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
           </div>
         </form>
 
-        {/* Lista de eventos con opción de eliminar */}
+        {/* Lista de eventos activos con opción de finalizar */}
         <div className="mt-6 bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-base font-semibold">Eventos existentes</h4>
@@ -191,12 +192,12 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
                           <td className="px-4 py-2 align-top">
                             <div className="flex justify-end">
                               <button
-                                title="Eliminar"
-                                onClick={() => handleDelete(id)}
-                                disabled={deletingId === id}
-                                className={`p-2 rounded hover:bg-red-100 ${deletingId === id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Finalizar"
+                                onClick={() => handleFinalize(id)}
+                                disabled={finalizingId === id}
+                                className={`px-2.5 py-1.5 text-xs font-medium rounded bg-amber-100 text-amber-800 hover:bg-amber-200 ${finalizingId === id ? 'opacity-50 cursor-not-allowed' : ''}`}
                               >
-                                <XMarkIcon className="w-5 h-5 text-red-600" />
+                                {finalizingId === id ? 'Finalizando...' : 'Finalizar'}
                               </button>
                             </div>
                           </td>

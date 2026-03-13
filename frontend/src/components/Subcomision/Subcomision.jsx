@@ -54,6 +54,7 @@ export default function Subcomision() {
   const [expandedEventId, setExpandedEventId] = useState('');
   const [eventsPage, setEventsPage] = useState(1);
   const [exportingEventId, setExportingEventId] = useState('');
+  const [showCreateEventForm, setShowCreateEventForm] = useState(false);
   const [editingEventId, setEditingEventId] = useState('');
   const [editingEventForm, setEditingEventForm] = useState({
     title: '',
@@ -118,11 +119,6 @@ export default function Subcomision() {
 
   const getEventRecaudacion = (event) => getEventTotalEntrada(event) - getEventTotal(event);
 
-  const globalExpenses = useMemo(
-    () => events.reduce((acc, event) => acc + getEventTotal(event), 0),
-    [events]
-  );
-
   const totalEventsPages = useMemo(
     () => Math.max(1, Math.ceil(events.length / EVENTS_PER_PAGE)),
     [events.length]
@@ -162,6 +158,7 @@ export default function Subcomision() {
       setEvents((prev) => [created, ...prev]);
       setEventsPage(1);
       setExpandedEventId(String(created?._id || created?.id || ''));
+      setShowCreateEventForm(false);
       setEventForm({
         title: '',
         date: '',
@@ -515,14 +512,19 @@ export default function Subcomision() {
           ) : (
             <div className="mt-5 space-y-5">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <h3 className="text-lg font-semibold text-slate-800">Registrar evento</h3>
-                  <div className="text-sm text-slate-600">
-                    Gasto total cargado: <span className="font-semibold text-slate-800">{formatMoney(globalExpenses)}</span>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateEventForm((prev) => !prev)}
+                    className="inline-flex items-center gap-2 text-left px-4 py-2 rounded-lg border border-cyan-400 bg-cyan-600 text-white hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-300 shadow-sm"
+                  >
+                    <ChevronDownIcon className={`h-5 w-5 text-white transition-transform ${showCreateEventForm ? 'rotate-180' : ''}`} />
+                    <h3 className="text-base sm:text-lg font-semibold text-white">Registrar evento</h3>
+                  </button>
                 </div>
 
-                <form onSubmit={handleCreateEvent} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {showCreateEventForm ? (
+                <form onSubmit={handleCreateEvent} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">Nombre del evento</label>
                     <input className="w-full border border-slate-300 rounded-lg px-3 py-2" value={eventForm.title} onChange={(e) => setEventForm((prev) => ({ ...prev, title: e.target.value }))} required />
@@ -557,6 +559,9 @@ export default function Subcomision() {
                     </button>
                   </div>
                 </form>
+                ) : (
+                  <div className="mt-3 text-sm text-slate-500">Formulario colapsado. Toca "Registrar evento" para abrirlo.</div>
+                )}
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
@@ -578,11 +583,11 @@ export default function Subcomision() {
                       const eventRecaudacion = getEventRecaudacion(event);
                       return (
                         <div key={eventId} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
                             <button
                               type="button"
                               onClick={() => toggleEventDetails(eventId)}
-                              className="text-left flex-1 min-w-0"
+                              className="text-left w-full lg:flex-1 min-w-0"
                             >
                               <div className="flex items-center gap-2">
                                 <ChevronDownIcon className={`h-4 w-4 text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -594,36 +599,38 @@ export default function Subcomision() {
                                 <p className="text-xs text-slate-500 mt-1">Toca para ver detalles y gastos del evento</p>
                               )}
                             </button>
-                            <div className="text-right shrink-0">
+                            <div className="w-full lg:w-auto lg:min-w-[250px] text-left lg:text-right shrink-0">
                               <div className="text-xs uppercase text-slate-500">Control de gastos</div>
                               <div className="text-xs text-slate-600 mt-1">Total de gasto: <span className="font-semibold text-slate-800">{formatMoney(eventTotal)}</span></div>
                               <div className="text-xs text-slate-600">Total de entrada: <span className="font-semibold text-slate-800">{formatMoney(eventTotalEntrada)}</span></div>
                               <div className={`text-sm font-semibold ${eventRecaudacion >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>Recaudacion: {formatMoney(eventRecaudacion)}</div>
-                              <button
-                                type="button"
-                                onClick={() => startEditingEvent(event)}
-                                className="mt-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-blue-700 bg-blue-100 hover:bg-blue-200"
-                              >
-                                Editar
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => renderCuentaExcel(event)}
-                                disabled={exportingEventId === eventId}
-                                className="mt-2 ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-emerald-800 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-60"
-                              >
-                                <DocumentArrowDownIcon className="h-4 w-4" />
-                                {exportingEventId === eventId ? 'Generando...' : 'Rendir cuenta'}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={deletingEventId === eventId}
-                                onClick={() => handleDeleteEvent(eventId)}
-                                className="mt-2 ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-red-700 bg-red-100 hover:bg-red-200 disabled:opacity-60"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                                Eliminar
-                              </button>
+                              <div className="mt-2 flex flex-wrap items-center gap-2 lg:justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingEvent(event)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-blue-700 bg-blue-100 hover:bg-blue-200"
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => renderCuentaExcel(event)}
+                                  disabled={exportingEventId === eventId}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-emerald-800 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-60"
+                                >
+                                  <DocumentArrowDownIcon className="h-4 w-4" />
+                                  {exportingEventId === eventId ? 'Generando...' : 'Rendir cuenta'}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={deletingEventId === eventId}
+                                  onClick={() => handleDeleteEvent(eventId)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-red-700 bg-red-100 hover:bg-red-200 disabled:opacity-60"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                  Eliminar
+                                </button>
+                              </div>
                             </div>
                           </div>
 

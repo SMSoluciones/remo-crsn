@@ -39,6 +39,14 @@ const eventSchema = new mongoose.Schema({
     default: 0,
     min: 0,
   },
+  isFinalizado: {
+    type: Boolean,
+    default: false,
+  },
+  finalizadoAt: {
+    type: Date,
+    default: null,
+  },
   gastos: {
     type: [
       {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchEvents, deleteEvent as deleteEventApi } from '../../models/Event';
+import { fetchEvents, finalizeEvent as finalizeEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import BeatLoader from 'react-spinners/BeatLoader';
 import { useAuth } from '../../context/useAuth';
@@ -12,7 +12,7 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
   const editable = ['admin', 'entrenador', 'subcomision'].includes(role);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
+  const [finalizingId, setFinalizingId] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -21,7 +21,7 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
     fetchEvents()
       .then(list => {
         if (!mounted) return;
-        const arr = Array.isArray(list) ? list : [];
+        const arr = (Array.isArray(list) ? list : []).filter((e) => !e?.isFinalizado);
         const sorted = arr.filter(e => e && e.date).sort((a,b) => new Date(a.date) - new Date(b.date));
         const noDate = arr.filter(e => !e || !e.date);
         setEvents([...sorted, ...noDate]);
@@ -43,19 +43,19 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onRequestClose]);
 
-  const handleDelete = async (id) => {
+  const handleFinalize = async (id) => {
     if (!editable) return;
-    if (!window.confirm('¿Eliminar este evento? Esta acción no se puede deshacer.')) return;
+    if (!window.confirm('¿Finalizar este evento? Dejara de figurar en eventos activos.')) return;
     try {
-      setDeletingId(id);
-      await deleteEventApi(id, user);
+      setFinalizingId(id);
+      await finalizeEventApi(id, user);
       setEvents(prev => prev.filter(e => (e._id || e.id) !== id));
-      showSuccess('Evento eliminado');
+      showSuccess('Evento finalizado');
     } catch (err) {
-      console.error('Error eliminando evento:', err);
-      showError('No se pudo eliminar el evento');
+      console.error('Error finalizando evento:', err);
+      showError('No se pudo finalizar el evento');
     } finally {
-      setDeletingId(null);
+      setFinalizingId(null);
     }
   };
 
@@ -87,8 +87,8 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
                   </div>
                   {editable ? (
                     <div className="ml-4 flex items-start">
-                      <button onClick={() => handleDelete(id)} disabled={deletingId === id} className={`p-2 rounded ${deletingId === id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100'}`}>
-                        <XMarkIcon className="w-5 h-5 text-red-600" />
+                      <button onClick={() => handleFinalize(id)} disabled={finalizingId === id} className={`px-2.5 py-1.5 text-xs font-medium rounded bg-amber-100 text-amber-800 ${finalizingId === id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-200'}`}>
+                        {finalizingId === id ? 'Finalizando...' : 'Finalizar'}
                       </button>
                     </div>
                   ) : null}

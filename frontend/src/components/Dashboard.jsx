@@ -287,7 +287,7 @@ export default function Dashboard() {
     fetchEvents()
       .then(list => {
         if (!mounted) return;
-        const arr = Array.isArray(list) ? list : [];
+        const arr = (Array.isArray(list) ? list : []).filter((ev) => !ev?.isFinalizado);
         const allSorted = arr.filter(ev => ev.date).sort((a,b) => new Date(a.date) - new Date(b.date));
         setEvents(allSorted);
       })
@@ -823,6 +823,7 @@ export default function Dashboard() {
           isOpen={isAddEventOpen}
           onRequestClose={() => setIsAddEventOpen(false)}
           onEventAdded={(newEv) => {
+          if (newEv?.isFinalizado) return;
           // Inserta y reordena por fecha ascendente (solo eventos con fecha válida primero)
             setEvents((prev) => {
               const list = Array.isArray(prev) ? [...prev, newEv] : [newEv];
@@ -832,8 +833,8 @@ export default function Dashboard() {
               return [...withDate, ...withoutDate];
             });
           }}
-          onEventDeleted={(deletedId) => {
-            setEvents((prev) => prev.filter((e) => (e._id || e.id) !== deletedId));
+          onEventDeleted={(eventId) => {
+            setEvents((prev) => prev.filter((e) => (e._id || e.id) !== eventId));
           }}
         />
       )}
