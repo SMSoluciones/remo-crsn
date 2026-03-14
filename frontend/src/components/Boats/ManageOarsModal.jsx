@@ -14,6 +14,7 @@ import {
 import { showError, showSuccess } from '../../utils/toast';
 
 export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdated }) {
+  const requiresCause = (estado) => estado === OarStatus.MANTENIMIENTO || estado === OarStatus.FUERA_SERVICIO;
   const [loading, setLoading] = useState(false);
   const [oars, setOars] = useState([]);
   const [newOar, setNewOar] = useState({
@@ -21,6 +22,7 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
     tipo: OarTypes[0],
     largoHacha: OarHachaSizes[0],
     estado: OarStatus.ACTIVO,
+    causa: '',
   });
 
   const load = async () => {
@@ -40,17 +42,22 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (requiresCause(newOar.estado) && !String(newOar.causa || '').trim()) {
+      showError('Debes ingresar la causa cuando el remo queda en mantenimiento o fuera de servicio');
+      return;
+    }
     try {
       const payload = {
         nombre: newOar.nombre,
         tipo: newOar.tipo,
         estado: newOar.estado,
         largoHacha: newOar.tipo === 'hacha' ? newOar.largoHacha : undefined,
+        causa: String(newOar.causa || '').trim() || undefined,
         fechaIngreso: new Date().toISOString(),
       };
       const created = await createOar(payload, user);
       setOars(prev => [created, ...prev]);
-      setNewOar({ nombre: '', tipo: OarTypes[0], largoHacha: OarHachaSizes[0], estado: OarStatus.ACTIVO });
+      setNewOar({ nombre: '', tipo: OarTypes[0], largoHacha: OarHachaSizes[0], estado: OarStatus.ACTIVO, causa: '' });
       showSuccess('Par de remo agregado');
       if (typeof onUpdated === 'function') onUpdated();
     } catch (err) {
@@ -60,6 +67,13 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
   };
 
   const handleUpdate = async (id, changes) => {
+    const current = oars.find((o) => o._id === id);
+    const nextEstado = changes.estado ?? current?.estado;
+    const nextCausa = String(changes.causa ?? current?.causa ?? '').trim();
+    if (requiresCause(nextEstado) && !nextCausa) {
+      showError('Debes ingresar la causa cuando el remo queda en mantenimiento o fuera de servicio');
+      return;
+    }
     try {
       const updated = await updateOar(id, changes, user);
       setOars(prev => prev.map(o => (o._id === id ? updated : o)));
@@ -131,6 +145,15 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
                 {Object.values(OarStatus).map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+            <div className="sm:col-span-2 md:col-span-5">
+              <label className="block text-xs font-medium text-slate-600 mb-1">Causa {requiresCause(newOar.estado) ? '(obligatoria)' : '(opcional)'}</label>
+              <input
+                className="w-full border border-slate-300 px-2 py-1.5 rounded-lg"
+                value={newOar.causa}
+                onChange={(e) => setNewOar(prev => ({ ...prev, causa: e.target.value }))}
+                placeholder="Ej: pala dañada, rajadura, etc."
+              />
+            </div>
             <div className="sm:col-span-2 md:col-span-5 flex justify-end">
               <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-sm font-medium">Agregar par de remo</button>
             </div>
@@ -160,6 +183,15 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
                         </select>
                       </div>
                     )}
+                    <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+                      <label className="text-sm text-slate-600 font-medium">Causa</label>
+                      <input
+                        className="border border-slate-300 px-2 py-1.5 rounded-lg"
+                        defaultValue={o.causa || ''}
+                        placeholder="Obligatoria si está en mantenimiento/fuera de servicio"
+                        onBlur={(e) => handleUpdate(o._id, { causa: e.target.value.trim() })}
+                      />
+                    </div>
                   </div>
                   <div className="flex md:flex-col items-end justify-end gap-2">
                     <button type="button" onClick={() => handleDelete(o._id)} className="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium">Eliminar</button>

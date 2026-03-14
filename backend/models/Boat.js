@@ -4,6 +4,7 @@ const BoatSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
   tipo: { type: String, enum: ['single', 'doble', 'cuadruple', 'yola', 'otros'], required: true },
   estado: { type: String, enum: ['activo', 'mantenimiento', 'fuera_servicio'], default: 'activo' },
+  causa: { type: String, trim: true, default: '' },
   fechaIngreso: { type: Date, default: Date.now },
   nivelDif: { type: Number, min: 1, max: 5, required: true }, // Nivel de dificultad del 1 al 5
   row: {

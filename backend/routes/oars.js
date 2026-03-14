@@ -9,6 +9,14 @@ function canManage(req) {
   return allowedRoles.has(role);
 }
 
+function requiresCause(estado) {
+  return estado === 'mantenimiento' || estado === 'fuera_servicio';
+}
+
+function normalizeCause(value) {
+  return String(value || '').trim();
+}
+
 router.get('/', async (req, res) => {
   const oars = await Oar.find().sort({ fechaIngreso: -1, _id: -1 });
   res.json(oars);
@@ -21,6 +29,10 @@ router.post('/', async (req, res) => {
   try {
     const payload = { ...req.body };
     if (payload.tipo !== 'hacha') payload.largoHacha = null;
+    payload.causa = normalizeCause(payload.causa);
+    if (requiresCause(payload.estado) && !payload.causa) {
+      return res.status(400).json({ error: 'La causa es obligatoria cuando el estado es mantenimiento o fuera de servicio' });
+    }
     const oar = new Oar(payload);
     await oar.save();
     res.status(201).json(oar);
@@ -36,6 +48,17 @@ router.put('/:id', async (req, res) => {
   try {
     const payload = { ...req.body };
     if (payload.tipo && payload.tipo !== 'hacha') payload.largoHacha = null;
+    if (Object.prototype.hasOwnProperty.call(payload, 'causa')) payload.causa = normalizeCause(payload.causa);
+
+    const current = await Oar.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Par de remo no encontrado' });
+
+    const nextEstado = payload.estado ?? current.estado;
+    const nextCausa = normalizeCause(Object.prototype.hasOwnProperty.call(payload, 'causa') ? payload.causa : current.causa);
+    if (requiresCause(nextEstado) && !nextCausa) {
+      return res.status(400).json({ error: 'La causa es obligatoria cuando el estado es mantenimiento o fuera de servicio' });
+    }
+
     const oar = await Oar.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     res.json(oar);
   } catch (err) {

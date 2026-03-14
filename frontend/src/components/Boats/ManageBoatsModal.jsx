@@ -7,6 +7,7 @@ import { showError, showSuccess } from '../../utils/toast';
 
 
 export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdated }) {
+  const requiresCause = (estado) => estado === BoatStatus.MANTENIMIENTO || estado === BoatStatus.FUERA_SERVICIO;
   const [loading, setLoading] = useState(false);
   const [boats, setBoats] = useState([]);
   const [newBoat, setNewBoat] = useState({
@@ -18,6 +19,7 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
     pesoMinimo: '',
     pesoMaximo: '',
     ubicacion: '',
+    causa: '',
   });
 
   const load = async () => {
@@ -46,6 +48,10 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (requiresCause(newBoat.estado) && !String(newBoat.causa || '').trim()) {
+      showError('Debes ingresar la causa cuando el bote queda en mantenimiento o fuera de servicio');
+      return;
+    }
     try {
       const created = await createBoat({
         nombre: newBoat.nombre,
@@ -56,10 +62,11 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
         pesoMinimo: newBoat.pesoMinimo !== '' ? Number(newBoat.pesoMinimo) : undefined,
         pesoMaximo: newBoat.pesoMaximo !== '' ? Number(newBoat.pesoMaximo) : undefined,
         ubicacion: newBoat.ubicacion?.trim() || undefined,
+        causa: String(newBoat.causa || '').trim() || undefined,
         fechaIngreso: new Date().toISOString(),
       }, user);
       setBoats(prev => [created, ...prev]);
-      setNewBoat({ nombre: '', tipo: BoatTypes[0], estado: BoatStatus.ACTIVO, nivelDif: 1, row: 1, pesoMinimo: '', pesoMaximo: '', ubicacion: '' });
+      setNewBoat({ nombre: '', tipo: BoatTypes[0], estado: BoatStatus.ACTIVO, nivelDif: 1, row: 1, pesoMinimo: '', pesoMaximo: '', ubicacion: '', causa: '' });
       showSuccess('Bote agregado');
       if (typeof onUpdated === 'function') onUpdated();
     } catch (err) {
@@ -69,6 +76,13 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
   };
 
   const handleUpdate = async (id, changes) => {
+    const current = boats.find((b) => b._id === id);
+    const nextEstado = changes.estado ?? current?.estado;
+    const nextCausa = String(changes.causa ?? current?.causa ?? '').trim();
+    if (requiresCause(nextEstado) && !nextCausa) {
+      showError('Debes ingresar la causa cuando el bote queda en mantenimiento o fuera de servicio');
+      return;
+    }
     try {
       const updated = await updateBoat(id, changes, user);
       setBoats(prev => prev.map(b => (b._id === id ? updated : b)));
@@ -78,6 +92,42 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
       console.error('Error actualizando bote:', err);
       showError('No se pudo actualizar el bote');
     }
+  };
+
+  const handleEstadoChange = async (boat, nextEstado) => {
+    if (!boat?._id) return;
+    const prevEstado = boat.estado;
+    if (nextEstado === prevEstado) return;
+
+    if (!requiresCause(nextEstado)) {
+      await handleUpdate(boat._id, { estado: nextEstado });
+      return;
+    }
+
+    const currentCause = String(boat.causa || '').trim();
+    if (currentCause) {
+      await handleUpdate(boat._id, { estado: nextEstado });
+      return;
+    }
+
+    const result = await fireThemedSwal({
+      title: 'Causa obligatoria',
+      text: 'Para dejar el bote en mantenimiento o fuera de servicio debes indicar la causa.',
+      input: 'text',
+      inputLabel: 'Causa',
+      inputPlaceholder: 'Ej: fisura en casco',
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (!String(value || '').trim()) return 'La causa es obligatoria';
+        return null;
+      },
+    });
+
+    if (!result.isConfirmed) return;
+    await handleUpdate(boat._id, { estado: nextEstado, causa: String(result.value || '').trim() });
   };
 
   const handleDelete = async (id) => {
@@ -177,6 +227,18 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
             <label className="block text-xs font-medium text-slate-600 mb-1">Ubicacion</label>
             <input className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={newBoat.ubicacion} onChange={(e) => setNewBoat(prev => ({ ...prev, ubicacion: e.target.value }))} />
           </div>
+          {requiresCause(newBoat.estado) && (
+            <div className="sm:col-span-2 md:col-span-4">
+              <label className="block text-xs font-medium text-slate-600 mb-1">Causa (obligatoria)</label>
+              <input
+                className="w-full border border-slate-300 px-2 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
+                value={newBoat.causa}
+                onChange={(e) => setNewBoat(prev => ({ ...prev, causa: e.target.value }))}
+                placeholder="Ej: fisura en casco, golpe en popa, etc."
+                required
+              />
+            </div>
+          )}
           <div className="sm:col-span-2 md:col-span-6 flex justify-end">
             <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-sm font-medium">Agregar bote</button>
           </div>
@@ -196,7 +258,7 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
                   </select>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                  <select className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" defaultValue={b.estado} onChange={(e) => handleUpdate(b._id, { estado: e.target.value })}>
+                  <select className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" value={b.estado} onChange={(e) => handleEstadoChange(b, e.target.value)}>
                     {Object.values(BoatStatus).map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                   <input type="date" defaultValue={b.fechaIngreso ? new Date(b.fechaIngreso).toISOString().slice(0,10) : ''} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onChange={(e) => handleUpdate(b._id, { fechaIngreso: e.target.value })} />
@@ -217,6 +279,17 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
                   <label className="text-sm text-slate-600 font-medium">Ubicacion</label>
                   <input defaultValue={b.ubicacion || b.proveedor || ''} className="border border-slate-300 px-2 py-1.5 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500" onBlur={(e) => handleUpdate(b._id, { ubicacion: e.target.value.trim() })} />
                 </div>
+                {requiresCause(b.estado) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+                    <label className="text-sm text-slate-600 font-medium">Causa</label>
+                    <input
+                      defaultValue={b.causa || ''}
+                      className="border border-slate-300 px-2 py-1.5 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500"
+                      placeholder="Obligatoria"
+                      onBlur={(e) => handleUpdate(b._id, { causa: e.target.value.trim() })}
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex md:flex-col items-end md:items-end justify-end gap-2">
                 <label className="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium cursor-pointer text-sm">

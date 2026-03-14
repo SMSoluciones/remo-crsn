@@ -6,11 +6,13 @@ import { fetchSeats, createSeat, updateSeat, deleteSeat, SeatStatus } from '../.
 import { showError, showSuccess } from '../../utils/toast';
 
 export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdated }) {
+  const requiresCause = (estado) => estado === SeatStatus.MANTENIMIENTO || estado === SeatStatus.FUERA_SERVICIO;
   const [loading, setLoading] = useState(false);
   const [seats, setSeats] = useState([]);
   const [newSeat, setNewSeat] = useState({
     nombre: '',
     estado: SeatStatus.ACTIVO,
+    causa: '',
   });
 
   const load = async () => {
@@ -30,14 +32,19 @@ export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdat
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (requiresCause(newSeat.estado) && !String(newSeat.causa || '').trim()) {
+      showError('Debes ingresar la causa cuando el carro queda en mantenimiento o fuera de servicio');
+      return;
+    }
     try {
       const created = await createSeat({
         nombre: newSeat.nombre,
         estado: newSeat.estado,
+        causa: String(newSeat.causa || '').trim() || undefined,
         fechaIngreso: new Date().toISOString(),
       }, user);
       setSeats(prev => [created, ...prev]);
-      setNewSeat({ nombre: '', estado: SeatStatus.ACTIVO });
+      setNewSeat({ nombre: '', estado: SeatStatus.ACTIVO, causa: '' });
       showSuccess('Asiento agregado');
       if (typeof onUpdated === 'function') onUpdated();
     } catch (err) {
@@ -47,6 +54,13 @@ export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdat
   };
 
   const handleUpdate = async (id, changes) => {
+    const current = seats.find((s) => s._id === id);
+    const nextEstado = changes.estado ?? current?.estado;
+    const nextCausa = String(changes.causa ?? current?.causa ?? '').trim();
+    if (requiresCause(nextEstado) && !nextCausa) {
+      showError('Debes ingresar la causa cuando el carro queda en mantenimiento o fuera de servicio');
+      return;
+    }
     try {
       const updated = await updateSeat(id, changes, user);
       setSeats(prev => prev.map(s => (s._id === id ? updated : s)));
@@ -104,6 +118,15 @@ export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdat
                 {Object.values(SeatStatus).map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+            <div className="sm:col-span-2 md:col-span-4">
+              <label className="block text-xs font-medium text-slate-600 mb-1">Causa {requiresCause(newSeat.estado) ? '(obligatoria)' : '(opcional)'}</label>
+              <input
+                className="w-full border border-slate-300 px-2 py-1.5 rounded-lg"
+                value={newSeat.causa}
+                onChange={(e) => setNewSeat(prev => ({ ...prev, causa: e.target.value }))}
+                placeholder="Ej: rueda trabada, rotura, etc."
+              />
+            </div>
             <div className="sm:col-span-2 md:col-span-4 flex justify-end">
               <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-sm font-medium">Agregar asiento</button>
             </div>
@@ -121,6 +144,15 @@ export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdat
                       <select className="border border-slate-300 px-2 py-1.5 rounded-lg" defaultValue={s.estado} onChange={(e) => handleUpdate(s._id, { estado: e.target.value })}>
                         {Object.values(SeatStatus).map(st => <option key={st} value={st}>{st}</option>)}
                       </select>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+                      <label className="text-sm text-slate-600 font-medium">Causa</label>
+                      <input
+                        className="border border-slate-300 px-2 py-1.5 rounded-lg"
+                        defaultValue={s.causa || ''}
+                        placeholder="Obligatoria si está en mantenimiento/fuera de servicio"
+                        onBlur={(e) => handleUpdate(s._id, { causa: e.target.value.trim() })}
+                      />
                     </div>
                   </div>
                   <div className="flex md:flex-col items-end justify-end gap-2">

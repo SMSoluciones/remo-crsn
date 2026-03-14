@@ -20,6 +20,14 @@ const uploadBufferToCloudinary = (buffer) => new Promise((resolve, reject) => {
   stream.end(buffer);
 });
 
+function requiresCause(estado) {
+  return estado === 'mantenimiento' || estado === 'fuera_servicio';
+}
+
+function normalizeCause(value) {
+  return String(value || '').trim();
+}
+
 router.get('/', async (req, res) => {
   const boats = await Boat.find();
   res.json(boats);
@@ -30,6 +38,10 @@ router.post('/', async (req, res) => {
     const payload = { ...req.body };
     if (!payload.ubicacion && payload.proveedor) payload.ubicacion = payload.proveedor;
     if (!payload.proveedor && payload.ubicacion) payload.proveedor = payload.ubicacion;
+    payload.causa = normalizeCause(payload.causa);
+    if (requiresCause(payload.estado) && !payload.causa) {
+      return res.status(400).json({ error: 'La causa es obligatoria cuando el estado es mantenimiento o fuera de servicio' });
+    }
     const boat = new Boat(payload);
     await boat.save();
     res.status(201).json(boat);
@@ -43,6 +55,17 @@ router.put('/:id', async (req, res) => {
     const payload = { ...req.body };
     if (!payload.ubicacion && payload.proveedor) payload.ubicacion = payload.proveedor;
     if (!payload.proveedor && payload.ubicacion) payload.proveedor = payload.ubicacion;
+    if (Object.prototype.hasOwnProperty.call(payload, 'causa')) payload.causa = normalizeCause(payload.causa);
+
+    const current = await Boat.findById(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Bote no encontrado' });
+
+    const nextEstado = payload.estado ?? current.estado;
+    const nextCausa = normalizeCause(Object.prototype.hasOwnProperty.call(payload, 'causa') ? payload.causa : current.causa);
+    if (requiresCause(nextEstado) && !nextCausa) {
+      return res.status(400).json({ error: 'La causa es obligatoria cuando el estado es mantenimiento o fuera de servicio' });
+    }
+
     const boat = await Boat.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     res.json(boat);
   } catch (err) {
