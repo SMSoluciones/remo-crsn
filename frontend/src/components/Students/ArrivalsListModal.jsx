@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { fireThemedSwal } from '../../utils/swalTheme';
 import Modal from 'react-modal';
 import { fetchStudents, deleteStudent } from '../../models/Student';
-import BeatLoader from 'react-spinners/BeatLoader';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 Modal.setAppElement('#root');
 
@@ -86,7 +86,7 @@ export default function ArrivalsListModal({ isOpen, onRequestClose }) {
         </div>
         <div className="p-3 sm:p-4 overflow-y-auto">
         {loading ? (
-          <div className="flex items-center justify-center py-8"><BeatLoader color="#1E40AF" /></div>
+          <LoadingSpinner message="" className="py-8" />
         ) : items.length === 0 ? (
           <div className="text-sm text-gray-600">Sin novedades</div>
         ) : (

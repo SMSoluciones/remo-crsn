@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fireThemedSwal } from '../../utils/swalTheme';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import BeatLoader from 'react-spinners/BeatLoader';
 import { fetchSeats, createSeat, updateSeat, deleteSeat, SeatStatus } from '../../models/Seat';
 import { showError, showSuccess } from '../../utils/toast';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdated }) {
   const requiresCause = (estado) => estado === SeatStatus.MANTENIMIENTO || estado === SeatStatus.FUERA_SERVICIO;
@@ -72,6 +72,42 @@ export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdat
     }
   };
 
+  const handleEstadoChange = async (seat, nextEstado) => {
+    if (!seat?._id) return;
+    const prevEstado = seat.estado;
+    if (nextEstado === prevEstado) return;
+
+    if (!requiresCause(nextEstado)) {
+      await handleUpdate(seat._id, { estado: nextEstado });
+      return;
+    }
+
+    const currentCause = String(seat.causa || '').trim();
+    if (currentCause) {
+      await handleUpdate(seat._id, { estado: nextEstado });
+      return;
+    }
+
+    const result = await fireThemedSwal({
+      title: 'Causa obligatoria',
+      text: 'Para dejar el carro en mantenimiento o fuera de servicio debes indicar la causa.',
+      input: 'text',
+      inputLabel: 'Causa',
+      inputPlaceholder: 'Ej: rueda trabada o rotura',
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (!String(value || '').trim()) return 'La causa es obligatoria';
+        return null;
+      },
+    });
+
+    if (!result.isConfirmed) return;
+    await handleUpdate(seat._id, { estado: nextEstado, causa: String(result.value || '').trim() });
+  };
+
   const handleDelete = async (id) => {
     const result = await fireThemedSwal({
       title: 'Eliminar asiento?',
@@ -118,22 +154,25 @@ export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdat
                 {Object.values(SeatStatus).map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <div className="sm:col-span-2 md:col-span-4">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Causa {requiresCause(newSeat.estado) ? '(obligatoria)' : '(opcional)'}</label>
-              <input
-                className="w-full border border-slate-300 px-2 py-1.5 rounded-lg"
-                value={newSeat.causa}
-                onChange={(e) => setNewSeat(prev => ({ ...prev, causa: e.target.value }))}
-                placeholder="Ej: rueda trabada, rotura, etc."
-              />
-            </div>
+            {requiresCause(newSeat.estado) && (
+              <div className="sm:col-span-2 md:col-span-4">
+                <label className="block text-xs font-medium text-slate-600 mb-1">Causa (obligatoria)</label>
+                <input
+                  className="w-full border border-slate-300 px-2 py-1.5 rounded-lg"
+                  value={newSeat.causa}
+                  onChange={(e) => setNewSeat(prev => ({ ...prev, causa: e.target.value }))}
+                  placeholder="Ej: rueda trabada, rotura, etc."
+                  required
+                />
+              </div>
+            )}
             <div className="sm:col-span-2 md:col-span-4 flex justify-end">
               <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-sm font-medium">Agregar asiento</button>
             </div>
           </form>
 
           {loading ? (
-            <div className="flex justify-center py-6"><BeatLoader color="#1E40AF" /></div>
+            <LoadingSpinner message="" className="py-6" />
           ) : (
             <div className="space-y-3 max-h-[58vh] sm:max-h-[60vh] overflow-y-auto">
               {seats.map((s) => (
@@ -141,19 +180,21 @@ export default function ManageSeatsModal({ isOpen, onRequestClose, user, onUpdat
                   <div className="md:col-span-2 space-y-2 min-w-0">
                     <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_150px] gap-2 sm:gap-3">
                       <input className="border border-slate-300 px-2 py-1.5 rounded-lg" defaultValue={s.nombre} onBlur={(e) => handleUpdate(s._id, { nombre: e.target.value })} />
-                      <select className="border border-slate-300 px-2 py-1.5 rounded-lg" defaultValue={s.estado} onChange={(e) => handleUpdate(s._id, { estado: e.target.value })}>
+                      <select className="border border-slate-300 px-2 py-1.5 rounded-lg" value={s.estado} onChange={(e) => handleEstadoChange(s, e.target.value)}>
                         {Object.values(SeatStatus).map(st => <option key={st} value={st}>{st}</option>)}
                       </select>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
-                      <label className="text-sm text-slate-600 font-medium">Causa</label>
-                      <input
-                        className="border border-slate-300 px-2 py-1.5 rounded-lg"
-                        defaultValue={s.causa || ''}
-                        placeholder="Obligatoria si está en mantenimiento/fuera de servicio"
-                        onBlur={(e) => handleUpdate(s._id, { causa: e.target.value.trim() })}
-                      />
-                    </div>
+                    {requiresCause(s.estado) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+                        <label className="text-sm text-slate-600 font-medium">Causa</label>
+                        <input
+                          className="border border-slate-300 px-2 py-1.5 rounded-lg"
+                          defaultValue={s.causa || ''}
+                          placeholder="Obligatoria"
+                          onBlur={(e) => handleUpdate(s._id, { causa: e.target.value.trim() })}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="flex md:flex-col items-end justify-end gap-2">
                     <button type="button" onClick={() => handleDelete(s._id)} className="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium">Eliminar</button>

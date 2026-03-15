@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { fireThemedSwal } from '../../utils/swalTheme';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import BeatLoader from 'react-spinners/BeatLoader';
 import { fetchBoatReports, deleteBoatReport, updateBoatReport } from '../../models/BoatReport';
 import { showError, showSuccess } from '../../utils/toast';
 import Avatar from 'react-avatar';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 
 export default function ManageReportsModal({ isOpen, onRequestClose, boats = [], user, onUpdated }) {
@@ -146,7 +146,7 @@ export default function ManageReportsModal({ isOpen, onRequestClose, boats = [],
         </div>
         <div className="p-3 sm:p-4 overflow-y-auto" data-aos="zoom-in" data-aos-duration="300">
       {loading ? (
-        <div className="flex justify-center py-6"><BeatLoader size={8} color="#1E40AF" /></div>
+        <LoadingSpinner message="" className="py-6" size={8} />
       ) : reports.length === 0 ? (
         <div className="text-sm text-gray-500">No hay reportes</div>
       ) : (

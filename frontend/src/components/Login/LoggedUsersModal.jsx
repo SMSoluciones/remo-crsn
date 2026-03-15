@@ -3,6 +3,7 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { fetchLoggedUsers } from '../../models/User';
 import { useAuth } from '../../context/useAuth';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 function formatLastSeen(value) {
   if (!value) return '—';
@@ -63,7 +64,7 @@ export default function LoggedUsersModal({ isOpen, onRequestClose }) {
 
         <div className="p-3 sm:p-4">
 
-        {loading && <p className="text-sm text-gray-500">Cargando historial...</p>}
+        {loading && <LoadingSpinner message="Cargando historial..." className="py-4" textClassName="text-sm text-gray-500" />}
         {!loading && error && <p className="text-sm text-red-600">{error}</p>}
 
         {!loading && !error && (

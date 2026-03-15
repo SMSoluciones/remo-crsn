@@ -7,10 +7,10 @@ import { fetchStudents, deleteStudent, updateStudent, downloadStudentsExcel } fr
 import { fetchBoats } from '../../models/Boat';
 import { fetchSheetsByStudent } from '../../models/TechnicalSheet';
 import Avatar from 'react-avatar';
-import BeatLoader from 'react-spinners/BeatLoader';
 import { EllipsisVerticalIcon, UserIcon, PlusIcon, Squares2X2Icon, Bars3Icon } from '@heroicons/react/24/outline';
 import AddStudentModal from './AddStudentModal';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function Students() {
   const [students, setStudents] = useState([]);
@@ -693,7 +693,7 @@ export default function Students() {
           {!showProfile ? (
             openingByEmail ? (
               <div className="flex items-center justify-center w-full py-20 text-gray-600">
-                  <BeatLoader color="#1E40AF" loading={true} size={12} />
+                  <LoadingSpinner message="" className="py-0" size={12} />
                 </div>
             ) : (
               <>
@@ -801,7 +801,7 @@ export default function Students() {
                   </div>
                 </div>
                 {loading ? (
-                  <div className="flex items-center justify-center py-8"><BeatLoader color="#1E40AF" /></div>
+                  <LoadingSpinner message="" className="py-8" />
                 ) : (
                   <div className={studentsViewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5' : 'flex flex-col gap-3'}>
                     {filtered.length === 0 && (
@@ -862,7 +862,7 @@ export default function Students() {
               </div>
               {profileLoading && (
                 <div className="flex items-center justify-center py-4">
-                  <BeatLoader color="#1E40AF" loading={true} size={10} />
+                  <LoadingSpinner message="" className="py-0" size={10} />
                 </div>
               )}
               {!selectedStudent ? (

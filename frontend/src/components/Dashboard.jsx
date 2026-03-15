@@ -14,7 +14,6 @@ import { showSuccess, showError } from '../utils/toast';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import BeatLoader from 'react-spinners/BeatLoader';
 import AddEventModal from './Events/AddEventModal';
 import AddAnnouncementModal from './Announcements/AddAnnouncementModal.jsx';
 import AnnouncementsListModal from './Announcements/AnnouncementsListModal';
@@ -30,6 +29,7 @@ import {
   UserGroupIcon,
   ArrowUpRightIcon,
 } from '@heroicons/react/24/outline';
+import LoadingSpinner from './common/LoadingSpinner';
 
 
 export default function Dashboard() {
@@ -637,7 +637,7 @@ export default function Dashboard() {
           </button>
         </div>
         {annLoading ? (
-          <div className="flex items-center justify-center h-24"><BeatLoader color="#1E40AF" /></div>
+          <div className="flex items-center justify-center h-24"><LoadingSpinner message="" className="py-0" size={10} /></div>
         ) : annError ? (
           <div className="text-sm text-red-600">{annError}</div>
         ) : announcements.length === 0 ? (
@@ -707,7 +707,7 @@ export default function Dashboard() {
             </button>
           </div>
           {eventsLoading ? (
-          <div className="flex items-center justify-center h-24"><BeatLoader color="#1E40AF" /></div>
+          <div className="flex items-center justify-center h-24"><LoadingSpinner message="" className="py-0" size={10} /></div>
         ) : eventsError ? (
             <div className="text-sm text-red-600">{eventsError}</div>
           ) : events.length === 0 ? (
@@ -767,7 +767,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-2">
               {recentLoading ? (
-                <div className="flex items-center justify-center h-8"><BeatLoader size={8} color="#1E40AF" /></div>
+                <div className="flex items-center justify-center h-8"><LoadingSpinner message="" className="py-0" size={8} /></div>
               ) : recentArr.length === 0 ? (
                 <div className="text-sm opacity-70">Sin novedades 🚣‍♂️</div>
               ) : (

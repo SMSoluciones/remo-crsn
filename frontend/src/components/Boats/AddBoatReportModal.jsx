@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import BeatLoader from 'react-spinners/BeatLoader';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { createBoatReport } from '../../models/BoatReport';
 import { showError, showSuccess } from '../../utils/toast';
 import { useAuth } from '../../context/useAuth';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [], onReportAdded }) {
   const { user } = useAuth();
@@ -125,7 +125,7 @@ export default function AddBoatReportModal({ isOpen, onRequestClose, boats = [],
 
           <div className="flex justify-end gap-2 mt-2">
             <button type="button" onClick={onRequestClose} className="px-4 py-2 border border-slate-300 rounded-lg bg-white hover:bg-slate-100">Cancelar</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-slate-300">{loading ? <BeatLoader size={8} color="#ffffff" /> : 'Reportar'}</button>
+            <button type="submit" disabled={loading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-slate-300">{loading ? <LoadingSpinner message="" className="py-0" size={8} color="#ffffff" /> : 'Reportar'}</button>
           </div>
         </form>
         </div>

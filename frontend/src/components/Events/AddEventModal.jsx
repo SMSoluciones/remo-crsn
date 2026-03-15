@@ -6,7 +6,7 @@ import 'aos/dist/aos.css';
 import { fetchEvents as fetchEventsApi, finalizeEvent as finalizeEventApi, createEvent as createEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/useAuth';
-import BeatLoader from 'react-spinners/BeatLoader';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted }) => {
   const { user } = useAuth();
@@ -162,7 +162,7 @@ const AddEventModal = ({ isOpen, onRequestClose, onEventAdded, onEventDeleted })
         <div className="mt-6 bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-base font-semibold">Eventos existentes</h4>
-            {listLoading && <div className="flex items-center"><BeatLoader size={6} color="#1E40AF" /></div>}
+            {listLoading && <LoadingSpinner message="" className="py-0" size={6} />}
           </div>
           {listError ? (
             <div className="text-sm text-red-600">{listError}</div>

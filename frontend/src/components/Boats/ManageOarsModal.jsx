@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fireThemedSwal } from '../../utils/swalTheme';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import BeatLoader from 'react-spinners/BeatLoader';
 import {
   fetchOars,
   createOar,
@@ -12,6 +11,7 @@ import {
   OarHachaSizes,
 } from '../../models/Oar';
 import { showError, showSuccess } from '../../utils/toast';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdated }) {
   const requiresCause = (estado) => estado === OarStatus.MANTENIMIENTO || estado === OarStatus.FUERA_SERVICIO;
@@ -85,6 +85,42 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
     }
   };
 
+  const handleEstadoChange = async (oar, nextEstado) => {
+    if (!oar?._id) return;
+    const prevEstado = oar.estado;
+    if (nextEstado === prevEstado) return;
+
+    if (!requiresCause(nextEstado)) {
+      await handleUpdate(oar._id, { estado: nextEstado });
+      return;
+    }
+
+    const currentCause = String(oar.causa || '').trim();
+    if (currentCause) {
+      await handleUpdate(oar._id, { estado: nextEstado });
+      return;
+    }
+
+    const result = await fireThemedSwal({
+      title: 'Causa obligatoria',
+      text: 'Para dejar el remo en mantenimiento o fuera de servicio debes indicar la causa.',
+      input: 'text',
+      inputLabel: 'Causa',
+      inputPlaceholder: 'Ej: pala dañada o rajadura',
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      inputValidator: (value) => {
+        if (!String(value || '').trim()) return 'La causa es obligatoria';
+        return null;
+      },
+    });
+
+    if (!result.isConfirmed) return;
+    await handleUpdate(oar._id, { estado: nextEstado, causa: String(result.value || '').trim() });
+  };
+
   const handleDelete = async (id) => {
     const result = await fireThemedSwal({
       title: 'Eliminar par de remo?',
@@ -145,22 +181,25 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
                 {Object.values(OarStatus).map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <div className="sm:col-span-2 md:col-span-5">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Causa {requiresCause(newOar.estado) ? '(obligatoria)' : '(opcional)'}</label>
-              <input
-                className="w-full border border-slate-300 px-2 py-1.5 rounded-lg"
-                value={newOar.causa}
-                onChange={(e) => setNewOar(prev => ({ ...prev, causa: e.target.value }))}
-                placeholder="Ej: pala dañada, rajadura, etc."
-              />
-            </div>
+            {requiresCause(newOar.estado) && (
+              <div className="sm:col-span-2 md:col-span-5">
+                <label className="block text-xs font-medium text-slate-600 mb-1">Causa (obligatoria)</label>
+                <input
+                  className="w-full border border-slate-300 px-2 py-1.5 rounded-lg"
+                  value={newOar.causa}
+                  onChange={(e) => setNewOar(prev => ({ ...prev, causa: e.target.value }))}
+                  placeholder="Ej: pala dañada, rajadura, etc."
+                  required
+                />
+              </div>
+            )}
             <div className="sm:col-span-2 md:col-span-5 flex justify-end">
               <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-sm font-medium">Agregar par de remo</button>
             </div>
           </form>
 
           {loading ? (
-            <div className="flex justify-center py-6"><BeatLoader color="#1E40AF" /></div>
+            <LoadingSpinner message="" className="py-6" />
           ) : (
             <div className="space-y-3 max-h-[58vh] sm:max-h-[60vh] overflow-y-auto">
               {oars.map((o) => (
@@ -171,7 +210,7 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
                       <select className="border border-slate-300 px-2 py-1.5 rounded-lg" defaultValue={o.tipo} onChange={(e) => handleUpdate(o._id, { tipo: e.target.value })}>
                         {OarTypes.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
-                      <select className="border border-slate-300 px-2 py-1.5 rounded-lg" defaultValue={o.estado} onChange={(e) => handleUpdate(o._id, { estado: e.target.value })}>
+                      <select className="border border-slate-300 px-2 py-1.5 rounded-lg" value={o.estado} onChange={(e) => handleEstadoChange(o, e.target.value)}>
                         {Object.values(OarStatus).map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
@@ -183,15 +222,17 @@ export default function ManageOarsModal({ isOpen, onRequestClose, user, onUpdate
                         </select>
                       </div>
                     )}
-                    <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
-                      <label className="text-sm text-slate-600 font-medium">Causa</label>
-                      <input
-                        className="border border-slate-300 px-2 py-1.5 rounded-lg"
-                        defaultValue={o.causa || ''}
-                        placeholder="Obligatoria si está en mantenimiento/fuera de servicio"
-                        onBlur={(e) => handleUpdate(o._id, { causa: e.target.value.trim() })}
-                      />
-                    </div>
+                    {requiresCause(o.estado) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+                        <label className="text-sm text-slate-600 font-medium">Causa</label>
+                        <input
+                          className="border border-slate-300 px-2 py-1.5 rounded-lg"
+                          defaultValue={o.causa || ''}
+                          placeholder="Obligatoria"
+                          onBlur={(e) => handleUpdate(o._id, { causa: e.target.value.trim() })}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="flex md:flex-col items-end justify-end gap-2">
                     <button type="button" onClick={() => handleDelete(o._id)} className="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium">Eliminar</button>

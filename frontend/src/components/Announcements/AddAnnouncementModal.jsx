@@ -6,7 +6,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { showError, showSuccess } from '../../utils/toast';
 import { useAuth } from '../../context/useAuth';
 import { fetchAnnouncements, createAnnouncement, deleteAnnouncement } from '../../models/Announcement';
-import BeatLoader from 'react-spinners/BeatLoader';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function AddAnnouncementModal({ isOpen, onRequestClose, onAnnouncementAdded, onAnnouncementDeleted }) {
 	const { user } = useAuth();
@@ -161,7 +161,7 @@ export default function AddAnnouncementModal({ isOpen, onRequestClose, onAnnounc
 				<div className="mt-6 bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-4">
 					<div className="flex items-center justify-between mb-2">
 						<h4 className="text-base font-semibold">Anuncios existentes</h4>
-						{listLoading && <div className="flex items-center"><BeatLoader size={6} color="#1E40AF" /></div>}
+						{listLoading && <LoadingSpinner message="" className="py-0" size={6} />}
 					</div>
 					{listError ? (
 						<div className="text-sm text-red-600">{listError}</div>

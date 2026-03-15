@@ -13,8 +13,10 @@ import { fetchOars } from '../../models/Oar';
 import { fetchSeats } from '../../models/Seat';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import ExcelJS from 'exceljs';
+import { exportRepairsExcel } from '../Reportes/repairsExcelReport';
 import { showError } from '../../utils/toast';
+import { fireThemedSwal } from '../../utils/swalTheme';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const DND_ITEM_TYPE = 'repair-item';
 
@@ -25,9 +27,9 @@ const TIPO_LABELS = {
 };
 
 const TIPO_COLORS = {
-  bote:  { bg: 'bg-cyan-500/10',   text: 'text-cyan-200',   border: 'border-cyan-400/40'   },
-  remo:  { bg: 'bg-violet-500/10', text: 'text-violet-200', border: 'border-violet-400/40' },
-  carro: { bg: 'bg-amber-500/10',  text: 'text-amber-200',  border: 'border-amber-400/40'  },
+  bote:  { bg: 'bg-cyan-100/60 dark:bg-cyan-500/10', text: 'text-cyan-800 dark:text-cyan-200', border: 'border-cyan-300 dark:border-cyan-400/40' },
+  remo:  { bg: 'bg-violet-100/60 dark:bg-violet-500/10', text: 'text-violet-800 dark:text-violet-200', border: 'border-violet-300 dark:border-violet-400/40' },
+  carro: { bg: 'bg-amber-100/60 dark:bg-amber-500/10', text: 'text-amber-800 dark:text-amber-200', border: 'border-amber-300 dark:border-amber-400/40' },
 };
 
 const ESTADO_LABELS = {
@@ -36,8 +38,8 @@ const ESTADO_LABELS = {
 };
 
 const ESTADO_COLORS = {
-  mantenimiento:  'bg-amber-500/20 text-amber-200 border border-amber-300/30',
-  fuera_servicio: 'bg-rose-500/20 text-rose-200 border border-rose-300/30',
+  mantenimiento: 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-300/30',
+  fuera_servicio: 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-300/30',
 };
 
 function CatalogRow({ item, isSelected, onAdd }) {
@@ -56,20 +58,20 @@ function CatalogRow({ item, isSelected, onAdd }) {
   return (
     <tr
       ref={dragRef}
-      className={`transition ${isSelected ? 'bg-emerald-500/10' : 'hover:bg-slate-800/60 cursor-grab'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
+      className={`transition ${isSelected ? 'bg-emerald-100 dark:bg-emerald-500/10' : 'hover:bg-cyan-50 dark:hover:bg-slate-800/60 cursor-grab'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
       onDoubleClick={() => {
         if (!isSelected) onAdd(item.key);
       }}
     >
-      <td className="px-4 py-3 font-medium text-slate-100">{item.nombre}</td>
-      <td className="px-4 py-3 text-slate-300 capitalize">{item.subtipo}</td>
+      <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{item.nombre}</td>
+      <td className="px-4 py-3 text-slate-600 dark:text-slate-300 capitalize">{item.subtipo}</td>
       <td className="px-4 py-3">
         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ESTADO_COLORS[item.estado]}`}>
           {ESTADO_LABELS[item.estado] || item.estado}
         </span>
       </td>
-      <td className="px-4 py-3 text-slate-300">{item.causa || '—'}</td>
-      <td className="px-4 py-3 text-slate-300">
+      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{item.causa || '—'}</td>
+      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
         {item.fechaIngreso
           ? format(new Date(item.fechaIngreso), "d MMM yyyy", { locale: es })
           : '—'}
@@ -115,21 +117,21 @@ function SelectedRow({ item, index, onRemove, onReorder, onInsertCatalog }) {
   return (
     <li
       ref={setRefs}
-      className={`rounded-lg border px-3 py-2 bg-slate-900/80 flex items-center gap-2 ${isOver ? 'border-emerald-400' : 'border-slate-700'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
+      className={`rounded-lg border px-3 py-2 bg-white dark:bg-slate-900/80 flex items-center gap-2 ${isOver ? 'border-emerald-400' : 'border-slate-200 dark:border-slate-700'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
     >
-      <Bars3Icon className="h-5 w-5 text-slate-400 shrink-0" />
-      <span className="text-xs text-slate-400 w-6 text-center">{index + 1}</span>
-      <span className="text-xs font-semibold text-slate-200 rounded-full px-2 py-0.5 border border-slate-700 bg-slate-800">
+      <Bars3Icon className="h-5 w-5 text-slate-500 dark:text-slate-400 shrink-0" />
+      <span className="text-xs text-slate-500 dark:text-slate-400 w-6 text-center">{index + 1}</span>
+      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-full px-2 py-0.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800">
         {TIPO_LABELS[item.tipo]}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-100 truncate">{item.nombre}</p>
-        <p className="text-xs text-slate-400 truncate">Causa: {item.causa || '—'}</p>
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{item.nombre}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Causa: {item.causa || '—'}</p>
       </div>
       <button
         type="button"
         onClick={() => onRemove(item.key)}
-        className="rounded-md border border-slate-700 p-1 text-slate-300 hover:bg-slate-800"
+        className="rounded-md border border-slate-300 dark:border-slate-700 p-1 text-slate-600 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800"
         title="Quitar del informe"
       >
         <XMarkIcon className="h-4 w-4" />
@@ -205,92 +207,41 @@ function RepairsContent() {
       showError('Selecciona al menos un artefacto para exportar');
       return;
     }
+
+    const modal = await fireThemedSwal({
+      title: 'Completar datos del reporte',
+      html: `
+        <div style="display:flex; flex-direction:column; gap:10px; text-align:left; margin-top:8px;">
+          <label for="repairs-materials" style="font-size:13px; font-weight:600;">Detalle de pedido de materiales</label>
+          <textarea id="repairs-materials" class="swal2-textarea" style="width:100%; min-height:90px; margin:0;" placeholder="Ej: tornillos inoxidables, mecha 4mm, caño de metal 30 cm..."></textarea>
+          <label for="repairs-observations" style="font-size:13px; font-weight:600;">Observaciones</label>
+          <textarea id="repairs-observations" class="swal2-textarea" style="width:100%; min-height:90px; margin:0;" placeholder="Observaciones adicionales..."></textarea>
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Generar Excel',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const materialsInput = document.getElementById('repairs-materials');
+        const observationsInput = document.getElementById('repairs-observations');
+        return {
+          materialsDetail: materialsInput?.value?.trim() || '',
+          observations: observationsInput?.value?.trim() || '',
+        };
+      },
+    });
+
+    if (!modal.isConfirmed) return;
+
     setExporting(true);
     try {
-      const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'CRSN';
-      workbook.created = new Date();
-
-      const sheet = workbook.addWorksheet('Orden de Reparacion');
-
-      // Cabecera principal
-      sheet.mergeCells('A1:G1');
-      const titleCell = sheet.getCell('A1');
-      titleCell.value = 'ORDEN DE REPARACION — CLUB DE REMO SANTA NINA';
-      titleCell.font = { bold: true, size: 14 };
-      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A5F' } };
-      titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
-      sheet.getRow(1).height = 30;
-
-      // Fecha
-      sheet.mergeCells('A2:G2');
-      const dateCell = sheet.getCell('A2');
-      dateCell.value = `Fecha: ${format(new Date(), "d 'de' MMMM yyyy", { locale: es })}`;
-      dateCell.font = { italic: true, size: 11 };
-      dateCell.alignment = { horizontal: 'right' };
-      sheet.getRow(2).height = 18;
-
-      sheet.getRow(3).height = 8;
-
-      // Encabezados de tabla
-      const headers = ['N°', 'Tipo', 'Nombre', 'Subtipo', 'Estado', 'Causa', 'Fecha Ingreso'];
-      const headerRow = sheet.getRow(4);
-      headers.forEach((h, i) => {
-        const cell = headerRow.getCell(i + 1);
-        cell.value = h;
-        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2D6A4F' } };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        cell.border = {
-          top: { style: 'thin' }, left: { style: 'thin' },
-          bottom: { style: 'thin' }, right: { style: 'thin' },
-        };
+      await exportRepairsExcel(selectedItems, {
+        tipoLabels: TIPO_LABELS,
+        estadoLabels: ESTADO_LABELS,
+        materialsDetail: modal.value?.materialsDetail || '',
+        observations: modal.value?.observations || '',
       });
-      sheet.getRow(4).height = 20;
-
-      // Filas de datos
-      selectedItems.forEach((item, idx) => {
-        const row = sheet.getRow(5 + idx);
-        const values = [
-          idx + 1,
-          TIPO_LABELS[item.tipo] || item.tipo,
-          item.nombre,
-          item.subtipo,
-          ESTADO_LABELS[item.estado] || item.estado,
-          item.causa || '—',
-          item.fechaIngreso ? format(new Date(item.fechaIngreso), 'dd/MM/yyyy') : '—',
-        ];
-        values.forEach((v, i) => {
-          const cell = row.getCell(i + 1);
-          cell.value = v;
-          cell.alignment = { horizontal: i === 0 ? 'center' : 'left', vertical: 'middle' };
-          cell.fill = {
-            type: 'pattern', pattern: 'solid',
-            fgColor: { argb: idx % 2 === 0 ? 'FFFAFAFA' : 'FFFFFFFF' },
-          };
-          cell.border = {
-            top: { style: 'thin' }, left: { style: 'thin' },
-            bottom: { style: 'thin' }, right: { style: 'thin' },
-          };
-        });
-        row.height = 18;
-      });
-
-      // Anchos de columna
-      sheet.columns = [
-        { width: 6 }, { width: 12 }, { width: 28 },
-        { width: 14 }, { width: 20 }, { width: 36 }, { width: 16 },
-      ];
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `orden_reparacion_${format(new Date(), 'yyyyMMdd')}.xlsx`;
-      link.click();
-      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Error exportando Excel:', err);
       showError('No se pudo generar el Excel');
@@ -361,18 +312,18 @@ function RepairsContent() {
   return (
     <div className="mt-5 space-y-5">
         {/* Header */}
-        <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5 sm:p-6">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-                <WrenchScrewdriverIcon className="h-5 w-5 text-slate-300" />
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <WrenchScrewdriverIcon className="h-5 w-5 text-slate-500 dark:text-slate-300" />
                 Artefactos en Mantenimiento
               </h3>
-              <p className="text-sm text-slate-300 mt-1">
-                Botes, remos y carros con estado <span className="font-medium text-amber-300">Mantenimiento</span> o{' '}
-                <span className="font-medium text-rose-300">Fuera de servicio</span>.
+              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                Botes, remos y carros con estado <span className="font-medium text-amber-700 dark:text-amber-300">Mantenimiento</span> o{' '}
+                <span className="font-medium text-rose-700 dark:text-rose-300">Fuera de servicio</span>.
               </p>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                 Arrastra artefactos desde el catalogo al panel de informe para seleccionar y ordenar lo que vas a enviar.
               </p>
             </div>
@@ -400,23 +351,23 @@ function RepairsContent() {
                   </div>
                 );
               })}
-              <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3">
-                <p className="text-xs font-medium text-emerald-200">Seleccionados</p>
-                <p className="text-2xl font-bold text-emerald-200">{selectedItems.length}</p>
+              <div className="rounded-xl border border-emerald-300 dark:border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3">
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-200">Seleccionados</p>
+                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-200">{selectedItems.length}</p>
               </div>
             </div>
           )}
         </div>
 
         {!loading && items.length > 0 && (
-          <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4 sm:p-5">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <h4 className="text-sm sm:text-base font-semibold text-slate-100">Informe de reparación (drag and drop)</h4>
+              <h4 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100">Informe de reparación (drag and drop)</h4>
               <button
                 type="button"
                 onClick={clearSelection}
                 disabled={selectedItems.length === 0}
-                className="text-xs px-3 py-1.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Limpiar selección
               </button>
@@ -424,10 +375,10 @@ function RepairsContent() {
 
             <div
               ref={panelDropRef}
-              className={`rounded-xl border-2 border-dashed p-3 sm:p-4 transition ${isOverPanel ? 'border-emerald-400 bg-emerald-500/10' : 'border-slate-600 bg-slate-900/50'}`}
+              className={`rounded-xl border-2 border-dashed p-3 sm:p-4 transition ${isOverPanel ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50'}`}
             >
               {selectedItems.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-4">
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">
                   Arrastra aquí los artefactos que quieras incluir en el informe.
                 </p>
               ) : (
@@ -450,12 +401,12 @@ function RepairsContent() {
 
         {/* Contenido */}
         {loading ? (
-          <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-8 text-center text-sm text-slate-400">
-            Cargando artefactos...
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            <LoadingSpinner message="Cargando artefactos..." className="py-2" textClassName="text-sm text-slate-500 dark:text-slate-400" color="#60A5FA" />
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-600 bg-slate-900/60 p-8 text-center text-sm text-slate-400">
-            <ExclamationTriangleIcon className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/60 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            <ExclamationTriangleIcon className="h-8 w-8 mx-auto mb-2 text-slate-500 dark:text-slate-300" />
             No hay artefactos en mantenimiento ni fuera de servicio.
           </div>
         ) : (
@@ -464,7 +415,7 @@ function RepairsContent() {
             if (group.length === 0) return null;
             const colors = TIPO_COLORS[tipo];
             return (
-              <div key={tipo} className="rounded-2xl border border-slate-700 bg-slate-900/70 overflow-hidden shadow-sm">
+              <div key={tipo} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/70 overflow-hidden shadow-sm">
                 {/* Cabecera de grupo */}
                 <div className={`px-5 py-3 flex items-center gap-2 border-b ${colors.border} ${colors.bg}`}>
                   <span className={`text-sm font-semibold ${colors.text}`}>
@@ -479,7 +430,7 @@ function RepairsContent() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
-                      <tr className="bg-slate-900 text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-700">
+                      <tr className="bg-white dark:bg-slate-900 text-left text-xs text-slate-700 dark:text-slate-400 uppercase tracking-wide border-b border-sky-100 dark:border-slate-700">
                         <th className="px-4 py-2 font-semibold">Nombre</th>
                         <th className="px-4 py-2 font-semibold">Subtipo</th>
                         <th className="px-4 py-2 font-semibold">Estado</th>
@@ -487,7 +438,7 @@ function RepairsContent() {
                         <th className="px-4 py-2 font-semibold">Fecha Ingreso</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800">
+                    <tbody className="divide-y divide-sky-100 dark:divide-slate-800">
                       {group.map(item => (
                         <CatalogRow
                           key={item.key}

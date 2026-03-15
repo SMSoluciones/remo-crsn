@@ -3,6 +3,7 @@ import { fireThemedSwal } from '../../utils/swalTheme';
 import { fetchBoatUsages, stopBoatUsage } from '../../models/BoatUsage';
 import { showSuccess, showError } from '../../utils/toast';
 import { API_BASE_URL } from '../../utils/apiConfig';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [] }) {
   const [list, setList] = useState([]);
@@ -181,7 +182,7 @@ export default function RemarHistoryModal({ isOpen, onClose, user, boatsList = [
         <div className="p-3 sm:p-4">
 
         {loading ? (
-          <div className="text-center py-8">Cargando...</div>
+          <LoadingSpinner message="Cargando historial..." className="py-8" />
         ) : error ? (
           <div className="text-red-600">{error}</div>
         ) : list.length === 0 ? (

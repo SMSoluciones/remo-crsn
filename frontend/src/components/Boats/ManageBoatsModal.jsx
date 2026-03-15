@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fireThemedSwal } from '../../utils/swalTheme';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import BeatLoader from 'react-spinners/BeatLoader';
 import { fetchBoats, createBoat, updateBoat, deleteBoat, uploadBoatPhoto, BoatTypes, BoatStatus } from '../../models/Boat';
 import { showError, showSuccess } from '../../utils/toast';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 
 export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdated }) {
@@ -245,7 +245,7 @@ export default function ManageBoatsModal({ isOpen, onRequestClose, user, onUpdat
         </form>
         <div data-aos="zoom-in" data-aos-duration="300">
       {loading ? (
-        <div className="flex justify-center py-6"><BeatLoader color="#1E40AF" /></div>
+        <LoadingSpinner message="" className="py-6" />
       ) : (
         <div className="space-y-3 max-h-[58vh] sm:max-h-[60vh] overflow-y-auto">
           {boats.map(b => (

@@ -8,7 +8,7 @@ import { fetchAllSheets, createSheet } from '../../models/TechnicalSheet';
 import { fetchStudents } from '../../models/Student';
 import { fetchTrainers } from '../../models/User';
 import { API_BASE_URL } from '../../utils/apiConfig';
-import BeatLoader from 'react-spinners/BeatLoader';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function TechnicalSheets() {
   const { user } = useAuth();
@@ -280,7 +280,7 @@ export default function TechnicalSheets() {
             title="Forzar recarga de fichas"
           >
             {reloading ? (
-                <div className="flex items-center gap-2"><BeatLoader size={6} color="#1E40AF" /><span className="text-sm text-gray-700">Recargando...</span></div>
+                <div className="flex items-center gap-2"><LoadingSpinner message="" className="py-0" size={6} /><span className="text-sm text-gray-700">Recargando...</span></div>
               ) : (
               'Recargar fichas'
             )}
@@ -372,7 +372,7 @@ export default function TechnicalSheets() {
       </div>
       
       {loading ? (
-        <div className="flex items-center justify-center py-8"><BeatLoader color="#1E40AF" /></div>
+        <LoadingSpinner message="" className="py-8" />
       ) : (
   <div className="mb-8">
         {/* Mobile: cards */}

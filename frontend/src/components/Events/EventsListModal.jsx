@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { fireThemedSwal } from '../../utils/swalTheme';
 import { fetchEvents, finalizeEvent as finalizeEventApi } from '../../models/Event';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import BeatLoader from 'react-spinners/BeatLoader';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 export default function EventsListModal({ isOpen, onRequestClose }) {
   const { user } = useAuth();
@@ -79,7 +79,7 @@ export default function EventsListModal({ isOpen, onRequestClose }) {
         </div>
         <div className="p-3 sm:p-4 overflow-y-auto">
         {loading ? (
-          <div className="flex items-center justify-center py-8"><BeatLoader color="#1E40AF" /></div>
+          <LoadingSpinner message="" className="py-8" />
         ) : events.length === 0 ? (
           <div className="text-sm text-gray-600">No hay eventos</div>
         ) : (
