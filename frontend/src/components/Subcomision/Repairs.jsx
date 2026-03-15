@@ -63,15 +63,23 @@ function CatalogRow({ item, isSelected, onAdd }) {
         if (!isSelected) onAdd(item.key);
       }}
     >
-      <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{item.nombre}</td>
-      <td className="px-4 py-3 text-slate-600 dark:text-slate-300 capitalize">{item.subtipo}</td>
-      <td className="px-4 py-3">
+      <td className="px-3 py-2.5 font-medium text-slate-800 dark:text-slate-100">
+        <span className="block">{item.nombre}</span>
+        <span className="sm:hidden block text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+          {item.subtipo !== '—' ? `${item.subtipo} · ` : ''}{item.causa || '—'}
+        </span>
+        <span className="sm:hidden block text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-normal">
+          {item.fechaIngreso ? format(new Date(item.fechaIngreso), "d MMM yyyy", { locale: es }) : '—'}
+        </span>
+      </td>
+      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600 dark:text-slate-300 capitalize">{item.subtipo}</td>
+      <td className="px-3 py-2.5">
         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ESTADO_COLORS[item.estado]}`}>
           {ESTADO_LABELS[item.estado] || item.estado}
         </span>
       </td>
-      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{item.causa || '—'}</td>
-      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.causa || '—'}</td>
+      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600 dark:text-slate-300">
         {item.fechaIngreso
           ? format(new Date(item.fechaIngreso), "d MMM yyyy", { locale: es })
           : '—'}
@@ -120,13 +128,15 @@ function SelectedRow({ item, index, onRemove, onReorder, onInsertCatalog }) {
       className={`rounded-lg border px-3 py-2 bg-white dark:bg-slate-900/80 flex items-center gap-2 ${isOver ? 'border-emerald-400' : 'border-slate-200 dark:border-slate-700'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
     >
       <Bars3Icon className="h-5 w-5 text-slate-500 dark:text-slate-400 shrink-0" />
-      <span className="text-xs text-slate-500 dark:text-slate-400 w-6 text-center">{index + 1}</span>
-      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-full px-2 py-0.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800">
+      <span className="hidden sm:inline text-xs text-slate-500 dark:text-slate-400 w-6 text-center shrink-0">{index + 1}</span>
+      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-full px-2 py-0.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
         {TIPO_LABELS[item.tipo]}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{item.nombre}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Causa: {item.causa || '—'}</p>
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate leading-tight">{item.nombre}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
+          {item.causa || '—'}
+        </p>
       </div>
       <button
         type="button"
@@ -331,7 +341,7 @@ function RepairsContent() {
               type="button"
               onClick={handleExportExcel}
               disabled={exporting || loading || selectedItems.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-300 bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-emerald-300 bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition"
             >
               <ArrowDownTrayIcon className="h-4 w-4" />
               {exporting ? 'Exportando...' : 'Exportar selección a Excel'}
@@ -340,20 +350,20 @@ function RepairsContent() {
 
           {/* Resumen */}
           {!loading && (
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {groups.map(tipo => {
                 const count = items.filter(i => i.tipo === tipo).length;
                 const colors = TIPO_COLORS[tipo];
                 return (
-                  <div key={tipo} className={`rounded-xl border ${colors.border} ${colors.bg} px-4 py-3`}>
+                  <div key={tipo} className={`rounded-xl border ${colors.border} ${colors.bg} px-3 py-2.5 sm:px-4 sm:py-3`}>
                     <p className={`text-xs font-medium ${colors.text}`}>{TIPO_LABELS[tipo]}s</p>
-                    <p className={`text-2xl font-bold ${colors.text}`}>{count}</p>
+                    <p className={`text-xl sm:text-2xl font-bold ${colors.text}`}>{count}</p>
                   </div>
                 );
               })}
-              <div className="rounded-xl border border-emerald-300 dark:border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3">
+              <div className="rounded-xl border border-emerald-300 dark:border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2.5 sm:px-4 sm:py-3">
                 <p className="text-xs font-medium text-emerald-700 dark:text-emerald-200">Seleccionados</p>
-                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-200">{selectedItems.length}</p>
+                <p className="text-xl sm:text-2xl font-bold text-emerald-700 dark:text-emerald-200">{selectedItems.length}</p>
               </div>
             </div>
           )}
@@ -430,12 +440,12 @@ function RepairsContent() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
-                      <tr className="bg-white dark:bg-slate-900 text-left text-xs text-slate-700 dark:text-slate-400 uppercase tracking-wide border-b border-sky-100 dark:border-slate-700">
-                        <th className="px-4 py-2 font-semibold">Nombre</th>
-                        <th className="px-4 py-2 font-semibold">Subtipo</th>
-                        <th className="px-4 py-2 font-semibold">Estado</th>
-                        <th className="px-4 py-2 font-semibold">Causa</th>
-                        <th className="px-4 py-2 font-semibold">Fecha Ingreso</th>
+                      <tr className="bg-white dark:bg-slate-900 text-left text-xs text-slate-700 dark:text-slate-400 uppercase tracking-wide border-b border-sky-100 dark:border-slate-700 select-none">
+                        <th className="px-3 py-2 font-semibold">Nombre</th>
+                        <th className="hidden sm:table-cell px-3 py-2 font-semibold">Subtipo</th>
+                        <th className="px-3 py-2 font-semibold">Estado</th>
+                        <th className="hidden sm:table-cell px-3 py-2 font-semibold">Causa</th>
+                        <th className="hidden sm:table-cell px-3 py-2 font-semibold">Fecha Ingreso</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-sky-100 dark:divide-slate-800">
