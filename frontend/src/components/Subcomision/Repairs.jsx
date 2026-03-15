@@ -27,9 +27,9 @@ const TIPO_LABELS = {
 };
 
 const TIPO_COLORS = {
-  bote:  { bg: 'bg-cyan-100/60 dark:bg-cyan-500/10', text: 'text-cyan-800 dark:text-cyan-200', border: 'border-cyan-300 dark:border-cyan-400/40' },
-  remo:  { bg: 'bg-violet-100/60 dark:bg-violet-500/10', text: 'text-violet-800 dark:text-violet-200', border: 'border-violet-300 dark:border-violet-400/40' },
-  carro: { bg: 'bg-amber-100/60 dark:bg-amber-500/10', text: 'text-amber-800 dark:text-amber-200', border: 'border-amber-300 dark:border-amber-400/40' },
+  bote:  { bg: 'bg-white', text: 'text-cyan-700', border: 'border-slate-200' },
+  remo:  { bg: 'bg-white', text: 'text-violet-700', border: 'border-slate-200' },
+  carro: { bg: 'bg-white', text: 'text-amber-700', border: 'border-slate-200' },
 };
 
 const ESTADO_LABELS = {
@@ -38,8 +38,8 @@ const ESTADO_LABELS = {
 };
 
 const ESTADO_COLORS = {
-  mantenimiento: 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-300/30',
-  fuera_servicio: 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-300/30',
+  mantenimiento: 'bg-amber-50 text-amber-700 border border-amber-200',
+  fuera_servicio: 'bg-rose-50 text-rose-700 border border-rose-200',
 };
 
 function CatalogRow({ item, isSelected, onAdd }) {
@@ -58,28 +58,28 @@ function CatalogRow({ item, isSelected, onAdd }) {
   return (
     <tr
       ref={dragRef}
-      className={`transition ${isSelected ? 'bg-emerald-100 dark:bg-emerald-500/10' : 'hover:bg-cyan-50 dark:hover:bg-slate-800/60 cursor-grab'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
+      className={`transition ${isSelected ? 'bg-emerald-50' : 'hover:bg-slate-50 cursor-grab'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
       onDoubleClick={() => {
         if (!isSelected) onAdd(item.key);
       }}
     >
-      <td className="px-3 py-2.5 font-medium text-slate-800 dark:text-slate-100">
+      <td className="px-3 py-2.5 font-medium text-slate-800">
         <span className="block">{item.nombre}</span>
-        <span className="sm:hidden block text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+        <span className="sm:hidden block text-xs text-slate-500 mt-0.5 font-normal">
           {item.subtipo !== '—' ? `${item.subtipo} · ` : ''}{item.causa || '—'}
         </span>
-        <span className="sm:hidden block text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-normal">
+        <span className="sm:hidden block text-xs text-slate-400 mt-0.5 font-normal">
           {item.fechaIngreso ? format(new Date(item.fechaIngreso), "d MMM yyyy", { locale: es }) : '—'}
         </span>
       </td>
-      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600 dark:text-slate-300 capitalize">{item.subtipo}</td>
+      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600 capitalize">{item.subtipo}</td>
       <td className="px-3 py-2.5">
         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ESTADO_COLORS[item.estado]}`}>
           {ESTADO_LABELS[item.estado] || item.estado}
         </span>
       </td>
-      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.causa || '—'}</td>
-      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600 dark:text-slate-300">
+      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600">{item.causa || '—'}</td>
+      <td className="hidden sm:table-cell px-3 py-2.5 text-slate-600">
         {item.fechaIngreso
           ? format(new Date(item.fechaIngreso), "d MMM yyyy", { locale: es })
           : '—'}
@@ -125,23 +125,23 @@ function SelectedRow({ item, index, onRemove, onReorder, onInsertCatalog }) {
   return (
     <li
       ref={setRefs}
-      className={`rounded-lg border px-3 py-2 bg-white dark:bg-slate-900/80 flex items-center gap-2 ${isOver ? 'border-emerald-400' : 'border-slate-200 dark:border-slate-700'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
+      className={`rounded-lg border px-3 py-2 bg-slate-50 flex items-center gap-2 ${isOver ? 'border-emerald-400' : 'border-slate-200'} ${isDragging ? 'opacity-40' : 'opacity-100'}`}
     >
-      <Bars3Icon className="h-5 w-5 text-slate-500 dark:text-slate-400 shrink-0" />
-      <span className="hidden sm:inline text-xs text-slate-500 dark:text-slate-400 w-6 text-center shrink-0">{index + 1}</span>
-      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-full px-2 py-0.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
+      <Bars3Icon className="h-5 w-5 text-slate-500 shrink-0" />
+      <span className="hidden sm:inline text-xs text-slate-500 w-6 text-center shrink-0">{index + 1}</span>
+      <span className="text-xs font-semibold text-slate-700 rounded-full px-2 py-0.5 border border-slate-300 bg-white shrink-0">
         {TIPO_LABELS[item.tipo]}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate leading-tight">{item.nombre}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
+        <p className="text-sm font-medium text-slate-800 truncate leading-tight">{item.nombre}</p>
+        <p className="text-xs text-slate-500 truncate leading-tight mt-0.5">
           {item.causa || '—'}
         </p>
       </div>
       <button
         type="button"
         onClick={() => onRemove(item.key)}
-        className="rounded-md border border-slate-300 dark:border-slate-700 p-1 text-slate-600 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800"
+        className="rounded-md border border-slate-300 p-1 text-slate-600 hover:bg-slate-100"
         title="Quitar del informe"
       >
         <XMarkIcon className="h-4 w-4" />
@@ -322,18 +322,18 @@ function RepairsContent() {
   return (
     <div className="mt-5 space-y-5">
         {/* Header */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-5 sm:p-6">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                <WrenchScrewdriverIcon className="h-5 w-5 text-slate-500 dark:text-slate-300" />
+              <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                <WrenchScrewdriverIcon className="h-5 w-5 text-slate-500" />
                 Artefactos en Mantenimiento
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                Botes, remos y carros con estado <span className="font-medium text-amber-700 dark:text-amber-300">Mantenimiento</span> o{' '}
-                <span className="font-medium text-rose-700 dark:text-rose-300">Fuera de servicio</span>.
+              <p className="text-sm text-slate-600 mt-1">
+                Botes, remos y carros con estado <span className="font-medium text-amber-700">Mantenimiento</span> o{' '}
+                <span className="font-medium text-rose-700">Fuera de servicio</span>.
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              <p className="text-xs text-slate-500 mt-2">
                 Arrastra artefactos desde el catalogo al panel de informe para seleccionar y ordenar lo que vas a enviar.
               </p>
             </div>
@@ -361,23 +361,23 @@ function RepairsContent() {
                   </div>
                 );
               })}
-              <div className="rounded-xl border border-emerald-300 dark:border-emerald-400/40 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2.5 sm:px-4 sm:py-3">
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-200">Seleccionados</p>
-                <p className="text-xl sm:text-2xl font-bold text-emerald-700 dark:text-emerald-200">{selectedItems.length}</p>
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
+                <p className="text-xs font-medium text-emerald-700">Seleccionados</p>
+                <p className="text-xl sm:text-2xl font-bold text-emerald-700">{selectedItems.length}</p>
               </div>
             </div>
           )}
         </div>
 
         {!loading && items.length > 0 && (
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-4 sm:p-5">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <h4 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100">Informe de reparación (drag and drop)</h4>
+              <h4 className="text-sm sm:text-base font-semibold text-slate-800">Informe de reparación.</h4>
               <button
                 type="button"
                 onClick={clearSelection}
                 disabled={selectedItems.length === 0}
-                className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Limpiar selección
               </button>
@@ -385,10 +385,10 @@ function RepairsContent() {
 
             <div
               ref={panelDropRef}
-              className={`rounded-xl border-2 border-dashed p-3 sm:p-4 transition ${isOverPanel ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50'}`}
+              className={`rounded-xl border-2 border-dashed p-3 sm:p-4 transition ${isOverPanel ? 'border-emerald-400 bg-emerald-50' : 'border-slate-300 bg-slate-50'}`}
             >
               {selectedItems.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">
+                <p className="text-sm text-slate-500 text-center py-4">
                   Arrastra aquí los artefactos que quieras incluir en el informe.
                 </p>
               ) : (
@@ -411,12 +411,12 @@ function RepairsContent() {
 
         {/* Contenido */}
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            <LoadingSpinner message="Cargando artefactos..." className="py-2" textClassName="text-sm text-slate-500 dark:text-slate-400" color="#60A5FA" />
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+            <LoadingSpinner message="Cargando artefactos..." className="py-2" textClassName="text-sm text-slate-500" color="#60A5FA" />
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/60 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            <ExclamationTriangleIcon className="h-8 w-8 mx-auto mb-2 text-slate-500 dark:text-slate-300" />
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+            <ExclamationTriangleIcon className="h-8 w-8 mx-auto mb-2 text-slate-500" />
             No hay artefactos en mantenimiento ni fuera de servicio.
           </div>
         ) : (
@@ -425,13 +425,13 @@ function RepairsContent() {
             if (group.length === 0) return null;
             const colors = TIPO_COLORS[tipo];
             return (
-              <div key={tipo} className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/70 overflow-hidden shadow-sm">
+              <div key={tipo} className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
                 {/* Cabecera de grupo */}
-                <div className={`px-5 py-3 flex items-center gap-2 border-b ${colors.border} ${colors.bg}`}>
+                <div className="px-5 py-3 flex items-center gap-2 border-b border-slate-200 bg-slate-50">
                   <span className={`text-sm font-semibold ${colors.text}`}>
                     {TIPO_LABELS[tipo]}s
                   </span>
-                  <span className={`text-xs rounded-full px-2 py-0.5 font-medium border ${colors.border} ${colors.text}`}>
+                  <span className={`text-xs rounded-full px-2 py-0.5 font-medium border ${colors.border} ${colors.bg} ${colors.text}`}>
                     {group.length}
                   </span>
                 </div>
@@ -440,7 +440,7 @@ function RepairsContent() {
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
-                      <tr className="bg-white dark:bg-slate-900 text-left text-xs text-slate-700 dark:text-slate-400 uppercase tracking-wide border-b border-sky-100 dark:border-slate-700 select-none">
+                      <tr className="bg-slate-50 text-left text-xs text-slate-700 uppercase tracking-wide border-b border-slate-200 select-none">
                         <th className="px-3 py-2 font-semibold">Nombre</th>
                         <th className="hidden sm:table-cell px-3 py-2 font-semibold">Subtipo</th>
                         <th className="px-3 py-2 font-semibold">Estado</th>
@@ -448,7 +448,7 @@ function RepairsContent() {
                         <th className="hidden sm:table-cell px-3 py-2 font-semibold">Fecha Ingreso</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-sky-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-slate-100">
                       {group.map(item => (
                         <CatalogRow
                           key={item.key}
