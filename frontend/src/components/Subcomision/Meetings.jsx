@@ -5,6 +5,7 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   PencilSquareIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/useAuth';
 import { showError, showSuccess } from '../../utils/toast';
@@ -13,10 +14,12 @@ import {
   fetchMeetings,
   createMeeting,
   updateMeeting,
+  deleteMeeting,
   createMeetingTopic,
   updateMeetingTopic,
   updateMeetingTopicStatus,
 } from '../../models/Meeting';
+import { fireThemedSwal } from '../../utils/swalTheme';
 
 const CATEGORY_LABELS = {
   hablado: 'Se hablo',
@@ -206,6 +209,8 @@ export default function Meetings() {
   const [creatingMeeting, setCreatingMeeting] = useState(false);
   const [creatingTopic, setCreatingTopic] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState(false);
+  const [deletingMeeting, setDeletingMeeting] = useState(false);
+  const [isMeetingPanelOpen, setIsMeetingPanelOpen] = useState(false);
 
   const [meetingForm, setMeetingForm] = useState({
     tituloReunion: '',
@@ -385,6 +390,37 @@ export default function Meetings() {
     }
   };
 
+  const handleDeleteSelectedMeeting = async () => {
+    if (!selectedMeeting) return;
+    const meetingId = String(selectedMeeting._id || selectedMeeting.id);
+
+    const confirm = await fireThemedSwal({
+      title: 'Eliminar reunion',
+      text: 'Esta accion elimina la reunion y todos sus temas.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    setDeletingMeeting(true);
+    try {
+      await deleteMeeting(meetingId, user);
+      const nextMeetings = meetings.filter((meeting) => String(meeting._id || meeting.id) !== meetingId);
+      setMeetings(nextMeetings);
+      setSelectedMeetingId(nextMeetings.length > 0 ? String(nextMeetings[0]._id || nextMeetings[0].id) : '');
+      showSuccess('Reunion eliminada');
+    } catch (error) {
+      console.error('Error eliminando reunion:', error);
+      showError('No se pudo eliminar la reunion');
+    } finally {
+      setDeletingMeeting(false);
+    }
+  };
+
   const handleSaveTopic = async (topic, draft) => {
     if (!selectedMeeting) return;
     const meetingId = String(selectedMeeting._id || selectedMeeting.id);
@@ -422,50 +458,61 @@ export default function Meetings() {
   return (
     <div className="mt-5 space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <h3 className="text-lg font-semibold text-slate-800">Reuniones (tablero compacto)</h3>
-        <p className="text-sm text-slate-600 mt-1">
-          Registra una fecha de reunion y luego carga temas dentro de esa reunion.
-        </p>
+        <button
+          type="button"
+          onClick={() => setIsMeetingPanelOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between gap-3 text-left"
+        >
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800">Nuevas Reuniones</h3>
+            <p className="text-sm text-slate-600 mt-1">
+              Registra una fecha de reunion y luego carga temas dentro de esa reunion.
+            </p>
+          </div>
+          <ChevronDownIcon className={`h-5 w-5 text-slate-500 transition-transform ${isMeetingPanelOpen ? 'rotate-180' : ''}`} />
+        </button>
 
-        <form onSubmit={handleCreateMeeting} className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
-          <input
-            className="md:col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            placeholder="Titulo de la reunion"
-            value={meetingForm.tituloReunion}
-            onChange={(e) => setMeetingForm((prev) => ({ ...prev, tituloReunion: e.target.value }))}
-          />
-          <input
-            type="date"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            value={meetingForm.fechaReunion}
-            onChange={(e) => setMeetingForm((prev) => ({ ...prev, fechaReunion: e.target.value }))}
-          />
-          <button
-            type="submit"
-            disabled={creatingMeeting}
-            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {creatingMeeting ? 'Guardando...' : 'Registrar reunion'}
-          </button>
-          <textarea
-            className="md:col-span-4 rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[72px]"
-            placeholder="Descripcion breve de la reunion"
-            value={meetingForm.descripcion}
-            onChange={(e) => setMeetingForm((prev) => ({ ...prev, descripcion: e.target.value }))}
-          />
-          {selectedMeeting && (
-            <div className="md:col-span-4 flex justify-end">
-              <button
-                type="button"
-                onClick={handleUpdateMeeting}
-                disabled={editingMeeting}
-                className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60"
-              >
-                {editingMeeting ? 'Guardando cambios...' : 'Actualizar reunion seleccionada'}
-              </button>
-            </div>
-          )}
-        </form>
+        {isMeetingPanelOpen && (
+          <form onSubmit={handleCreateMeeting} className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
+            <input
+              className="md:col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              placeholder="Titulo de la reunion"
+              value={meetingForm.tituloReunion}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, tituloReunion: e.target.value }))}
+            />
+            <input
+              type="date"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              value={meetingForm.fechaReunion}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, fechaReunion: e.target.value }))}
+            />
+            <button
+              type="submit"
+              disabled={creatingMeeting}
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {creatingMeeting ? 'Guardando...' : 'Registrar reunion'}
+            </button>
+            <textarea
+              className="md:col-span-4 rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[72px]"
+              placeholder="Descripcion breve de la reunion"
+              value={meetingForm.descripcion}
+              onChange={(e) => setMeetingForm((prev) => ({ ...prev, descripcion: e.target.value }))}
+            />
+            {selectedMeeting && (
+              <div className="md:col-span-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleUpdateMeeting}
+                  disabled={editingMeeting}
+                  className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60"
+                >
+                  {editingMeeting ? 'Guardando cambios...' : 'Actualizar reunion seleccionada'}
+                </button>
+              </div>
+            )}
+          </form>
+        )}
       </section>
 
       {loading ? (
@@ -474,7 +521,7 @@ export default function Meetings() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <aside className="rounded-2xl border border-slate-200 bg-white p-3 lg:col-span-1">
+          <aside className="rounded-2xl border border-slate-200 bg-white p-3 lg:col-span-1 flex flex-col">
             <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
               <CalendarDaysIcon className="h-5 w-5 text-slate-500" />
               Calendario de reuniones
@@ -501,6 +548,19 @@ export default function Meetings() {
                     </button>
                   );
                 })}
+              </div>
+            )}
+
+            {selectedMeeting && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleDeleteSelectedMeeting}
+                  disabled={deletingMeeting}
+                  className="rounded-lg border border-rose-300 bg-transparent px-3 py-1.5 text-sm font-medium text-rose-700 hover:text-rose-800 disabled:opacity-60"
+                >
+                  {deletingMeeting ? 'Eliminando...' : 'Eliminar reunion seleccionada'}
+                </button>
               </div>
             )}
           </aside>

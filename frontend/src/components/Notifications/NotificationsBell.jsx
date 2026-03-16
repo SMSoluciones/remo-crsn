@@ -18,6 +18,13 @@ function normalizeText(value) {
   return String(value || '').trim();
 }
 
+function canUserReceiveAnnouncement(announcement, user) {
+  const roles = Array.isArray(announcement?.targetRoles) ? announcement.targetRoles : [];
+  if (roles.length === 0) return true;
+  const role = normalizeText(user?.rol).toLowerCase();
+  return !!role && roles.includes(role);
+}
+
 function statusLabel(status) {
   const raw = normalizeText(status).toLowerCase();
   if (raw === 'activo') return 'Activo';
@@ -201,7 +208,7 @@ export default function NotificationsBell({ user, theme = 'light' }) {
       try {
         const [boats, announcements, events] = await Promise.all([
           fetchBoats().catch(() => []),
-          fetchAnnouncements().catch(() => []),
+          fetchAnnouncements(user).catch(() => []),
           fetchEvents().catch(() => []),
         ]);
 
@@ -260,11 +267,14 @@ export default function NotificationsBell({ user, theme = 'light' }) {
           .map((a) => normalizeId(a._id || a.id))
           .filter(Boolean);
         if (!nextState.initializedAnnouncements) {
-          nextState.knownAnnouncementIds = announcementIds;
+          nextState.knownAnnouncementIds = (Array.isArray(announcements) ? announcements : [])
+            .filter((a) => canUserReceiveAnnouncement(a, user))
+            .map((a) => normalizeId(a._id || a.id));
           nextState.initializedAnnouncements = true;
         } else {
           const known = new Set(nextState.knownAnnouncementIds || []);
           (Array.isArray(announcements) ? announcements : []).forEach((a) => {
+            if (!canUserReceiveAnnouncement(a, user)) return;
             const id = normalizeId(a._id || a.id);
             if (!id || known.has(id)) return;
             pending.push({

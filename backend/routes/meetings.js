@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Meeting = require('../models/Meeting');
+const Announcement = require('../models/Announcement');
 
 function headerAuth(req, res, next) {
   const role = req.header('x-user-role');
@@ -37,6 +38,21 @@ function buildTopicPayload(body = {}) {
   };
 }
 
+async function createMeetingAnnouncement(meeting) {
+  const title = `Nueva reunion: ${String(meeting?.tituloReunion || '').trim() || 'Sin titulo'}`;
+  const fecha = meeting?.fechaReunion ? new Date(meeting.fechaReunion) : new Date();
+  const description = `Se registro una nueva reunion para el ${fecha.toLocaleDateString('es-AR')}.`;
+
+  const announcement = new Announcement({
+    title,
+    date: fecha,
+    description,
+    targetRoles: ['admin', 'subcomision'],
+    sourceType: 'meeting',
+  });
+  await announcement.save();
+}
+
 router.get('/', async (req, res) => {
   try {
     const meetings = await Meeting.find().sort({ fechaReunion: -1, updatedAt: -1 });
@@ -58,6 +74,13 @@ router.post('/', headerAuth, requireMeetingEditors, async (req, res) => {
 
     const meeting = new Meeting(payload);
     await meeting.save();
+
+    try {
+      await createMeetingAnnouncement(meeting);
+    } catch (notificationError) {
+      console.warn('No se pudo crear notificacion de reunion:', notificationError);
+    }
+
     return res.status(201).json(meeting);
   } catch (error) {
     return res.status(500).json({ message: 'Error al crear la reunion', error });
@@ -172,6 +195,18 @@ router.patch('/:id/topics/:topicId/status', headerAuth, requireMeetingEditors, a
     return res.status(200).json(meeting);
   } catch (error) {
     return res.status(500).json({ message: 'Error al actualizar estado del tema', error });
+  }
+});
+
+router.delete('/:id', headerAuth, requireMeetingEditors, async (req, res) => {
+  try {
+    const deleted = await Meeting.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Reunion no encontrada' });
+    }
+    return res.status(200).json({ message: 'Reunion eliminada correctamente' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error al eliminar la reunion', error });
   }
 });
 

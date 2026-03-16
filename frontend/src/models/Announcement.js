@@ -3,9 +3,11 @@ import { API_BASE_URL } from '../utils/apiConfig';
 
 const BASE = `${API_BASE_URL}/api/announcements`;
 
-export const fetchAnnouncements = async () => {
+export const fetchAnnouncements = async (auth) => {
   try {
-    const res = await axios.get(BASE);
+    const headers = {};
+    if (auth?.rol) headers['x-user-role'] = auth.rol;
+    const res = await axios.get(BASE, { headers });
     return res.data;
   } catch (err) {
     console.error('Error al obtener los anuncios:', err);

@@ -13,6 +13,14 @@ const announcementSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  targetRoles: {
+    type: [String],
+    default: [],
+  },
+  sourceType: {
+    type: String,
+    default: 'general',
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Announcement', announcementSchema);

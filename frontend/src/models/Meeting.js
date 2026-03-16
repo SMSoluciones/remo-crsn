@@ -24,6 +24,11 @@ export const updateMeeting = async (meetingId, meetingData, auth) => {
   return response.data;
 };
 
+export const deleteMeeting = async (meetingId, auth) => {
+  const response = await axios.delete(`${BASE}/${meetingId}`, { headers: getHeaders(auth) });
+  return response.data;
+};
+
 export const createMeetingTopic = async (meetingId, topicData, auth) => {
   const response = await axios.post(`${BASE}/${meetingId}/topics`, topicData, { headers: getHeaders(auth) });
   return response.data;
